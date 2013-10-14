@@ -263,8 +263,7 @@ public:
     /// Construct a ComponentTypeManager.
     this(Source.Loader sourceLoader)
     {
-        import tharsis.entity.lifecomponent;
-        registerComponentTypes!LifeComponent;
+        registerComponentTypes!BuiltinComponents;
     }
 
     /// Register specified component types.

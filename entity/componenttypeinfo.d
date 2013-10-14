@@ -11,12 +11,17 @@ module tharsis.entity.componenttypeinfo;
 import std.algorithm;
 import std.stdio;
 import std.string;
+import std.typetuple;
 
 import tharsis.util.traits;
 
 
 /// Maximum number of component types that can be defined by the user.
 enum maxUserComponentTypes = 60;
+
+import tharsis.entity.lifecomponent;
+/// A tuple of all builtin component types.
+alias TypeTuple!(LifeComponent) BuiltinComponents;
 
 
 /// Type information about a component type.
