@@ -24,6 +24,21 @@ import tharsis.entity.lifecomponent;
 alias TypeTuple!(LifeComponent) BuiltinComponents;
 
 
+/// Get a bitmask corresponding to specified components.
+/// 
+/// Works at compile-time.
+ulong ComponentFlags(ComponentTypes...)() @safe pure nothrow
+{
+    ulong result = 0;
+    foreach(type; ComponentTypes)
+    {
+        assert(type.ComponentTypeID < 64, "Component type ID out of range");
+        result |= 1UL << type.ComponentTypeID;
+    }
+    return result;
+}
+
+
 /// Type information about a component type.
 struct ComponentTypeInfo
 {
