@@ -42,6 +42,13 @@ ulong ComponentFlags(ComponentTypes...)() @safe pure nothrow
 /// Type information about a component type.
 struct ComponentTypeInfo
 {
+private:
+    /// Type information about the source type the components are loaded from.
+    /// 
+    /// Ensures that a correct Source is passed to loadComponent.
+    TypeInfo sourceType_;
+
+public:
     /// ID of the component type (0 to 63).
     ulong id = ulong.max;
 
@@ -50,11 +57,6 @@ struct ComponentTypeInfo
 
     /// Name of the component type.
     string name = "";
-
-    /// Type information about the source type the components are loaded from.
-    /// 
-    /// Ensures that a correct Source is passed to loadComponent.
-    TypeInfo sourceType_;
 
     /// Type information about a component type field (data member).
     struct Field 
