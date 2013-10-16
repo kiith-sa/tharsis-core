@@ -144,28 +144,27 @@ public:
 
                 // TODO if a field has a default value, allow it to be 
                 //      unspecified and set it to the default value here.
-                if(source.isValue || !source.hasKey(name))
+                Source value;
+                if(!source.getValue(name, value))
                 {
                     writeln("Failed to load component '", Component.stringof,
-                            "' : Field not specified: '", name, "'");
+                            "' : Could not find field: '", name, "'");
                     return false;
                 }
 
-                const value = (*source)[name];
-
                 mixin(q{alias typeof(Component.%s) FieldType;}.format(name));
 
-                if(!value.matchesType!FieldType)
+                mixin(q{
+                FieldType* field = &((cast(Component*)componentBuffer.ptr).%s);
+                }.format(name));
+
+                if(!value.readTo(*field))
                 {
                     writeln("Failed to load component '", Component.stringof, 
                             "' : Field '", name, "' does not match expected "
                             "type: '", FieldType.stringof, "'");
                     return false;
                 }
-
-                mixin(q{
-                (cast(Component*)componentBuffer.ptr).%s = value.as!FieldType;
-                }.format(name));
 
                 return true;
             }
