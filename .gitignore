@@ -1,3 +1,5 @@
 /entity/unittest.o
-/entity/.directory
+*.directory
+*.bkp
+*.bkp?
 /unittest
