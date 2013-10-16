@@ -23,6 +23,12 @@ import tharsis.entity.lifecomponent;
 /// A tuple of all builtin component types.
 alias TypeTuple!(LifeComponent) BuiltinComponents;
 
+/// Return a component mask with only the user component types from given mask.
+ulong userComponents(const ulong mask) @safe pure nothrow
+{
+    return mask & 0x0FFFFFFFFFFFFFFF;
+}
+
 
 /// Get a bitmask corresponding to specified components.
 /// 
