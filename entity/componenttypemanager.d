@@ -145,6 +145,8 @@ package:
 ///         /// (There is no requirement to load from actual files;
 ///         /// this may be implemented by loading from some archive file or 
 ///         /// from memory.)
+///         ///
+///         /// On failure, the returned TestSource will be null.
 ///         TestSource loadSource(string name) @safe nothrow 
 ///         {
 ///             assert(false);
@@ -160,51 +162,44 @@ package:
 ///         assert(false);
 ///     }
 ///
-///     /// Check if the type stored in a value Source matches specified type.
+///     /// Read a value of type T to target.
 ///     /// 
-///     /// If and only if this is true can the value be accessed as specified 
-///     /// type using the as() method.
+///     /// Returns: true if the value was successfully read. 
+///     ///          false if the Source isn't convertible to specified type.
+///     bool readTo(T)(out T target) @safe nothrow
+///     {
+///         try 
+///         {
+///             target = yaml_.as!T;
+///             return true;
+///         }
+///         catch(NodeException e)
+///         {
+///             return false;
+///         }
+///     }
+///    
+///     /// Get a nested source indexed by string.
 ///     ///
-///     /// May only be called on non-null value Sources.
-///     bool matchesType(T)() @safe nothrow const
-///     {
-///         assert(false);
-///     }
-///
-///     /// Access the value stored in a value source as specified type.
+///     /// (Get a value from a source that contains multiple values indexed by 
+///     /// strings)
 ///     /// 
-///     /// Can only be called on value sources that match specified type.
-///     T as(T)() @trusted nothrow const
-///     {
-///         assert(false);
-///     }
-///
-///     /// Does this Source directly store a value (instead of other Sources)?
+///     /// Params:  key    = Key identifying the nested source..
+///     ///          target = Target to read the nested source to.
 ///     /// 
-///     /// If true, the type of the value can be checked by matchesType() and 
-///     /// the value can be accessed by as().
-///     bool isValue() @safe nothrow const 
+///     /// Returns: true on success, false on failure. (e.g. if this source is
+///     ///          a single value instead of a mapping.)
+///     bool getValue(string key, out TestSource target) @safe nothrow
 ///     {
-///         assert(false);
-///     }
-///
-///     /// Does this mapping source store a nested Source with specified key?
-///     /// 
-///     /// If true, the nested source can be accessed using opIndex with 
-///     /// specified name.
-///     ///
-///     /// Can only be called on non-value Sources.
-///     bool hasKey(const string key) @safe nothrow const 
-///     {
-///         assert(false);
-///     }
-///
-///     /// Access a nested Source with specified key in a mapping Source.
-///     ///
-///     /// Can only be called on non-value Sources that contain specified key.
-///     TestSource opIndex(const string key) @safe nothrow const
-///     {
-///         assert(false);
+///         try 
+///         {
+///             target = yaml_[key];
+///             return true;
+///         }
+///         catch(NodeException e)
+///         {
+///             return false;
+///         }
 ///     }
 /// }
 /// --------------------
@@ -220,37 +215,31 @@ package:
 /// Tharsis will use the Source API roughly in the following way:
 /// 
 /// --------------------
-/// void getAwesomeness(ref const(Source) components)
+/// bool getAwesomeness(ref const(Source) components, out int awesomeness)
 /// {
-///     if(components.isNull || components.isValue)
-///     { 
-///         // Handle error (unexpected entity format)...
-///     }
-///     if(!components.hasKey("example")
+///     if(components.isNull())
 ///     {
-///         // No such component in this entity...
+///         writeln("components is null");
+///         return false;
 ///     }
-///
-///     Source exampleComponent = components["example"];
-///     if(exampleComponent.isValue)
+///     Source exampleComponent;
+///     if(!component.getValue("example", exampleComponent))
 ///     {
-///         // Handle error (unexpected component format)
+///         writeln("could not find ExampleComponent in components");
+///         return false;
 ///     }
-///     if(!exampleComponent.hasKey("awesomeness")
+///     Source awesomenessSource;
+///     if(!exampleComponent.getValue("awesomeness", awesomenessSource))
 ///     {
-///         // Handle error (missing property in component)
+///         writeln("could not find awesomeness in ExampleComponent");
+///         return false;
 ///     }
-///
-///     Source awesomenessProperty = exampleComponent["awesomeness"];
-///     if(!awesomenessProperty.isValue)
+///     if(!awesomenessSource.readTo(awesomeness))
 ///     {
-///         // Handle error (unexpected "awesomeness" format)
+///         writeln("awesomeness could not be read to int");
+///         return false;
 ///     }
-///     if(!awesomenessProperty.matchesType(int))
-///     {
-///         // Handle error (unexpected "awesomeness" type)
-///     }
-///     return awesomenessProperty.as!int;
+///     return true;
 /// }
 /// --------------------
 class ComponentTypeManager(Source) : AbstractComponentTypeManager
