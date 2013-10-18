@@ -9,6 +9,7 @@ module tharsis.entity.componenttypeinfo;
 
 
 import std.algorithm;
+import std.array;
 import std.stdio;
 import std.string;
 import std.typetuple;
@@ -16,34 +17,23 @@ import std.typetuple;
 import tharsis.util.traits;
 
 
-/// Maximum number of component types that can be defined by the user.
-enum maxUserComponentTypes = 60;
-
 import tharsis.entity.lifecomponent;
 /// A tuple of all builtin component types.
 alias TypeTuple!(LifeComponent) BuiltinComponents;
 
-/// Return a component mask with only the user component types from given mask.
-ulong userComponents(const ulong mask) @safe pure nothrow
+ulong[] userComponentIDs(ulong[] ids) @trusted
 {
-    return mask & 0x0FFFFFFFFFFFFFFF;
+    return ids.uniq.setDifference(componentIDs!BuiltinComponents).array;
 }
 
-
-/// Get a bitmask corresponding to specified components.
-/// 
-/// Works at compile-time.
-ulong ComponentFlags(ComponentTypes...)() @safe pure nothrow
+/// Get a sorted array of IDs of specified component types.
+ulong[] componentIDs(ComponentTypes...)() @trusted
 {
-    ulong result = 0;
-    foreach(type; ComponentTypes)
-    {
-        assert(type.ComponentTypeID < 64, "Component type ID out of range");
-        result |= 1UL << type.ComponentTypeID;
-    }
-    return result;
+    ulong[] ids;
+    foreach(type; ComponentTypes) { ids ~= type.ComponentTypeID; }
+    ids.sort();
+    return ids;
 }
-
 
 /// Type information about a component type.
 struct ComponentTypeInfo

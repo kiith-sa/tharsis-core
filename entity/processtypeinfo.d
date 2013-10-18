@@ -6,6 +6,8 @@
 module tharsis.entity.processtypeinfo;
 
 import std.algorithm;
+import std.array;
+import std.conv;
 import std.string;
 import std.traits;
 import std.typecons;
@@ -39,9 +41,9 @@ template AllPastComponentTypes(Process)
 }
 unittest
 {
-    struct AComponent{}
-    struct BComponent{}
-    struct CComponent{}
+    struct AComponent{enum ComponentTypeID = 1;}
+    struct BComponent{enum ComponentTypeID = 2;}
+    struct CComponent{enum ComponentTypeID = 3;}
     class S
     {
         void process(ref immutable(AComponent) a, ref immutable(BComponent) b){};
@@ -58,10 +60,10 @@ template PastComponentTypes(alias ProcessFunc)
         UnqualAll!(ConstTypes!(ParameterTypeTuple!ProcessFunc));
 }
 
-/// Get a 64bit bitmask specifying past component types read by a process() method.
-template pastComponentFlags(alias ProcessFunc)
+/// Get sorted array of IDs of past component types read by a process() method.
+template pastComponentIDs(alias ProcessFunc)
 {
-    enum pastComponentFlags = ComponentFlags!(PastComponentTypes!ProcessFunc);
+    enum pastComponentIDs = componentIDs!(PastComponentTypes!ProcessFunc);
 }
 
 /// Get the future component type written by a process() method.
@@ -103,7 +105,7 @@ size_t futureComponentIndex(alias ProcessFunc)()
         if(paramStorage & ParameterStorageClass.out_)
         {
             assert(result == size_t.max, 
-                   "process() function with multiple future components");
+                   "process() method with multiple future components");
             result = idx;
         }
     }
@@ -118,47 +120,53 @@ template isValidProcessMethod(alias Function)
 {
     enum isValidProcessMethod = validate();
 
-    //TODO finish once the process() function format stabilizes.
+    //TODO finish once the process() method format stabilizes.
     bool validate()
     {
-        alias args              = ParameterTypeTuple!Function;
-        alias argStorageClasses = ParameterStorageClassTuple!Function;
+        alias ParamTypes          = ParameterTypeTuple!Function;
+        alias ParamStorageClasses = ParameterStorageClassTuple!Function;
         uint nonConstCount;
-        foreach(i, arg; args)
+        bool[size_t] pastIDs;
+        foreach(i, Param; ParamTypes)
         {
             /*
-            assert((Unqual!arg).stringof.endsWith("Component"), 
-                   "A parameter type to a process() function with name not " 
-                   "ending by \"Component\": " ~ arg.stringof);
+            assert((Unqual!Param).stringof.endsWith("Component"), 
+                   "A parameter type to a process() method with name not " 
+                   "ending by \"Component\": " ~ Param.stringof);
             */
-            if(isMutable!arg) 
+            if(isMutable!Param) 
             {
                 ++nonConstCount;
-                assert(argStorageClasses[i] == ParameterStorageClass.out_,
-                       "Output component of a process() function must be 'out'");
-                //TODO allowing access by pointer here.
+                assert(ParamStorageClasses[i] == ParameterStorageClass.out_,
+                       "Output component of a process() method must be 'out'");
             }
             else 
             {
-                assert(argStorageClasses[i] == ParameterStorageClass.ref_,
-                       "Input components of a process() function must be 'ref'");
+                assert((Param.ComponentTypeID in pastIDs) == null,
+                       "Two past components of the same type (or of types with "
+                       "the same ComponentTypeID) in a process() method "
+                       "signature");
+                pastIDs[Param.ComponentTypeID] = true;
+                assert(ParamStorageClasses[i] == ParameterStorageClass.ref_,
+                       "Input components of a process() method must be 'ref'");
             }
         }
         assert(nonConstCount <= 1,
-               "A process() function with more than one output (non-const) " 
+               "A process() method with more than one output (non-const) " 
                "component type");
         return true;
     }
 }
 
-/// Prioritize overloads of the process() function from process P.
+
+/// Prioritize overloads of the process() method from process P.
 /// 
 /// Returns: An array of 2-tuples sorted from the most specific process()
 ///          overload (i.e. the one that reads the most past components) to the
 ///          most general (reads the fewest past components).
-///          Each 2-tuple consists of a 64-bit mask specifying which past 
-///          components the overload reads, and the index of the overload in
-///          processOverloads!P.
+///          The first member of each 2-tuple is a string containing 
+///          comma-separated IDs of past component types the overload reads; the
+///          second member is the index of the overload in processOverloads!P.
 ///
 /// Note: 
 /// 
@@ -170,25 +178,27 @@ template isValidProcessMethod(alias Function)
 /// components, since there might be an entity with components matching both 
 /// overloads.
 /// 
-/// Example: if one process() function reads components A and B, another reads 
+/// Example: if one process() method reads components A and B, another reads 
 /// B and C, and an entity has components A, B and C, we don't know which 
 /// overload to call. This will trigger an error, requiring the user to define 
 /// another process() overload reading A, B and C. This overload will take 
 /// precedence as it is unambiguosly more specific than both previous overloads.
-Tuple!(ulong, size_t)[] prioritizeProcessOverloads(P)()
+Tuple!(string, size_t)[] prioritizeProcessOverloads(P)()
 {
-    // All overloads of the process() function in P.
+    // All overloads of the process() method in P.
     alias overloads = processOverloads!P;
+
     // Keys are component combinations handled by process() overloads, values 
     // are the indices of process() overloads handling each combination.
-    size_t[ulong] cases;
+    size_t[immutable(ulong)[]] cases;
 
     // For each pair of process() overloads (even if o1 and o2 are the same):
     foreach(i1, o1; overloads) foreach(i2, o2; overloads)
     {
-        // A bit mask representing the union of the past components read 
-        // by o1 and o2.
-        const combined = pastComponentFlags!o1 | pastComponentFlags!o2;
+        // A union of IDs of the past component types read by o1 and o2.
+        auto combined = pastComponentIDs!o1.setUnion(pastComponentIDs!o2)
+                        .uniq.array;
+
         // We've already found an overload for this combination.
         if((combined in cases) != null) { continue; }
 
@@ -196,9 +206,10 @@ Tuple!(ulong, size_t)[] prioritizeProcessOverloads(P)()
         // and o2. (If o1 and o2 are the same, this will also find the same 
         // overload).
         size_t handlerOverload = size_t.max;
-        foreach(i, mask; staticMap!(pastComponentFlags, overloads))
+        foreach(i, ids; staticMap!(pastComponentIDs, overloads))
         {
-            if((mask.userComponents) == combined)
+            if(ids.userComponentIDs.setIntersection(combined).array.length == 
+               combined.length)
             {
                 handlerOverload = i;
                 break;
@@ -207,18 +218,21 @@ Tuple!(ulong, size_t)[] prioritizeProcessOverloads(P)()
 
         assert(handlerOverload != size_t.max, "Ambigous process() "
                "overloads in %s: %s, %s. Add an overload handling "
-               "past components processed by both overloads."
+               "past components processed by both overloads %s."
                .format(P.stringof, 
-                       typeof(o1).stringof, typeof(o2).stringof));
+                       typeof(o1).stringof, typeof(o2).stringof, combined));
 
-        cases[combined] = handlerOverload;
+        cases[cast(immutable(ulong)[])combined] = handlerOverload;
     }
 
     // The result must be an ordered array.
-    Tuple!(ulong, size_t)[] result;
-    foreach(mask, overload; cases) { result ~= tuple(mask, overload); }
+    Tuple!(string, size_t)[] result;
+    foreach(ids, overload; cases) 
+    {
+        result ~= tuple(ids.map!(to!string).join(", "), overload); 
+    }
     // Sort from most specific (reading most past components) to least specific
     // process() functions.
-    result.sort!((a, b) => countBitsSet(a[0]) > countBitsSet(b[0]));
+    result.sort!((a, b) => a[0].split(",").length > b[0].split(",").length);
     return result;
 }
