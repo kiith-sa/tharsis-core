@@ -45,7 +45,7 @@ public:
     /// If the resource doesn't exist yet, this will create it.
     /// The resource may or may not be loaded. Use the loaded() method to 
     /// determine that.
-    Handle handle(ref const Descriptor descriptor) @safe pure nothrow;
+    Handle handle(ref const Descriptor descriptor) @safe nothrow;
 
     /// Get the current state of the resource with specified handle.
     /// 
@@ -66,7 +66,7 @@ public:
     /// to load.
     /// 
     /// See_Also: state
-    void requestLoad(const Handle handle) @safe pure nothrow;
+    void requestLoad(const Handle handle) @safe nothrow;
 
     /// Get an immutable reference to resource with specified handle.
     /// 
