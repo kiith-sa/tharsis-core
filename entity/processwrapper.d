@@ -16,17 +16,17 @@ import tharsis.entity.entitymanager;
 //       (using an enum (trivial, cheap, medium, expensive, bottleneck))
 
 /// Abstract parent class to allow storing all process wrappers in a single array.
-class AbstractProcessWrapper
+class AbstractProcessWrapper(Policy)
 {
     /// Runs the process on all matching entities from specified entity manager.
-    void run(EntityManager entities) 
+    void run(EntityManager!Policy entities) 
     {
         assert(false, "DMD bug workaround - should never happen");
     }
 }
 
 /// Wraps a process of a concrete type.
-class ProcessWrapper(Process) : AbstractProcessWrapper
+class ProcessWrapper(Process, Policy) : AbstractProcessWrapper!Policy
 {
 private:
     /// The wrapped process.
@@ -43,7 +43,7 @@ public:
     /// called.
     ///
     /// Can be changed into delegate if needed, but try to keep it a function.
-    alias void function(EntityManager, Process) ProcessFunction;
+    alias void function(EntityManager!Policy, Process) ProcessFunction;
 
     /// Construct a ProcessWrapper.
     /// 
@@ -58,7 +58,7 @@ public:
         runProcess_ = runProcess;
     }
 
-    override void run(EntityManager entities)
+    override void run(EntityManager!Policy entities)
     {
         runProcess_(entities, process_);
     }

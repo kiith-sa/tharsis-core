@@ -9,15 +9,19 @@ module tharsis.entity.componenttypemanager;
 
 
 import std.algorithm;
+import std.string;
 
 import tharsis.entity.componenttypeinfo;
+import tharsis.entity.defaultentitypolicy;
 
 
 /// Base class for component type managers.
 ///
 /// See_Also: ComponentTypeManager.
-class AbstractComponentTypeManager 
+class AbstractComponentTypeManager(Policy)
 {
+    static assert(isValidEntityPolicy!Policy, "Invalid entity policy");
+    
 private:
     /// Is this manager locked (i.e. no more types may be registered)?
     bool locked_;
@@ -28,7 +32,7 @@ protected:
     /// Every index corresponds to a component type ID.
     /// If there is no registered component type with a particular ID, the
     /// ComponentTypeInfo at its corresponding index is null.
-    ComponentTypeInfo[64] componentTypeInfo_;
+    ComponentTypeInfo[Policy.maxComponentTypes] componentTypeInfo_;
 
 public:
     /// Lock the component type manager.
@@ -100,8 +104,13 @@ package:
 /// 
 /// Params: Source = A struct type to read components from. This may be for 
 ///                  example a wrapped YAML or XML node, or an INI section.
+///                  See below.
+///         Policy = Specifies compile-time parameters such as the maximum 
+///                  number of component types.
+///                  See tharsis.entity.defaultentitypolicy.d for the default 
+///                  Policy type.
 /// 
-/// Example:
+/// Source Example:
 /// --------------------
 /// // struct SomeSource
 /// // SomeSource.Loader loader
@@ -238,23 +247,43 @@ package:
 ///     return true;
 /// }
 /// --------------------
-class ComponentTypeManager(Source) : AbstractComponentTypeManager
+/// 
+/// Example Policy type:
+/// --------------------
+/// struct Policy
+/// {
+///     // This must be greater than 
+///     // tharsis.entity.componenttypeinfo.maxBuiltinComponentTypes
+///     enum maxComponentTypes = 128;
+/// }
+/// --------------------
+class ComponentTypeManager(Source, Policy = DefaultEntityPolicy)
+    : AbstractComponentTypeManager!Policy
 {
 private:
     /// Loads the Source objects from which entities are loaded.
     Source.Loader sourceLoader;
+
+    /// Set to true after all builtin component types are registered.
+    bool builtinRegistered_ = false;
 
 public:
     /// Construct a ComponentTypeManager.
     this(Source.Loader sourceLoader)
     {
         registerComponentTypes!BuiltinComponents;
+        builtinRegistered_ = true;
     }
 
     /// Register specified component types.
     /// 
     /// Every component type used any Process registered with the EntityManager
-    /// must be registered here.
+    /// must be registered here. The ComponentTypeID enum of the component
+    /// must be greater or equal to 
+    /// tharsis.entity.componenttypeinfo.maxBuiltinComponentTypes, and less 
+    /// than Policy.maxComponentTypes set by the Policy parameter of the 
+    /// component type manager (64 by default).
+    /// 
     /// 
     /// Example:
     /// --------------------
@@ -262,17 +291,24 @@ public:
     /// // struct HealthComponent, struct PhysicsComponent
     /// componentTypes.registerComponentTypes!(HealthComponent, PhysicsComponent);
     /// --------------------
-    void registerComponentTypes(Types ...)() @safe
+    void registerComponentTypes(Types ...)() @trusted
     {
         assert(!locked, "Can't register new component types with locked "
                         "ComponentTypeManager");
         foreach(Component; Types)
         {
             enum id = Component.ComponentTypeID;
+            assert(!builtinRegistered_ || id >= maxBuiltinComponentTypes,
+                   "Registering a user-defined component type with ID reserved "
+                   "for builtin component IDs. Use enum ComponentTypeID = "
+                   "maxBuiltinComponentTypes + (YOUR_ID); instead.");
             assert(componentTypeInfo_[id].isNull, 
                    "There already is a registered component type with this ID");
-            assert(id >= 0 && id < 64, 
-                   "Component type IDs must be at least 0 and at most 63.");
+            assert(id < Policy.maxComponentTypes, 
+                   "Component type IDs must be at most %s. This limit can be "
+                   "increased by overriding the Policy template parameter "
+                   "of the ComponentTypeManager"
+                   .format(Policy.maxComponentTypes - 1));
             componentTypeInfo_[id] = 
                 ComponentTypeInfo.construct!(Source, Component);
         }
