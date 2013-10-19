@@ -99,8 +99,7 @@ package:
 /// EntityManager.
 /// 
 /// Params: Source = A struct type to read components from. This may be for 
-///                  example a (likely wrapped) YAML or XML node, or an INI 
-///                  section.
+///                  example a wrapped YAML or XML node, or an INI section.
 /// 
 /// Example:
 /// --------------------
@@ -155,7 +154,7 @@ package:
 ///
 ///     /// If true, the Source is 'null' and doesn't store anything. 
 ///     ///
-///     /// A null source may be returned when loading a Source fails, e.g. 
+///     /// A null Source may be returned when loading a Source fails, e.g. 
 ///     /// from Loader.loadSource().
 ///     bool isNull() @safe nothrow const
 ///     {
@@ -168,38 +167,35 @@ package:
 ///     ///          false if the Source isn't convertible to specified type.
 ///     bool readTo(T)(out T target) @safe nothrow
 ///     {
-///         try 
-///         {
-///             target = yaml_.as!T;
-///             return true;
-///         }
-///         catch(NodeException e)
-///         {
-///             return false;
-///         }
+///         assert(false);
 ///     }
 ///    
-///     /// Get a nested source indexed by string.
+///     /// Get a nested Source from a 'sequence' Source.
 ///     ///
-///     /// (Get a value from a source that contains multiple values indexed by 
-///     /// strings)
+///     /// (Get a value from a Source that represents an array of Sources)
 ///     /// 
-///     /// Params:  key    = Key identifying the nested source..
-///     ///          target = Target to read the nested source to.
+///     /// Params:  index  = Index of the Source to get in the sequence.
+///     ///          target = Target to read the Source to.
 ///     /// 
-///     /// Returns: true on success, false on failure. (e.g. if this source is
-///     ///          a single value instead of a mapping.)
-///     bool getValue(string key, out TestSource target) @safe nothrow
+///     /// Returns: true on success, false on failure. (e.g. if this Source is
+///     ///          a not a sequence, or the index is out of range).
+///     bool getSequenceValue(string key, out TestSource target) @safe nothrow
 ///     {
-///         try 
-///         {
-///             target = yaml_[key];
-///             return true;
-///         }
-///         catch(NodeException e)
-///         {
-///             return false;
-///         }
+///         assert(false);
+///     }
+///    
+///     /// Get a nested Source from a 'mapping' Source.
+///     ///
+///     /// (Get a value from a Source that maps strings to Sources)
+///     /// 
+///     /// Params:  key    = Key identifying the nested Source.
+///     ///          target = Target to read the nested Source to.
+///     /// 
+///     /// Returns: true on success, false on failure. (e.g. if this Source is
+///     ///          a not a mapping, or if there is no such key.)
+///     bool getMappingValue(string key, out TestSource target) @safe nothrow
+///     {
+///         assert(false);
 ///     }
 /// }
 /// --------------------
@@ -223,13 +219,13 @@ package:
 ///         return false;
 ///     }
 ///     Source exampleComponent;
-///     if(!component.getValue("example", exampleComponent))
+///     if(!component.getMappingValue("example", exampleComponent))
 ///     {
 ///         writeln("could not find ExampleComponent in components");
 ///         return false;
 ///     }
 ///     Source awesomenessSource;
-///     if(!exampleComponent.getValue("awesomeness", awesomenessSource))
+///     if(!exampleComponent.getMappingValue("awesomeness", awesomenessSource))
 ///     {
 ///         writeln("could not find awesomeness in ExampleComponent");
 ///         return false;

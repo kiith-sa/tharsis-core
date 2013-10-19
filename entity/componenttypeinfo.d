@@ -135,7 +135,7 @@ public:
                 // TODO if a field has a default value, allow it to be 
                 //      unspecified and set it to the default value here.
                 Source value;
-                if(!source.getValue(name, value))
+                if(!source.getMappingValue(name, value))
                 {
                     writeln("Failed to load component '", Component.stringof,
                             "' : Could not find field: '", name, "'");
