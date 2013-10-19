@@ -56,11 +56,18 @@ public:
     /// 
     /// Returns: true if the value was successfully read. 
     ///          false if the Source isn't convertible to specified type.
-    bool readTo(T)(out T target) @safe nothrow const
+    bool readTo(T)(out T target) @trusted nothrow const
     {
-        try                    { target = yaml_.as!T; }
-        catch(NodeException e) { return false; }
-        return true;
+        // Hack to allow nothrow to work.
+        bool implementation(ref T target)
+        {
+            try                    { target = yaml_.as!(const T); }
+            catch(NodeException e) { return false; }
+            return true;
+        }
+
+        alias bool delegate(ref T target) nothrow nothrowFunc;
+        return (cast(nothrowFunc)&implementation)(target); 
     }
 
     void opAssign(Source)(auto ref Source rhs) @safe nothrow 
