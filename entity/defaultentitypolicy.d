@@ -23,6 +23,9 @@ struct DefaultEntityPolicy
     /// >= maxBuiltinComponentTypes and < maxComponentTypes.
     enum maxComponentTypes = 64;
 
+    /// Maximum entities added during one frame.
+    enum maxNewEntitiesPerFrame = 4096;
+
     /// Data type used internally for component counts in an entity.
     ///
     /// The maximum number of components of one type in an entity is 
