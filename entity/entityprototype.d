@@ -94,7 +94,7 @@ public:
                "Ran out of memory provided to an EntityPrototype");
 
         components_ = storage_[0 .. components_.length + info.size];
-        const componentIDIndex = componentIDs_.size - 1;
+        const componentIDIndex = componentIDs_.length - 1;
         componentIDs_ = (cast(ushort[])storage_)[componentIDIndex .. $];
         (cast(ushort[])storage_)[componentIDIndex] = info.id;
         return components_[$ - info.size .. $];
