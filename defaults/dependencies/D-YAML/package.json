@@ -1,0 +1,15 @@
+{
+"description": "YAML parser and emitter",
+"authors": [
+    "Ferdinand Majerech"
+],
+"libs": [],
+"targetType": "staticLibrary",
+"importPaths": ["source"],
+"version": "~master",
+"license": "Boost 1.0",
+"dependencies": {},
+"homepage": "http://dyaml.alwaysdata.net/",
+"name": "dyaml",
+"copyright": "Copyright © 2011-2013, Ferdinand Majerech"
+}
