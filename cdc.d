@@ -103,6 +103,7 @@ import std.file;
 import std.path;
 import std.process;
 import std.range;
+import std.regex;
 import std.string;
 import std.stdio : writeln;
 
@@ -119,7 +120,7 @@ version(Windows)
     ///Valid object file extensions. 
     const string[] obj_ext = ["obj", "o"]; 
     ///Library extension.
-    const string lib_ext = "lib";
+    const string lib_ext = ".lib";
     ///Binary executable extension.
     const string bin_ext = "exe";
     ///Path separator character.
@@ -130,7 +131,7 @@ else
     ///Valid object file extensions. 
     const string[] obj_ext = ["o"];
     ///Library extension.
-    const string lib_ext = "a";
+    const string lib_ext = ".a";
     ///Binary executable extension.
     const string bin_ext = "";
     ///Path separator character.
@@ -139,6 +140,9 @@ else
 
 void main(string[] args)
 {
+    assert("defaults/dependencies/D-YAML/examples/resolver/main.d"
+           .match(".+?examples/.+?"));
+
     scope(failure){help(); core.stdc.stdlib.exit(-1);}
 
     string[] targets;
@@ -161,9 +165,9 @@ void main(string[] args)
         }
     }
 
-    //TODO library build
+    //TODO library builds, with and without defaults.
     //if(targets.length == 0){targets = ["debug"];}
-    if(targets.length == 0){targets = ["unittest"];}
+    if(targets.length == 0) {targets = ["unittest"];}
 
     auto dbg          = ["-unittest", "-gc", "-debug"];
     auto no_contracts = ["-release", "-gc"];
@@ -171,13 +175,19 @@ void main(string[] args)
 
     auto dependencies = cast(string[])[];
     auto sources      = ["entity", "util"];
+    auto defaults     = ["defaults"];
 
-    void compile_(string[] args, string[] files, string binaryName)
+    auto baseIgnore = [".+?D-YAML/unittest.d", 
+                       ".+?D-YAML/examples/.+?",
+                       ".+?D-YAML/test/.+?",
+                       ".+?D-YAML/cdc.d"];
+
+    void compile_(string[] args, string[] files, string binaryName, string[] ignore)
     {
-        compile(args ~ extra_args ~ ("-of" ~ binaryName), files);
+        compile(args ~ extra_args ~ ("-of" ~ binaryName), files, ignore);
     }
 
-    auto filesTest = dependencies ~ sources ~ ["test.d"];
+    auto filesTest = dependencies ~ sources ~ defaults ~ ["test.d"];
 
     void build(string[] targets ...)
     {
@@ -187,10 +197,10 @@ void main(string[] args)
             switch(target)
             {
                 case "unittest":
-                    compile_(dbg, filesTest, "unittest");
+                    compile_(dbg, filesTest, "unittest", baseIgnore);
                     break;
                 case "all":
-                    compile_(dbg, filesTest, "unittest");
+                    compile_(dbg, filesTest, "unittest", baseIgnore);
                     break;
                 default:
                     writeln("unknown target: ", target);
@@ -201,8 +211,8 @@ void main(string[] args)
     }
 
     try{build(targets);}
-    catch(CompileException e){writeln("Could not compile: ",  e.msg);}
-    catch(ProcessException e){writeln("Compilation failed: ", e.msg);}
+    catch(CompileException e) {writeln("Could not compile: ",  e.msg);}
+    catch(ProcessException e) {writeln("Compilation failed: ", e.msg);}
 
     writeln("DONE");
 }
@@ -238,8 +248,11 @@ void help()
 /**
  * Compile D code using the current compiler.
  *
- * Params:  options = Compiler options.
- *          paths   = Source and library files/directories. Directories are recursively searched. 
+ * Params:  options        = Compiler options.
+ *          paths          = Source and library files/directories. Directories 
+ *                           are recursively searched. 
+ *          ignorePathExps = If a file path matches any of these regular 
+ *                           expressions, it is ignored.
  *
  * Example:
  * --------
@@ -251,7 +264,7 @@ void help()
  *
  * TODO Add a dry run option to just return an array of commands to execute. 
  */
-void compile(string[] options, string[] paths)
+void compile(string[] options, string[] paths, string[] ignorePathExps)
 {
     //Convert src and lib paths to files
     string[] sources, libs, ddocs;
@@ -261,10 +274,10 @@ void compile(string[] options, string[] paths)
                   "Source file/folder \"" ~ src ~ "\" does not exist.");
         //Directory of source or lib files 
         if(isDir(src))
-        {    
-            sources ~= scan(src, ".d");
-            ddocs   ~= scan(src, ".ddoc");
-            libs    ~= scan(src, lib_ext);
+        {
+            sources ~= scan(src, [".d"],    ignorePathExps);
+            ddocs   ~= scan(src, [".ddoc"], ignorePathExps);
+            libs    ~= scan(src, [lib_ext], ignorePathExps);
         } 
         //File
         else if(isFile(src))
@@ -613,19 +626,26 @@ void execute(string command, string[] args)
 /**
  * Recursively get all files with specified extensions in directory and subdirectories.
  *
- * Params:  directory  = Absolute or relative path to the current directory.
- *          extensions = Extensions to match.
+ * Params:  directory      = Absolute or relative path to the current directory.
+ *          extensions     = Extensions to match.
+ *          ignorePathExps = If a file path matches any of these regular 
+ *                           expressions, it is ignored.
  *
  * Returns: An array of paths (including filename) relative to directory.
  *
  * Bugs:    LDC fails to return any results. 
  */
-string[] scan(string directory, string extensions ...)
+string[] scan(string directory, string[] extensions, string[] ignorePathExps)
 {
     string[] result;
-    foreach(string name; dirEntries(directory, SpanMode.depth))
+    foreach(string name; dirEntries(directory, SpanMode.depth)) 
     {
-        if(isFile(name) && name.endsWith(extensions)){result ~= name;}
+        if(name.isFile &&
+           extensions.canFind!(e => name.endsWith(e)) &&
+           !ignorePathExps.canFind!(e => !name.match(e).empty))
+        {
+            result ~= name;
+        }
     }
     return result;
 }
