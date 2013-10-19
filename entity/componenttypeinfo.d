@@ -21,15 +21,17 @@ import tharsis.entity.lifecomponent;
 /// A tuple of all builtin component types.
 alias TypeTuple!(LifeComponent) BuiltinComponents;
 
-ulong[] userComponentIDs(ulong[] ids) @trusted
+enum ushort maxBuiltinComponentTypes = 8;
+
+ushort[] userComponentIDs(ushort[] ids) @trusted
 {
     return ids.uniq.setDifference(componentIDs!BuiltinComponents).array;
 }
 
 /// Get a sorted array of IDs of specified component types.
-ulong[] componentIDs(ComponentTypes...)() @trusted
+ushort[] componentIDs(ComponentTypes...)() @trusted
 {
-    ulong[] ids;
+    ushort[] ids;
     foreach(type; ComponentTypes) { ids ~= type.ComponentTypeID; }
     ids.sort();
     return ids;
@@ -46,7 +48,7 @@ private:
 
 public:
     /// ID of the component type (0 to 63).
-    ulong id = ulong.max;
+    ushort id = ushort.max;
 
     /// Size of a single component of this type in bytes.
     size_t size;
@@ -79,7 +81,7 @@ public:
     Field[] fields;
 
     /// Is this ComponentTypeInfo null (i.e. doesn't describe any type)?
-    bool isNull() @safe pure nothrow const { return id == ulong.max; }
+    bool isNull() @safe pure nothrow const { return id == ushort.max; }
 
 
     /// Loads a component of this component type.

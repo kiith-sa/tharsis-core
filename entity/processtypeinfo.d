@@ -190,7 +190,7 @@ Tuple!(string, size_t)[] prioritizeProcessOverloads(P)()
 
     // Keys are component combinations handled by process() overloads, values 
     // are the indices of process() overloads handling each combination.
-    size_t[immutable(ulong)[]] cases;
+    size_t[immutable(ushort)[]] cases;
 
     // For each pair of process() overloads (even if o1 and o2 are the same):
     foreach(i1, o1; overloads) foreach(i2, o2; overloads)
@@ -222,7 +222,7 @@ Tuple!(string, size_t)[] prioritizeProcessOverloads(P)()
                .format(P.stringof, 
                        typeof(o1).stringof, typeof(o2).stringof, combined));
 
-        cases[cast(immutable(ulong)[])combined] = handlerOverload;
+        cases[cast(immutable(ushort)[])combined] = handlerOverload;
     }
 
     // The result must be an ordered array.

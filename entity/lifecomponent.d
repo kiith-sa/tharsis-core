@@ -15,7 +15,7 @@ struct LifeComponent
     /// Bit specifying this component type. 
     /// 
     /// The last 4 bits are reserved for builtins.
-    enum ulong ComponentTypeID = 63;
+    enum ushort ComponentTypeID = 0;
 
     /// True if the component is alive, false otherwise.
     bool alive;
