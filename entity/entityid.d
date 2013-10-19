@@ -13,13 +13,19 @@ struct EntityID
 {
 package:
     /// The identifier value.
-    uint id_; 
+    uint id_ = uint.max; 
 
 public:
     /// Equality comparison with another ID.
     bool opEquals(EntityID rhs) const pure nothrow @safe
     {
         return id_ == rhs.id_;
+    }
+
+    /// Is the ID null? (E.g. unititialized, or returned by a failed operation)
+    @property bool isNull() const pure nothrow @safe 
+    {
+        return id_ == uint.max;
     }
 
     /// Comparison for sorting.
