@@ -716,32 +716,21 @@ Note that this is very likely to change as any unexpected issues appear.</p>
 <h1>Execution of a process</h1>
 <p>This is a high-level overview of what the generated code executing a Process
 needs to do every frame. As above, this is very likely to change.</p>
-<ul>
-<li><p class="first">For each past entity</p>
-<ul>
-<li><p class="first">If the entity is not dead</p>
-<ul>
-<li><p class="first">If the entity has all needed components</p>
-<ul>
-<li><dl class="first docutils">
-<dt>Ensure we have enough memory (running out of memory here should be</dt>
-<dd><p class="first last">very rare, and this check could even be removed based on
-preallocation hints).</p>
-</dd>
-</dl>
-</li>
-<li><p class="first">Call (one of) the process() method(s)</p>
-</li>
+<ul class="simple">
+<li>For each past entity<ul>
+<li>If the entity is not dead<ul>
+<li>If the entity has all needed components<ul>
+<li>Ensure we have enough memory (running out of memory here should be
+very rare, and this check could even be removed based on
+preallocation hints).</li>
+<li>Call (one of) the process() method(s)</li>
 </ul>
 </li>
-<li><p class="first">Update the component count on the future component</p>
-</li>
-<li><p class="first">? Optionally update a spatial manager based on this component ?</p>
-</li>
+<li>Update the component count on the future component</li>
+<li>? Optionally update a spatial manager based on this component ?</li>
 </ul>
 </li>
-<li><p class="first">Iterate over components relevant to the process</p>
-</li>
+<li>Iterate over components relevant to the process</li>
 </ul>
 </li>
 </ul>

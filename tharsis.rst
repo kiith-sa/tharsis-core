@@ -410,8 +410,8 @@ needs to do every frame. As above, this is very likely to change.
     * If the entity has all needed components 
   
       - Ensure we have enough memory (running out of memory here should be
-         very rare, and this check could even be removed based on
-         preallocation hints).
+        very rare, and this check could even be removed based on
+        preallocation hints).
       - Call (one of) the process() method(s)
   
     * Update the component count on the future component
