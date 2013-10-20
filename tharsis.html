@@ -1,0 +1,833 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Tharsis: Threaded Entity-Component Framework in D</title>
+<style type="text/css">
+
+/*
+:Author: David Goodger (goodger@python.org)
+:Id: $Id: html4css1.css 7614 2013-02-21 15:55:51Z milde $
+:Copyright: This stylesheet has been placed in the public domain.
+
+Default cascading style sheet for the HTML output of Docutils.
+
+See http://docutils.sf.net/docs/howto/html-stylesheets.html for how to
+customize this style sheet.
+*/
+
+/* used to remove borders from tables and images */
+.borderless, table.borderless td, table.borderless th {
+  border: 0 }
+
+table.borderless td, table.borderless th {
+  /* Override padding for "table.docutils td" with "! important".
+     The right padding separates the table cells. */
+  padding: 0 0.5em 0 0 ! important }
+
+.first {
+  /* Override more specific margin styles with "! important". */
+  margin-top: 0 ! important }
+
+.last, .with-subtitle {
+  margin-bottom: 0 ! important }
+
+.hidden {
+  display: none }
+
+a.toc-backref {
+  text-decoration: none ;
+  color: black }
+
+blockquote.epigraph {
+  margin: 2em 5em ; }
+
+dl.docutils dd {
+  margin-bottom: 0.5em }
+
+object[type="image/svg+xml"], object[type="application/x-shockwave-flash"] {
+  overflow: hidden;
+}
+
+/* Uncomment (and remove this text!) to get bold-faced definition list terms
+dl.docutils dt {
+  font-weight: bold }
+*/
+
+div.abstract {
+  margin: 2em 5em }
+
+div.abstract p.topic-title {
+  font-weight: bold ;
+  text-align: center }
+
+div.admonition, div.attention, div.caution, div.danger, div.error,
+div.hint, div.important, div.note, div.tip, div.warning {
+  margin: 2em ;
+  border: medium outset ;
+  padding: 1em }
+
+div.admonition p.admonition-title, div.hint p.admonition-title,
+div.important p.admonition-title, div.note p.admonition-title,
+div.tip p.admonition-title {
+  font-weight: bold ;
+  font-family: sans-serif }
+
+div.attention p.admonition-title, div.caution p.admonition-title,
+div.danger p.admonition-title, div.error p.admonition-title,
+div.warning p.admonition-title, .code .error {
+  color: red ;
+  font-weight: bold ;
+  font-family: sans-serif }
+
+/* Uncomment (and remove this text!) to get reduced vertical space in
+   compound paragraphs.
+div.compound .compound-first, div.compound .compound-middle {
+  margin-bottom: 0.5em }
+
+div.compound .compound-last, div.compound .compound-middle {
+  margin-top: 0.5em }
+*/
+
+div.dedication {
+  margin: 2em 5em ;
+  text-align: center ;
+  font-style: italic }
+
+div.dedication p.topic-title {
+  font-weight: bold ;
+  font-style: normal }
+
+div.figure {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+div.footer, div.header {
+  clear: both;
+  font-size: smaller }
+
+div.line-block {
+  display: block ;
+  margin-top: 1em ;
+  margin-bottom: 1em }
+
+div.line-block div.line-block {
+  margin-top: 0 ;
+  margin-bottom: 0 ;
+  margin-left: 1.5em }
+
+div.sidebar {
+  margin: 0 0 0.5em 1em ;
+  border: medium outset ;
+  padding: 1em ;
+  background-color: #ffffee ;
+  width: 40% ;
+  float: right ;
+  clear: right }
+
+div.sidebar p.rubric {
+  font-family: sans-serif ;
+  font-size: medium }
+
+div.system-messages {
+  margin: 5em }
+
+div.system-messages h1 {
+  color: red }
+
+div.system-message {
+  border: medium outset ;
+  padding: 1em }
+
+div.system-message p.system-message-title {
+  color: red ;
+  font-weight: bold }
+
+div.topic {
+  margin: 2em }
+
+h1.section-subtitle, h2.section-subtitle, h3.section-subtitle,
+h4.section-subtitle, h5.section-subtitle, h6.section-subtitle {
+  margin-top: 0.4em }
+
+h1.title {
+  text-align: center }
+
+h2.subtitle {
+  text-align: center }
+
+hr.docutils {
+  width: 75% }
+
+img.align-left, .figure.align-left, object.align-left {
+  clear: left ;
+  float: left ;
+  margin-right: 1em }
+
+img.align-right, .figure.align-right, object.align-right {
+  clear: right ;
+  float: right ;
+  margin-left: 1em }
+
+img.align-center, .figure.align-center, object.align-center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.align-left {
+  text-align: left }
+
+.align-center {
+  clear: both ;
+  text-align: center }
+
+.align-right {
+  text-align: right }
+
+/* reset inner alignment in figures */
+div.align-right {
+  text-align: inherit }
+
+/* div.align-center * { */
+/*   text-align: left } */
+
+ol.simple, ul.simple {
+  margin-bottom: 1em }
+
+ol.arabic {
+  list-style: decimal }
+
+ol.loweralpha {
+  list-style: lower-alpha }
+
+ol.upperalpha {
+  list-style: upper-alpha }
+
+ol.lowerroman {
+  list-style: lower-roman }
+
+ol.upperroman {
+  list-style: upper-roman }
+
+p.attribution {
+  text-align: right ;
+  margin-left: 50% }
+
+p.caption {
+  font-style: italic }
+
+p.credits {
+  font-style: italic ;
+  font-size: smaller }
+
+p.label {
+  white-space: nowrap }
+
+p.rubric {
+  font-weight: bold ;
+  font-size: larger ;
+  color: maroon ;
+  text-align: center }
+
+p.sidebar-title {
+  font-family: sans-serif ;
+  font-weight: bold ;
+  font-size: larger }
+
+p.sidebar-subtitle {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+p.topic-title {
+  font-weight: bold }
+
+pre.address {
+  margin-bottom: 0 ;
+  margin-top: 0 ;
+  font: inherit }
+
+pre.literal-block, pre.doctest-block, pre.math, pre.code {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+pre.code .ln { color: grey; } /* line numbers */
+pre.code, code { background-color: #eeeeee }
+pre.code .comment, code .comment { color: #5C6576 }
+pre.code .keyword, code .keyword { color: #3B0D06; font-weight: bold }
+pre.code .literal.string, code .literal.string { color: #0C5404 }
+pre.code .name.builtin, code .name.builtin { color: #352B84 }
+pre.code .deleted, code .deleted { background-color: #DEB0A1}
+pre.code .inserted, code .inserted { background-color: #A3D289}
+
+span.classifier {
+  font-family: sans-serif ;
+  font-style: oblique }
+
+span.classifier-delimiter {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+span.interpreted {
+  font-family: sans-serif }
+
+span.option {
+  white-space: nowrap }
+
+span.pre {
+  white-space: pre }
+
+span.problematic {
+  color: red }
+
+span.section-subtitle {
+  /* font-size relative to parent (h1..h6 element) */
+  font-size: 80% }
+
+table.citation {
+  border-left: solid 1px gray;
+  margin-left: 1px }
+
+table.docinfo {
+  margin: 2em 4em }
+
+table.docutils {
+  margin-top: 0.5em ;
+  margin-bottom: 0.5em }
+
+table.footnote {
+  border-left: solid 1px black;
+  margin-left: 1px }
+
+table.docutils td, table.docutils th,
+table.docinfo td, table.docinfo th {
+  padding-left: 0.5em ;
+  padding-right: 0.5em ;
+  vertical-align: top }
+
+table.docutils th.field-name, table.docinfo th.docinfo-name {
+  font-weight: bold ;
+  text-align: left ;
+  white-space: nowrap ;
+  padding-left: 0 }
+
+/* "booktabs" style (no vertical lines) */
+table.docutils.booktabs {
+  border: 0px;
+  border-top: 2px solid;
+  border-bottom: 2px solid;
+  border-collapse: collapse;
+}
+table.docutils.booktabs * {
+  border: 0px;
+}
+table.docutils.booktabs th {
+  border-bottom: thin solid;
+  text-align: left;
+}
+
+h1 tt.docutils, h2 tt.docutils, h3 tt.docutils,
+h4 tt.docutils, h5 tt.docutils, h6 tt.docutils {
+  font-size: 100% }
+
+ul.auto-toc {
+  list-style-type: none }
+
+</style>
+</head>
+<body>
+<div class="document" id="tharsis-threaded-entity-component-framework-in-d">
+<h1 class="title">Tharsis: Threaded Entity-Component Framework in D</h1>
+
+<p><strong>NOTE: This is a design document;  it does not describe a finished product and
+is subject to change</strong></p>
+<p>Tharsis is an open-source
+<a class="reference external" href="en.wikipedia.org/wiki/Entity_component_system">Entity Component System</a>
+framework written in the <a class="reference external" href="dlang.org">D programming language</a> with support for
+automatic threading of game/simulation code.</p>
+<div class="section" id="introduction">
+<h1>Introduction</h1>
+<p>Most past (and many present) game engines use an inheritance-based approach to
+design game entities. This approach is intuitive but gets unwieldy as the
+entities get more complex. This led to the adoption of entity systems based on
+aggregation instead of inheritance, many of which are referred to as
+<em>entity-component</em> systems.
+<a class="reference external" href="http://cowboyprogramming.com/2007/01/05/evolve-your-heirachy/">This</a>
+<a class="reference external" href="http://scottbilas.com/files/2002/gdc_san_jose/game_objects_slides.pdf">has</a>
+<a class="reference external" href="http://gamearchitect.net/Articles/GameObjects1.html">been</a>
+<a class="reference external" href="https://d3cw3dd2w32x2b.cloudfront.net/wp-content/uploads/2011/06/6-1-2010.pdf">discussed</a>
+<a class="reference external" href="http://www.gamedev.net/page/resources/_/technical/game-programming/understanding-component-entity-systems-r3013">to</a>
+<a class="reference external" href="http://flohofwoe.blogspot.sk/2007/11/nebula3s-application-layer-provides.html">death</a>
+<a class="reference external" href="http://www.richardlord.net/blog/what-is-an-entity-framework">already</a>,
+so this article focuses on the specifics of the Tharsis framework.</p>
+<p>Many early component systems use entities composed of &quot;intelligent&quot; components
+with their own logic logic usually implementing some kind of an interface. This
+approach has various issues, including the dependency of a components' logic on
+another component.</p>
+<p>Tharsis entities consist of &quot;dumb&quot; components that are pure data with no logic
+whatsoever, similar to the approach proposed by
+<a class="reference external" href="t-machine.org/index.php/2007/09/03/entity-systems-are-the-future-of-mmog-development-part-1/">Adam Martin</a>.</p>
+<p>With this approach, all logic is separated into &quot;systems&quot; (or <em>processes</em>, as
+they're called in Tharsis). A process is usually (ideally) a stateless object
+with a method that is called for all entities containing components specified
+in its signature.  This decouples data and code and avoids component
+dependencies; code depending on particular components will only execute if
+those components are present.</p>
+<p>Another advantage of dumb components is performance; components can be
+plain-old-data types with no virtual functions and can often by tightly packed
+in memory.</p>
+<p>Tharsis builds on this approach, adding a distinction between <em>past</em> and
+<em>future</em> state which removes dependencies of processes on the order in which
+they are being run and enables performance optimizations such as execution of
+processes on different threads.</p>
+</div>
+<div class="section" id="features">
+<h1>Features</h1>
+<div class="section" id="separation-of-data-and-logic">
+<h2>Separation of data and logic</h2>
+<p>Components in Tharsis are plain-old-data with no logic.  Logic is fully
+contained in <em>processes</em>, often called systems in other entity component
+systems.</p>
+</div>
+<div class="section" id="data-defined-entities">
+<h2>Data-defined entities</h2>
+<p>Tharsis automatically generates code to load components from user-specifiable
+<em>Sources</em> (see below in the <em>Concepts</em> section). YAML support is built-in;
+support for XML, JSON or other formats can be added by defining a struct with
+a very simple interface.</p>
+</div>
+<div class="section" id="past-future-distinction">
+<h2>Past/future distinction</h2>
+<p>Unlike in other frameworks, components and entities in Tharsis exist in two
+versions; read-only <em>past</em> and writable <em>future</em>. This removes the dependencies
+of processes on the order in which they run; all processes read the unchanged
+state from previous frame.</p>
+<p>During a frame, processes read past components to write future components
+(which are created on-the-fly). When all processes have finished processing,
+the frame ends, future becomes the past, and memory formerly allocated for past
+is reused for future state created during the next frame.</p>
+<p>Since future components are created as the process runs, the process can add or
+remove (i.e. not add) components while the data is stored linearly, avoiding
+dead gaps and subsequent cleanup.  If an entity is removed, its components are
+simply not added In the future.</p>
+</div>
+<div class="section" id="threading">
+<h2>Threading</h2>
+<p>All processes in Tharis read immutable data from the past; one process can't
+affect what another reads during a frame. Also, only one process can write
+future components of one type. While this is somewhat limiting, it allows the
+processes to be moved into separate threads automatically, adapting to the
+number of cores of the CPU.</p>
+</div>
+<div class="section" id="generated-code-for-safety-and-performance">
+<h2>Generated code for safety and performance</h2>
+<p>Components in Tharsis are always structs and processes don't need to be
+polymorphic; Tharsis analyzes signature of the <em>process()</em> method of a process
+and generates code that will call it directly without indirections.  This
+enables inlining and other compiler optimizations.</p>
+<p>The <em>process()</em>  method is only called if an entity has all past components
+from its signature.  There is no need to cast or to determine if a component is
+present. Component iteration is not implemented by convention; it is built into
+the framework, allowing further optimizations such as threading.</p>
+</div>
+<div class="section" id="cache-friendly-memory-usage">
+<h2>Cache-friendly memory usage</h2>
+<p>Tharsis allocates memory through user-specified allocation functions (default
+being malloc/free). Memory for components and entities is preallocated based on
+compile-time hints (e.g. if a component type is common, one can specify that at
+least 16k components of that type should be preallocated) as well as run-time
+controls (e.g. increase the size of preallocated memory before loading a large
+map).</p>
+<p>If Tharsis runs out of memory and is forced to reallocate in the middle
+a frame, it prints a warning, allowing the programmer to adjust size of
+preallocated memory.</p>
+<p>Components and entities are tightly packed in simple arrays processed linearly
+to avoid cache misses.</p>
+</div>
+</div>
+<div class="section" id="api">
+<h1>API</h1>
+<p>This section describes the main types and concepts in Tharsis API.  Note that
+the implementation may involve more types.</p>
+<div class="section" id="component-concept">
+<h2>Component (concept)</h2>
+<ul class="simple">
+<li>Simple struct types defined by the programmer<ul>
+<li>Registered and verified by ComponentTypeManager</li>
+<li>No elaborate destructor, copy constructor or postblit</li>
+<li>Data behind any indirections is not owned by the component<ul>
+<li>E.g. resource handles (initialization not certain yet)</li>
+</ul>
+</li>
+<li>Can be safely compied by memcpy</li>
+</ul>
+</li>
+<li>Compile-time information:<ul>
+<li>Unique type ID (set manually by the user, validated at runtime)</li>
+<li>Optional preallocation hints</li>
+</ul>
+</li>
+<li>Type name must have a &quot;Component&quot; suffix (may be relaxed if inconvenient)</li>
+<li>Builtin components (avoided if possible)<ul>
+<li>LifeComponent - determines if an entity is dead and should be removed</li>
+</ul>
+</li>
+</ul>
+<p>Example</p>
+<pre class="literal-block">
+struct StaticComponent
+{
+    enum ushort ComponentTypeID = maxBuiltinComponentTypes + 1;
+
+    enum minPrealloc = 16384;
+
+    enum minPreallocPerEntity = 1.0;
+
+    vec3 position;
+
+    vec3 rotation;
+}
+</pre>
+</div>
+<div class="section" id="multicomponent-concept">
+<h2>MultiComponent (concept)</h2>
+<ul class="simple">
+<li>A Component allowing more than one instance per entity
+- Differentiated by a compile-time flag or naming convention (not certain yet)</li>
+<li>Passed to processes as a slice</li>
+<li>Extra compile-time information:
+- Maximum components of this type per entity</li>
+</ul>
+<p>Example:</p>
+<pre class="literal-block">
+struct ColliderMultiComponent
+{
+    enum ushort ComponentTypeID = maxBuiltinComponentTypes + 2;
+
+    enum isMultiComponent = true;
+
+    enum maxComponentsPerEntity = 1024;
+
+    EntityID colliderEntityID;
+}
+</pre>
+</div>
+<div class="section" id="process-concept">
+<h2>Process (concept)</h2>
+<ul class="simple">
+<li>Class types with a process() method (without deriving a common parent)</li>
+<li>Signature of a process() method:<ul>
+<li>Optional reference to immutable past entity</li>
+<li>References to immutable past components<ul>
+<li>For MultiComponents, these are slices of immutable components</li>
+</ul>
+</li>
+<li>Optional output reference to mutable future componen<ul>
+<li>May be an output reference to mutable pointer; the pointer can be (and,
+due to the output reference, is by default) set to null to avoid writing
+the component to future state.</li>
+<li>For MultiComponent, this is an output reference to a slice of mutable
+components with length equal to maxComponentsPerEntity of that
+MultiComponent type. The slice is shortened to specify the the part
+written to future state.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Multiple process() methods can be used to match different past component
+patterns (at some performance cost). If component patterns of two process()
+methods are ambiguous, a compile-time error informs the programmer about
+a need to define another process() function to handle a union of these
+patterns.  More specific process() methods take precedence over more general
+ones.</li>
+<li>A process may contain compile-time information related to scheduling such as
+the number of frames it can skip, or to allow optimizations in code generated
+to call its process() method/s. This information will be defined as the
+scheduling code is implemented.</li>
+</ul>
+<p>Example:</p>
+<pre class="literal-block">
+class MovementProcess
+{
+    /// A more specific process() method, taking precedence if there is
+    /// both a StaticComponent and a DynamicComponent.
+    void process(ref immutable(StaticComponent) pastStatic,
+                 ref immutable(DynamicComponent) pastDynamic,
+                 out StaticComponent futureStatic)
+    {
+        // How to determine time is not yet determined,
+        // this is just an example.
+        futureStatic.position = pastStatic.position +
+                                timeStep * pastDynamic.velocity;
+    }
+
+    /// A more general case, ensuring the the component is preserved
+    /// in future state (this particular case may be simplified/optimized
+    /// further with a compile-time flag if overhead is measurable).
+    void process(ref immutable(StaticComponent) pastStatic,
+                 out StaticComponent futureStatic)
+    {
+        futureStatic = pastStatic;
+    }
+}
+</pre>
+</div>
+<div class="section" id="entity-struct">
+<h2>Entity (struct)</h2>
+<ul class="simple">
+<li>Stores a unique ID (<em>EntityID</em>)</li>
+<li>By itself, it has no data about the components it contains<ul>
+<li><em>Component counts</em> are stored by EntityManager in arrays parallel to the
+entity array; a Process writes to the component counts array for its future
+component type, removing the need to lock entities.</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="entityprototype-struct">
+<h2>EntityPrototype (struct)</h2>
+<ul class="simple">
+<li>Stores components needed to create an entity</li>
+<li>Can be loaded from a file once, used to create many entities</li>
+<li>Does not manage its memory (memory can be provided by e.g. a ResourceManager)</li>
+</ul>
+</div>
+<div class="section" id="source-concept">
+<h2>Source (concept)</h2>
+<ul class="simple">
+<li>Used by generated code to load Component properties</li>
+<li>User-overridable (at compile-time) type to load components from (e.g. into
+EntityPrototypes)</li>
+<li>Usually should be a wrapper around a serializing format such as XML, JSON,
+YAML. YAML support is implemented by builtin YAMLSource</li>
+<li>Must be able to represent mappings, sequences, values</li>
+</ul>
+</div>
+<div class="section" id="resource-concept">
+<h2>Resource (concept)</h2>
+<ul class="simple">
+<li>Struct types designed to be created once, used without mutation<ul>
+<li>May contain large chunks of data loaded from files, such as images,
+sounds, 3D models, EntityPrototypes, ...</li>
+<li>Created once, marked immutable, reused many times from many threads</li>
+<li>Must define two struct types: Descriptor and Handle<ul>
+<li>Descriptor contains all information needed to create the resource
+(e.g. a filename)</li>
+<li>Handle is an ID used to access a Resource through its ResourceManager</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>Example:</p>
+<pre class="literal-block">
+struct EntityPrototypeResource
+{
+    struct Handle
+    {
+    package:
+        /// Accessible only by a ResourceManager in the same package
+        uint resourceID_ = uint.max;
+    }
+
+    struct Descriptor
+    {
+        string fileName;
+    }
+
+    this(const ref Descriptor descriptor) &#64;safe pure nothrow
+    {
+        this.descriptor = descriptor;
+    }
+
+    // As the resource is accessed through immutable references, its data
+    // members can be public. The resource manager can directly change them
+    // until marked immutable.
+
+    EntityPrototype prototype;
+
+    Descriptor descriptor;
+
+    ResourceState state = ResourceState.New;
+}
+</pre>
+</div>
+<div class="section" id="resourcemanager-class-hierarchy">
+<h2>ResourceManager (class hierarchy)</h2>
+<ul class="simple">
+<li>AbstractResourceManager - common base<ul>
+<li>Allows EntityManager to &quot;run&quot; the ResourceManager</li>
+</ul>
+</li>
+<li>ResourceManager!Resource - base of resource-specific managers<ul>
+<li>API to use Resources with</li>
+<li>Resource creation, loading, access, state queries</li>
+</ul>
+</li>
+<li>Implementation classes<ul>
+<li>Implement ResourceManager!Resource API</li>
+<li>Store resources in (logically) immutable storage</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="entitymanager-class">
+<h2>EntityManager (class)</h2>
+<ul class="simple">
+<li>The main &quot;master&quot; object</li>
+<li>Entity creation (done between frames)</li>
+<li>Entity/component storage</li>
+<li>Resource manager registering</li>
+<li>Process registering/validation</li>
+<li>Executing processes</li>
+<li>Configured at compile-time by a policy with limits, hints</li>
+</ul>
+</div>
+<div class="section" id="componenttypemanager-class">
+<h2>ComponentTypeManager (class)</h2>
+<ul class="simple">
+<li>Component type registering/validation</li>
+<li>Component type info generation</li>
+<li>Configured at compile-time by a policy with limits, hints</li>
+</ul>
+</div>
+</div>
+<div class="section" id="execution-of-a-frame">
+<h1>Execution of a frame</h1>
+<p>This is a high-level overview of what EntityManager needs to do between frames.
+Note that this is very likely to change as any unexpected issues appear.</p>
+<ul class="simple">
+<li>Wait until all processes running in threads stop (don't stop the threads)</li>
+<li>Run resource managers
+(allowing them to load resources, possibly in background threads)</li>
+<li>Switch past/future component buffers</li>
+<li>Reallocate memory if running out (this should not happen often)</li>
+<li>Create entities added during the last frame</li>
+<li>Switch past/future entity buffers</li>
+<li>Copy the past (former future) entities to future, forgetting dead entities</li>
+<li>? Handle messages ?</li>
+<li>Assign processes to threads</li>
+<li>Run processes in threads</li>
+</ul>
+</div>
+<div class="section" id="execution-of-a-process">
+<h1>Execution of a process</h1>
+<p>This is a high-level overview of what the generated code executing a Process
+needs to do every frame. As above, this is very likely to change.</p>
+<ul>
+<li><p class="first">For each past entity</p>
+<ul>
+<li><p class="first">If the entity is not dead</p>
+<ul>
+<li><p class="first">If the entity has all needed components</p>
+<ul>
+<li><dl class="first docutils">
+<dt>Ensure we have enough memory (running out of memory here should be</dt>
+<dd><p class="first last">very rare, and this check could even be removed based on
+preallocation hints).</p>
+</dd>
+</dl>
+</li>
+<li><p class="first">Call (one of) the process() method(s)</p>
+</li>
+</ul>
+</li>
+<li><p class="first">Update the component count on the future component</p>
+</li>
+<li><p class="first">? Optionally update a spatial manager based on this component ?</p>
+</li>
+</ul>
+</li>
+<li><p class="first">Iterate over components relevant to the process</p>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="uncertain-features-to-be-designed">
+<h1>Uncertain features / to be designed</h1>
+<ul class="simple">
+<li>Message-passing between systems (always delayed by 1 frame).
+- May not be needed at all</li>
+<li>Spatial management (needed for e.g. collision detection)
+- Should be user-defined</li>
+</ul>
+</div>
+<div class="section" id="goals">
+<h1>Goals</h1>
+<ul class="simple">
+<li>Main goals<ul>
+<li>A past/future entity system<ul>
+<li>Separation into past and future state</li>
+<li>Future state is generated on-the-fly</li>
+<li>Resources loaded async between frames (but not in separate threads)</li>
+<li>Entities loaded from files using compile-time generated information,
+including resource initialization.</li>
+<li>Performance measurements</li>
+</ul>
+</li>
+<li>Threading<ul>
+<li>Processes executed on separate threads</li>
+<li>Solving uncertain/unforseen issues.<ul>
+<li>Messaging ?</li>
+<li>Spatial management ?</li>
+</ul>
+</li>
+<li>Performance measurements</li>
+</ul>
+</li>
+<li>Scheduling<ul>
+<li>Processes assigned to threads according to user hints and/or (very basic)
+real-time profiling</li>
+<li>Performance measurements</li>
+</ul>
+</li>
+<li>Optimizations</li>
+</ul>
+</li>
+<li>Optional goals<ul>
+<li>Threaded resource loading
+- Resources loaded async in background threads</li>
+<li>Special-case optimizations in generated code</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="non-goals-aka-beyond-1-0">
+<h1>Non-goals (aka beyond-1.0)</h1>
+<ul class="simple">
+<li>Parallelization on the level of entities as opposed to (or in addition to)
+processes<ul>
+<li>Past-future distinction is the main requirement enabling this approach</li>
+<li>Possible, but would complicate the design (memory organization)</li>
+<li>Not very useful in most cases on &lt;10 core machines</li>
+</ul>
+</li>
+<li>Parallelization on the GPU<ul>
+<li>Will require massive changes</li>
+<li>May be revisited once unified address space is common</li>
+<li>May only be useful with entity-level parallelization</li>
+</ul>
+</li>
+<li>Scripting language support</li>
+</ul>
+</div>
+<div class="section" id="other-component-entity-system-frameworks">
+<h1>Other component-entity system frameworks</h1>
+<ul class="simple">
+<li><a class="reference external" href="http://gamadu.com/artemis/">Artemis</a> (Java),
+(<a class="reference external" href="https://github.com/elvisxzhou/artemisd/tree/master/source">D port</a>),
+(<a class="reference external" href="http://www.acunliffe.com/2013/01/coment-a-c-componententity-system-based-on-artemis/">C++ clone</a>)</li>
+<li><a class="reference external" href="https://github.com/alecthomas/entityx">EntityX</a> (C++) -
+a type-safe entity system with some similarities to Tharsis</li>
+<li><a class="reference external" href="http://www.ashframework.org/">Ash</a> (ActionScript 3)</li>
+<li><a class="reference external" href="http://code.google.com/p/dtentity/">dtEntity</a> (C++)</li>
+<li><a class="reference external" href="https://bitbucket.org/mludwig/entreri">Entreri</a> (Java)</li>
+<li><a class="reference external" href="http://unity3d.com/">Unity3D engine</a> (uses a component-entity system)</li>
+</ul>
+</div>
+</div>
+</body>
+</html>
