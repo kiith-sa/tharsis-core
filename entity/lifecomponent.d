@@ -19,6 +19,14 @@ struct LifeComponent
 
     /// True if the component is alive, false otherwise.
     bool alive;
+
+    /// The minimum number of LifeComponents to preallocate.
+    ///
+    /// This is a lot, but they only take 1 byte and are used by every entity.
+    enum minPrealloc = 32768;
+
+    /// The minimum number of LifeComponents to preallocate per entity.
+    enum minPreallocPerEntity = 1.0;
 }
 
 
