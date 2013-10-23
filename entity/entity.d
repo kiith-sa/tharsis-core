@@ -26,12 +26,9 @@ public:
     }
 
 package:
-    /// No default-construction.
-    @disable this();
-
     /// Create an entity with specified ID.
-    this(const uint id) pure nothrow @safe
+    this(const EntityID id) pure nothrow @safe
     {
-        id_.id_ = id;
+        id_ = id;
     }
 }
