@@ -143,29 +143,43 @@ public:
     }
 }
 
+
+/// A resource wrapping an EntityPrototype. Managed by PrototypeManager.
 struct EntityPrototypeResource 
 {
+    /// Resource handle.
     struct Handle 
     {
     package:
+        /// A simple unique ID.
         uint resourceID_ = uint.max;
     }
 
+    /// Resource descriptor.
     struct Descriptor 
     {
+        /// The file name to load the prototype from.
         string fileName;
     }
 
+    /// No default construction.
     @disable this();
 
+    /// Construct a New (not loaded) EntityPrototypeResource with specified 
+    /// descriptor.
     this(const ref Descriptor descriptor) @safe pure nothrow
     {
         this.descriptor = descriptor;
     }
 
+    // Data can be public as we use this through immutable.
+
+    /// The stored prototype, is state is ResourceState.New.
     EntityPrototype prototype;
 
+    /// Descriptor of the prototype (i.e. its file name).
     Descriptor descriptor;
 
+    /// Current state of the resource,
     ResourceState state = ResourceState.New; 
 }
