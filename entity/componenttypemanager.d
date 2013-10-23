@@ -73,7 +73,8 @@ public:
         size_t result;
         foreach(ref componentType; componentTypeInfo_)
         {
-            result += componentType.isNull ? 0 : componentType.size;
+            result += componentType.isNull 
+                    ? 0 : componentType.size * componentType.maxPerEntity;
         }
         return result;
     }
