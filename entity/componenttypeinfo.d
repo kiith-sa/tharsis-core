@@ -23,11 +23,6 @@ alias TypeTuple!(LifeComponent) BuiltinComponents;
 
 enum ushort maxBuiltinComponentTypes = 8;
 
-ushort[] userComponentIDs(ushort[] ids) @trusted
-{
-    return ids.uniq.setDifference(componentIDs!BuiltinComponents).array;
-}
-
 /// Get a sorted array of IDs of specified component types.
 ushort[] componentIDs(ComponentTypes...)() @trusted
 {
