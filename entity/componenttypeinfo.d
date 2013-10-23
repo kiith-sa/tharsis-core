@@ -22,6 +22,10 @@ import tharsis.entity.lifecomponent;
 /// A tuple of all builtin component types.
 alias TypeTuple!(LifeComponent) BuiltinComponents;
 
+/// Maximum possible number of builtin, mandatory component types.
+///
+/// Component type IDs of user-defined components should add to this number to 
+/// avoid collisions with builtin components.
 enum ushort maxBuiltinComponentTypes = 8;
 
 /// Get a sorted array of IDs of specified component types.
