@@ -38,7 +38,7 @@ private:
     /// and in reverse order. When the memory is trimmed, this is moved right 
     /// after components_ and reversed into the same order as the order of 
     /// components stored in components_.
-    ushort[] componentIDs_;
+    ushort[] componentTypeIDs_;
 
     /// Part of storage_ used to store components. Starts at the beginning of
     /// storage_.
@@ -67,7 +67,15 @@ public:
                "EntityPrototype memory must be divisible by 16");
         storage_ = memory;
         components_  = memory[0 .. 0];
-        componentIDs_ = cast(ushort[])memory[$ .. $];
+        componentTypeIDs_ = cast(ushort[])memory[$ .. $];
+    }
+
+    /// Get the stored components as raw bytes.
+    @property inout(ubyte)[] rawComponentBytes() @safe inout pure nothrow 
+    {
+        assert(locked_, "Trying to access raw components stored in an unlocked "
+                        "EntityPrototype");
+        return components_;
     }
 
     /// Allocate space for a component in the prototype. 
@@ -86,16 +94,16 @@ public:
         assert(!locked_, "Adding a component to a locked EntityPrototype");
         assert(info.id >= maxBuiltinComponentTypes, 
                "Trying to add a builtin component type to an EntityPrototype");
-        assert(!componentIDs_.canFind(info.id), 
+        assert(!componentTypeIDs_.canFind(info.id), 
                "EntityPrototype with 2 non-multi components of the same type");
 
         assert(components_.length + info.size + 
-               componentIDs_.length + ushort.sizeof  <= storage_.length,
+               componentTypeIDs_.length + ushort.sizeof  <= storage_.length,
                "Ran out of memory provided to an EntityPrototype");
 
         components_ = storage_[0 .. components_.length + info.size];
-        const componentIDIndex = componentIDs_.length - 1;
-        componentIDs_ = (cast(ushort[])storage_)[componentIDIndex .. $];
+        const componentIDIndex = componentTypeIDs_.length - 1;
+        componentTypeIDs_ = (cast(ushort[])storage_)[componentIDIndex .. $];
         (cast(ushort[])storage_)[componentIDIndex] = info.id;
         return components_[$ - info.size .. $];
     }
@@ -110,17 +118,28 @@ public:
     {
         const usedBytes = components_.length;
 
-        const oldComponentIDs = componentIDs_;
+        const oldComponentIDs = componentTypeIDs_;
         const idBytes = oldComponentIDs.length * ushort.sizeof;
-        componentIDs_ = 
+        componentTypeIDs_ = 
             cast(ushort[])storage_[usedBytes .. usedBytes + idBytes];
-        foreach(i, id; oldComponentIDs) { componentIDs_[$ - i - 1] = id; }
+        foreach(i, id; oldComponentIDs) { componentTypeIDs_[$ - i - 1] = id; }
 
         const totalBytes = components_.length + idBytes;
         storage_ = storage_[0 .. totalBytes];
 
         locked_ = true;
         return storage_;
+    }
+
+    /// Get the component type IDs of stored components.
+    ///
+    /// Can only be called on locked prototypes.
+    const(ushort[]) componentTypeIDs() @safe pure nothrow const
+    {
+        assert(locked_, 
+               "Trying to get component type IDs of an unlocked entity "
+               "prototype");
+        return componentTypeIDs_;
     }
 }
 
