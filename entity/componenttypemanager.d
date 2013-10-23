@@ -310,6 +310,11 @@ public:
                    "increased by overriding the Policy template parameter "
                    "of the ComponentTypeManager"
                    .format(Policy.maxComponentTypes - 1));
+            assert(maxComponentsPerEntity!Component <= Policy.ComponentCount.max, 
+                   "maxComponentsPerEntity of a component type is greater "
+                   "than the maximum value of ComponentCount type "
+                   "specified by the Policy template parameter of the "
+                   "ComponentTypeManager");
             componentTypeInfo_[id] = 
                 ComponentTypeInfo.construct!(Source, Component);
         }
