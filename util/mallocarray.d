@@ -78,6 +78,25 @@ public:
         freeMemory(cast(void[])oldUsedData, typeid(T));
     }
 
+    /// Grow up to currently allocated capacity without initializing data,
+    ///
+    /// Params:  items = Length to grow to, in items. Must be greater than the 
+    ///                  current length.
+    ///
+    /// Can only grow to allocated capacity.
+    ///
+    /// See_Also: reserve, capacity
+    void growUninitialized(const size_t items) pure nothrow
+    {
+        assert(items >= this.length, 
+               "Calling grow() with smaller than current size");
+        auto allData = cast(T[])data_;
+        assert(items <= allData.length, 
+               "Calling growUninitialized with size greater than reserved "
+               "space. Call reserve() first.");
+        usedData_ = allData[0 .. items];
+    }
+
     /// Clear the MallocArray, destroying all elements without deallocating.
     void clear() @trusted pure nothrow
     {
