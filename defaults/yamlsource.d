@@ -31,12 +31,14 @@ public:
             // Hack to allow nothrow to work.
             static YAMLSource implementation(string name)
             {
+                import std.stdio;
                 try
                 {
-                    return YAMLSource(dyaml.loader.Loader("input.yaml").load());
+                    return YAMLSource(dyaml.loader.Loader(name).load());
                 }
                 catch(YAMLException e)
                 {
+                    writeln(e.msg);
                     return YAMLSource(dyaml.node.Node(YAMLNull()));
                 }
             }
