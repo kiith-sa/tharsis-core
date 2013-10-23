@@ -69,8 +69,20 @@ public:
     /// Size of a single component of this type in bytes.
     size_t size;
 
+    /// Maximum possible components of this type at entity may have.
+    ///
+    /// Used mainly by MultiComponents. For normal Components this is a minimum 
+    /// number of free preallocated components.
+    size_t maxPerEntity = 1;
+
     /// Name of the component type.
     string name = "";
+
+    /// Minimum number of components to preallocate.
+    uint minPrealloc = 0;
+
+    /// Minimum number of components to preallocate per entity.
+    double minPreallocPerEntity = 0;
 
     /// Type information about a component type field (data member).
     struct Field 
@@ -111,7 +123,7 @@ public:
         assert(typeid(Source) is sourceType_, 
                "Source type used to construct a ComponentTypeInfo doesn't "
                "match the source type passed to its loadComponent method");
-        
+
         // TODO we can implement modifying-entity-from-YAML easily;
         //      call loadField only for those fields that are present.
         //      The rest simply won't be overwritten.
@@ -139,6 +151,16 @@ public:
         result.size = Component.sizeof;
         result.name = fullName[0 .. fullName.length - "Component".length];
         result.fields.reserve(Fields.length);
+
+        static if(hasMember!(Component, "minPrealloc"))
+        {
+            result.minPrealloc = Component.minPrealloc;
+        }
+        static if(hasMember!(Component, "minPreallocPerEntity"))
+        {
+            result.minPreallocPerEntity = Component.minPreallocPerEntity;
+        }
+        result.maxPerEntity = maxComponentsPerEntity!Component();
 
         // This is a static foreach; the double brackets explicitly add a scope 
         // to separate the loadField functions generated for each field.
