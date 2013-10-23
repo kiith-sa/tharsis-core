@@ -26,6 +26,17 @@ struct DefaultEntityPolicy
     /// Maximum entities added during one frame.
     enum maxNewEntitiesPerFrame = 4096;
 
+    /// Minimum size of component buffers (in components) for every component 
+    /// type to preallocate.
+    enum minComponentPrealloc = 1024;
+
+    /// The multiplier to increase allocated size during an emergency reallocation.
+    enum reallocMult = 2.5;
+
+    /// Minimum relative size of component buffers (in components) for every 
+    /// component type compared to entity count.
+    enum minComponentPerEntityPrealloc = 0.05;
+
     /// Data type used internally for component counts in an entity.
     ///
     /// The maximum number of components of one type in an entity is 
