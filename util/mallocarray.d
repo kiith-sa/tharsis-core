@@ -43,7 +43,7 @@ public:
     @trusted nothrow ~this()
     {
         clear();
-        freeMemory(cast(void[])data_, typeid(T));
+        if(data_ != []) { freeMemory(cast(void[])data_, typeid(T)); }
         usedData_ = null;
         data_     = null;
     }
