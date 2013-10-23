@@ -12,6 +12,7 @@ import std.algorithm;
 import std.array;
 import std.stdio;
 import std.string;
+import std.traits;
 import std.typetuple;
 
 import tharsis.util.traits;
@@ -30,6 +31,22 @@ ushort[] componentIDs(ComponentTypes...)() @trusted
     foreach(type; ComponentTypes) { ids ~= type.ComponentTypeID; }
     ids.sort();
     return ids;
+}
+
+/// Get the maximum possible components of this type at entity may have.
+///
+/// Used mainly by MultiComponents. For normal Components this is a minimum 
+/// number of free preallocated components.
+auto maxComponentsPerEntity(ComponentType)() @safe pure nothrow
+{
+    static if(__traits(hasMember, ComponentType, "maxComponentsPerEntity"))
+    {
+        return ComponentType.maxComponentsPerEntity;
+    }
+    else 
+    {
+        return 1;
+    }
 }
 
 /// Type information about a component type.
