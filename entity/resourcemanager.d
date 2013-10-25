@@ -18,11 +18,11 @@ protected:
     /// Called by EntityManager between frames. 
     /// 
     /// Can handle e.g. resource loading.
-    void betweenFrames_() @trusted nothrow;
+    void update_() @trusted nothrow;
 
 package:
-    /// See_Also: betweenFrames_
-    final void betweenFrames() @safe nothrow { betweenFrames_; };
+    /// See_Also: update()_
+    final void update() @safe nothrow { update_(); }
 }
 
 /// Base class for resource managers managing a specific Resource type.
