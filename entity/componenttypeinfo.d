@@ -28,6 +28,9 @@ alias TypeTuple!(LifeComponent) BuiltinComponents;
 /// avoid collisions with builtin components.
 enum ushort maxBuiltinComponentTypes = 8;
 
+/// A 'null' component type ID, e.g. to specify a unused component buffer.
+enum ushort nullComponentTypeID = 0;
+
 /// Get a sorted array of IDs of specified component types.
 ushort[] componentIDs(ComponentTypes...)() @trusted
 {
@@ -63,8 +66,8 @@ private:
     TypeInfo sourceType_;
 
 public:
-    /// ID of the component type (0 to 63).
-    ushort id = ushort.max;
+    /// ID of the component type.
+    ushort id = nullComponentTypeID;
 
     /// Size of a single component of this type in bytes.
     size_t size;
@@ -109,7 +112,7 @@ public:
     Field[] fields;
 
     /// Is this ComponentTypeInfo null (i.e. doesn't describe any type)?
-    bool isNull() @safe pure nothrow const { return id == ushort.max; }
+    bool isNull() @safe pure nothrow const { return id == nullComponentTypeID; }
 
 
     /// Loads a component of this component type.
