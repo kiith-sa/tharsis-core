@@ -30,3 +30,23 @@ import tharsis.entity.resourcemanager;
 import tharsis.util.bitmanip;
 import tharsis.util.mallocarray;
 
+}
+}
+/// The central, "World" object of Tharsis.
+///
+/// EntityManager fullfills multiple roles:
+/// 
+/// * Registers processes and resource managers.
+/// * Creates entities from entity prototypes.
+/// * Executes processes.
+/// * Manages past and future entities and components.
+///
+/// Params: Policy = A struct with enum members specifying various compile-time 
+///                  parameters and hints. See defaultentitypolicy.d for an example.
+class EntityManager(Policy)
+{
+    mixin validateEntityPolicy!Policy;
+
+    alias Policy.ComponentCount ComponentCount;
+}
+
