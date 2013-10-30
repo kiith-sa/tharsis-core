@@ -104,7 +104,7 @@ public:
         ///                  ComponentTypeInfo.
         ///
         /// Returns: true if the field was successfully loaded, false otherwise.
-        alias bool function(ubyte[], void*) pure nothrow LoadField;
+        alias bool function(ubyte[], void*) nothrow LoadField;
 
         /// The function to load the field.
         LoadField loadField;
@@ -123,7 +123,7 @@ public:
     ///          source        = Source to load the component from (e.g. a YAML 
     ///                          node defining the component).
     bool loadComponent(Source)(ubyte[] componentData, ref Source source)
-        @trusted pure nothrow const
+        @trusted nothrow const
     {
         assert(typeid(Source) is sourceType_, 
                "Source type used to construct a ComponentTypeInfo doesn't "
@@ -152,10 +152,10 @@ public:
         alias FieldNamesTuple!Component Fields;
 
         ComponentTypeInfo result;
-        result.id   = Component.ComponentTypeID;
-        result.size = Component.sizeof;
-        result.name = fullName[0 .. fullName.length - "Component".length];
         result.sourceType_ = typeid(Source);
+        result.id          = Component.ComponentTypeID;
+        result.size        = Component.sizeof;
+        result.name        = fullName[0 .. fullName.length - "Component".length];
         result.sourceName  = result.name[0 .. 1].toLower ~ result.name[1 .. $];
         result.fields.reserve(Fields.length);
 
@@ -169,11 +169,15 @@ public:
         }
         result.maxPerEntity = maxComponentsPerEntity!Component();
 
-        // This is a static foreach; the double brackets explicitly add a scope 
-        // to separate the loadField functions generated for each field.
+        // Compile-time foreach.
         foreach(name; Fields)
-        {{
-            static bool loadField(ubyte[] componentBuffer, void* sourceVoid)
+        {
+            // Generate a function to load this field.
+            // This whole thing is a huge mixin; search for '%s' to see the 
+            // substitutions.
+            mixin(q{
+            result.fields ~= Field(cast(Field.LoadField)
+            function bool(ubyte[] componentBuffer, void* sourceVoid)
             {
                 Source* source = cast(Source*)sourceVoid;
                 assert(componentBuffer.length == Component.sizeof, 
@@ -189,11 +193,9 @@ public:
                     return false;
                 }
 
-                mixin(q{alias typeof(Component.%s) FieldType;}.format(name));
+                alias typeof(Component.%s) FieldType;
 
-                mixin(q{
                 FieldType* field = &((cast(Component*)componentBuffer.ptr).%s);
-                }.format(name));
 
                 if(!value.readTo(*field))
                 {
@@ -204,9 +206,9 @@ public:
                 }
 
                 return true;
-            }
-            result.fields ~= Field(cast(Field.LoadField)&loadField);
-        }}
+            });
+            }.format(name, name));
+        }
 
         return result;
     }
