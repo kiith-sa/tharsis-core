@@ -125,7 +125,13 @@ public:
         foreach(i, id; oldComponentIDs) { componentTypeIDs_[$ - i - 1] = id; }
 
         const totalBytes = components_.length + idBytes;
-        storage_ = storage_[0 .. totalBytes];
+        assert(storage_.length % 16 == 0, 
+               "ComponentPrototype storage length not divisible by 16");
+        
+        // Align the used memory to 16.
+        const alignedBytes = ((totalBytes + 15) / 16) * 16;
+
+        storage_ = storage_[0 .. alignedBytes];
 
         locked_ = true;
         return storage_;
