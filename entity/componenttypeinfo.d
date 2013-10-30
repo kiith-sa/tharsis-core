@@ -83,6 +83,7 @@ public:
 
     /// Name of the component when accessed in a Source (e.g. YAML).
     string sourceName = "";
+
     /// Minimum number of components to preallocate.
     uint minPrealloc = 0;
 
