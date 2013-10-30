@@ -100,9 +100,12 @@ template futureComponentByPointer(alias ProcessFunc)
 size_t futureComponentIndex(alias ProcessFunc)()
 {
     size_t result = size_t.max;
+    alias ParamTypes = ParameterTypeTuple!ProcessFunc;
     foreach(idx, paramStorage; ParameterStorageClassTuple!ProcessFunc)
     {
-        if(paramStorage & ParameterStorageClass.out_)
+        if(paramStorage & ParameterStorageClass.out_ ||
+           (isPointer!(ParamTypes[idx]) && 
+            paramStorage & ParameterStorageClass.ref_))
         {
             assert(result == size_t.max, 
                    "process() method with multiple future components");
@@ -137,8 +140,12 @@ template isValidProcessMethod(alias Function)
             if(isMutable!Param) 
             {
                 ++nonConstCount;
-                assert(ParamStorageClasses[i] == ParameterStorageClass.out_,
-                       "Output component of a process() method must be 'out'");
+
+                enum storage = ParamStorageClasses[i];
+                assert((isPointer!Param && storage & ParameterStorageClass.ref_)
+                       || storage & ParameterStorageClass.out_,
+                       "Output component of a process() method must be 'out' "
+                       "or a 'ref' pointer");
             }
             else 
             {
