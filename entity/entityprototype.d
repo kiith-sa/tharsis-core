@@ -98,7 +98,7 @@ public:
                "EntityPrototype with 2 non-multi components of the same type");
 
         assert(components_.length + info.size + 
-               componentTypeIDs_.length + ushort.sizeof  <= storage_.length,
+               componentTypeIDs_.length * ushort.sizeof <= storage_.length,
                "Ran out of memory provided to an EntityPrototype");
 
         components_ = storage_[0 .. components_.length + info.size];
