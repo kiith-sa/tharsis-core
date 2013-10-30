@@ -73,9 +73,6 @@ public:
         enabled_         = true;
     }
 
-    /// Is this ComponentBuffer enabled?
-    bool enabled() @safe pure nothrow { return enabled_; }
-
     /// Get the memory that's not used yet. 
     ///
     /// Components can be written to this memory, and then committed using 
@@ -275,9 +272,6 @@ public:
         enabled_ = true;
     }
 
-    /// Is this ComponentCountBuffer enabled?
-    bool enabled() @safe pure nothrow { return enabled_; }
-
     /// Set the number of components in entity at specified index.
     ///
     /// Params: entityIdx = Index of the entity in past/future entities in 
@@ -316,7 +310,7 @@ public:
     ///
     /// Params:  count = The new number of entities. Must be greater than the 
     ///                  current entity count (set by reset or growEntityCount).
-    void growEntityCount(const size_t count) @safe nothrow
+    void growEntityCount(const size_t count) @trusted nothrow
     {
         assert(enabled_, "Can't grow entity count in a non-enabled buffer");
 
