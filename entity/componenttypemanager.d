@@ -82,12 +82,12 @@ public:
 package:
     /// Get type information about all registered components.
     /// 
-    /// Returns a reference to a 64-element array; if there are less than
-    /// 64 registered component types, some values will be null 
-    /// (determine this using ComponentTypeInfo.isNull).
+    /// Returns a reference to a fixed-size array; if there are less than
+    /// Policy.maxComponentTypes registered component types, some values will 
+    /// be null (determine this using ComponentTypeInfo.isNull).
     /// 
     /// Can only be called after this manager is locked.
-    ref const(ComponentTypeInfo[64]) componentTypeInfo()
+    ref const(ComponentTypeInfo[Policy.maxComponentTypes]) componentTypeInfo()
         @safe pure nothrow const 
     {
         assert(locked, "Can't access component type info before locking "
