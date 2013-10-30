@@ -89,7 +89,7 @@ public:
     /// Returns: A slice to write the component to. The component $(B must) be
     ///          written to this slice or the prototype must be thrown away.
     ubyte[] allocateComponent 
-        (ComponentTypeInfo)(ref const(ComponentTypeInfo) info)
+        (ComponentTypeInfo)(ref const(ComponentTypeInfo) info) @trusted nothrow
     {
         assert(!locked_, "Adding a component to a locked EntityPrototype");
         assert(info.id >= maxBuiltinComponentTypes, 
@@ -102,9 +102,12 @@ public:
                "Ran out of memory provided to an EntityPrototype");
 
         components_ = storage_[0 .. components_.length + info.size];
-        const componentIDIndex = componentTypeIDs_.length - 1;
+
+
+        const componentIDIndex = (cast(ushort[])storage_).length - 
+                                 componentTypeIDs_.length - 1;
         componentTypeIDs_ = (cast(ushort[])storage_)[componentIDIndex .. $];
-        (cast(ushort[])storage_)[componentIDIndex] = info.id;
+        componentTypeIDs_[0] = info.id;
         return components_[$ - info.size .. $];
     }
 
