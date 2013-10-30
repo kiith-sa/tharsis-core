@@ -155,6 +155,7 @@ public:
         result.id   = Component.ComponentTypeID;
         result.size = Component.sizeof;
         result.name = fullName[0 .. fullName.length - "Component".length];
+        result.sourceType_ = typeid(Source);
         result.sourceName  = result.name[0 .. 1].toLower ~ result.name[1 .. $];
         result.fields.reserve(Fields.length);
 
