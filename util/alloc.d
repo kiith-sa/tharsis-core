@@ -19,7 +19,7 @@ void[] nothrowMalloc(const size_t bytes, TypeInfo type) nothrow
 }
 
 /// The default deallocation function (just a nothrow free wrapper).
-void nothrowFree(void[] data, TypeInfo type) nothrow 
+void nothrowFree(void[] data) nothrow 
 {
     (cast(void function(void*) nothrow)&core.stdc.stdlib.free)(data.ptr);
 }
@@ -45,10 +45,4 @@ __gshared void[] function (const size_t bytes, TypeInfo) nothrow allocateMemory
 /// overridden as well.
 ///
 /// Params: data = The data to deallocate.
-///         type = Type information about the deallocated type
-///                (useful for debugging/diagnostics).
-__gshared void function (void[] data, TypeInfo) nothrow freeMemory 
-    = &nothrowFree;
-
-
-
+__gshared void function (void[] data) nothrow freeMemory = &nothrowFree;

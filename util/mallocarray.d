@@ -7,6 +7,8 @@
 module tharsis.util.mallocarray;
 
 
+import core.memory;
+
 import std.algorithm;
 import std.traits;
 
@@ -43,7 +45,12 @@ public:
     @trusted nothrow ~this()
     {
         clear();
-        if(data_ != []) { freeMemory(cast(void[])data_, typeid(T)); }
+        if(data_ != []) 
+        {
+            // True if the GC needs to scan this type.
+            if(typeid(T).flags) { GC.removeRange(cast(void*)data_.ptr); }
+            freeMemory(cast(void[])data_); 
+        }
         usedData_ = null;
         data_     = null;
     }
@@ -69,13 +76,18 @@ public:
     void reserve(const size_t items) @trusted nothrow
     {
         const bytes = T.sizeof * items;
-        if(data_.length >= items) { return; }
+        if(data_.length >= bytes) { return; }
         data_ = cast(ubyte[])allocateMemory(bytes, typeid(T));
+        // True if the GC needs to scan this type.
+        if(typeid(T).flags) { GC.addRange(cast(void*)data_.ptr, data_.length); }
+
         auto oldUsedData = usedData_;
         usedData_ = (cast(T[])data_)[0 .. this.length];
         // Avoid postblits or copy-ctors.
         (cast(ubyte[])usedData_)[] = (cast(ubyte[])oldUsedData)[];
-        freeMemory(cast(void[])oldUsedData, typeid(T));
+        // True if the GC needs to scan this type.
+        if(typeid(T).flags) { GC.removeRange(cast(void*)oldUsedData.ptr); }
+        freeMemory(cast(void[])oldUsedData);
     }
 
     /// Grow up to currently allocated capacity without initializing data,
