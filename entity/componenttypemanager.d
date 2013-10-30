@@ -20,7 +20,7 @@ import tharsis.entity.defaultentitypolicy;
 /// See_Also: ComponentTypeManager.
 class AbstractComponentTypeManager(Policy)
 {
-    static assert(isValidEntityPolicy!Policy, "Invalid entity policy");
+    mixin validateEntityPolicy!Policy;
     
 private:
     /// Is this manager locked (i.e. no more types may be registered)?

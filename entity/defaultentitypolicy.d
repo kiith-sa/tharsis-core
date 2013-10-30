@@ -46,9 +46,12 @@ struct DefaultEntityPolicy
 }
 
 /// Check if an entity policy is valid.
-template isValidEntityPolicy(Policy)
+template validateEntityPolicy(Policy)
 {
-    enum isValidEntityPolicy = 
-        Policy.maxComponentTypes > maxBuiltinComponentTypes &&
-        isUnsigned!(Policy.ComponentCount);
+    static assert(Policy.maxComponentTypes > maxBuiltinComponentTypes,
+                  "maxComponentTypes too low");
+    static assert(std.traits.isUnsigned!(Policy.ComponentCount),
+                  "ComponentCount must be an unsigned integer type");
+    static assert(Policy.reallocMult > 1.0,
+                  "reallocMult must be greater than 1");
 }
