@@ -81,6 +81,8 @@ public:
     /// Name of the component type.
     string name = "";
 
+    /// Name of the component when accessed in a Source (e.g. YAML).
+    string sourceName = "";
     /// Minimum number of components to preallocate.
     uint minPrealloc = 0;
 
@@ -153,6 +155,7 @@ public:
         result.id   = Component.ComponentTypeID;
         result.size = Component.sizeof;
         result.name = fullName[0 .. fullName.length - "Component".length];
+        result.sourceName  = result.name[0 .. 1].toLower ~ result.name[1 .. $];
         result.fields.reserve(Fields.length);
 
         static if(hasMember!(Component, "minPrealloc"))
