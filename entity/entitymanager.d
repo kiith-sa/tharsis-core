@@ -144,6 +144,78 @@ private:
         allocMult_ = mult;
     }
 
+    /// Execute a single frame/tick/time step of the game/simulation.
+    ///
+    /// Does all management needed between frames, and runs all registered 
+    /// processes on matching entities once.
+    ///
+    /// This includes updating the resource managers, swapping past and future 
+    /// state, forgetting dead entities, creating entities added by addEntity,
+    /// preallocation, etc.
+    void executeFrame()
+    {
+        frameDebug();
+        updateResourceManagers();
+
+        // Past entities from the previous frame may be longer or equal, but 
+        // never shorter than the future entities from the previous frame.
+        // The reason is that any dead entities from past were not copied to 
+        // future (any new entities were copied to both).
+        assert(past_.entities.length >= future_.entities.length, 
+               "Past entities from the previous frame shorter than future "
+               "entities from the previous frame. Past entities may be longer "
+               "or equal, never shorter than the future entities. The reason "
+               "is that any dead entities from past are not copied to future "
+               "(newly added entities are copied to both, so they don't affect "
+               "relative lengths");
+
+        // Get the past & future component/entity buffers for the new frame.
+        GameState* newFuture = cast(GameState*)past_;
+        GameState* newPast   = future_;
+
+        newFuture.entities = 
+            cast(Entity[])newFuture.entities[0 .. newPast.entities.length];
+        // Clear the future (former past) entities to help detect bugs.
+        newFuture.entities[] = Entity.init;
+
+        // Get the number of entities added this frame.
+        auto entitiesToAdd     = cast(const(EntitiesToAdd))&entitiesToAdd_;
+        const addedEntityCount = entitiesToAdd.prototypes.length;
+
+        // Copy alive past entities to future and create space for the newly 
+        // added entities in future.
+        const futureEntityCount = copyLiveEntitiesToFuture(newPast, newFuture);
+        newFuture.entities.length = futureEntityCount + addedEntityCount;
+        newFuture.components.resetBuffers();
+        auto addedFutureEntities = newFuture.entities[futureEntityCount .. $];
+
+        // Create space for the newly added entities in past.
+        const pastEntityCount  = newPast.entities.length;
+        newPast.entities.length = pastEntityCount + addedEntityCount;
+        auto addedPastEntities = 
+            cast(Entity[])newPast.entities[pastEntityCount .. $];
+
+        // Preallocate future component buffer if needed.
+        preallocateComponents(newFuture);
+
+        // Inform the entity count buffers about a changed number of entities.
+        newPast.components.growEntityCount(newPast.entities.length);
+        newFuture.components.growEntityCount(newFuture.entities.length);
+
+        // Add the new entities into the reserved entity/component space.
+        addNewEntities(newPast.components, pastEntityCount,
+                       addedPastEntities, addedFutureEntities);
+
+        // Assign back to data members.
+        future_ = newFuture;
+        past_   = cast(immutable(GameState*))(newPast);
+
+
+        // Run the processes (sequentially so far).
+        foreach(process; processes_) { process.run(this); }
+    }
+
+
     /// All state belonging to one component type.
     ///
     /// Stores the components and component counts for each entity.
