@@ -102,6 +102,36 @@ private:
     /// Entities to add when the next frame starts.
     shared(EntitiesToAdd) entitiesToAdd_;
 
+
+    /// Add a new entity, using components from specified prototype.
+    ///
+    /// The new entity will be added at the beginning of the next frame.
+    /// The prototype provided must exist and must not be changed until then.
+    /// It can be safely deleted during the next frame.
+    ///
+    /// Returns: ID of the new entity on success.
+    ///          A null ID if we've added more than 
+    ///          Policy.maxNewEntitiesPerFrame new entities during one frame.
+    EntityID addEntity(ref immutable(EntityPrototype) prototype) @trusted
+    {
+        // This should be cheap, assuming most of the time only 1 thread
+        // adds entities (SpawnerSystem). If slow, allow bulk adding
+        // through a struct that locks at ctor/unlocks at dtor.
+        auto entitiesToAdd = cast(EntitiesToAdd)&entitiesToAdd_;
+        synchronized(entitiesToAdd)
+        {
+            if(entitiesToAdd.prototypes.length ==
+               entitiesToAdd.prototypes.capacity)
+            {
+                return EntityID.init;
+            }
+
+            auto id = EntityID(entitiesToAdd.nextEntityID++);
+            entitiesToAdd.prototypes ~= tuple(&prototype, id);
+            return id;
+        }
+    }
+
     /// Can be set to force more or less preallocation.
     /// 
     /// Useful e.g. before loading a big map.
