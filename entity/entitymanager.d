@@ -564,5 +564,70 @@ private:
         }
     }
 
+    /// Add newly created entities (from the entitiesToAdd_ data member).
+    ///
+    /// Part of the code executed between frames in executeFrame().
+    ///
+    /// Params:  target          = Past component buffers to add components of
+    ///                            the added entities to. We're adding entities
+    ///                            created during the previous frame, so the 
+    ///                            next frame will see them as past state. 
+    ///                            Whether the components will also exist in the 
+    ///                            future is up to the processes that will 
+    ///                            process them.
+    ///          baseEntityCount = The number of past entities (before these 
+    ///                            entities are added).
+    ///          targetPast      = Past entities to add the newly created 
+    ///                            entities to.
+    ///          targetFuture    = Future entities to add the newly created 
+    ///                            entities to. (They need to be added for 
+    ///                            processes to run - only the processes running
+    ///                            during the next frame will decide whether or 
+    ///                            not they will continue to live).
+    void addNewEntities(ref ComponentState target,
+                        const size_t baseEntityCount,
+                        Entity[] targetPast,
+                        Entity[] targetFuture) @trusted nothrow
+    {
+        auto entitiesToAdd = cast(EntitiesToAdd)&entitiesToAdd_;
+        foreach(index, pair; entitiesToAdd.prototypes)
+        {
+            immutable(EntityPrototype)* prototype = pair[0];
+            const(ubyte)[] rawBytes = prototype.rawComponentBytes;
+
+            // Component counts of each component type for this entity.
+            ComponentCount[Policy.maxComponentTypes] componentCounts;
+            // Copy components from the prototype to component buffers.
+            foreach(typeID; prototype.componentTypeIDs)
+            {
+                // Copies and commits the component.
+                rawBytes = target[typeID].buffer.addComponent(rawBytes);
+                ++componentCounts[typeID];
+            }
+
+            // Add a (mandatory) LifeComponent.
+            enum lifeID = LifeComponent.ComponentTypeID;
+            const life  = LifeComponent(true);
+            auto source = cast(const(ubyte)[])((&life)[0 .. 1]);
+            target[lifeID].buffer.addComponent(source);
+            ++componentCounts[lifeID];
+
+            // Add the new entity to past/future entities.
+            const EntityID entityID = pair[1];
+            targetPast[index] = targetFuture[index] = Entity(entityID);
+
+            // Set the component counts for this entity.
+            foreach(typeID, count; componentCounts) 
+            {
+                if(!target[typeID].enabled) { continue; }
+                const globalIndex = baseEntityCount + index;
+                target[typeID].counts.setComponentsInEntity(globalIndex, count);
+            }
+        }
+
+        // Clear to reuse during the next frame.
+        entitiesToAdd.prototypes.clear();
+    }
+
 }
 
