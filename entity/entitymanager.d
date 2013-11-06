@@ -452,5 +452,13 @@ private:
         }
     }
 
+    /// Update every resource manager, allowing them to load resources.
+    ///
+    /// Part of the code executed between frames in executeFrame().
+    void updateResourceManagers() @safe nothrow
+    {
+        foreach(resManager; resourceManagers_) { resManager.update(); }
+    }
+
 }
 
