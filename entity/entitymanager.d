@@ -452,6 +452,39 @@ private:
         }
     }
 
+
+    /// Show any useful debugging information (warnings) before running a frame,
+    /// and check frame invariants.
+    void frameDebug() @trusted nothrow
+    {
+        static void implementation(EntityManager self) 
+        {with(self){
+            foreach(id; 0 .. maxBuiltinComponentTypes)
+            {
+                const(ComponentTypeInfo)* info = &componentTypeInfo[id];
+                // If no such builtin component type exists, ignore.
+                if(info.isNull) { continue; }
+                assert(writtenComponentTypes_[id], 
+                       "No process writing to builtin component type %s: "
+                       "please register a process writing this component type "
+                       "(see tharsis.defaults.copyprocess for a "
+                       "placeholder process).".format(info.name));
+            }
+            foreach(ref info; componentTypeInfo)
+            {
+                if(writtenComponentTypes_[info.id] ||
+                   info.id == nullComponentTypeID)
+                {
+                    continue;
+                }
+                writefln("WARNING: No process writing to component type %s: "
+                         "all components of this type will disappear after the "
+                         "first frame.", info.name);
+            }
+        }}
+        (cast(void function(EntityManager) nothrow)&implementation)(this);
+    }
+
     /// Update every resource manager, allowing them to load resources.
     ///
     /// Part of the code executed between frames in executeFrame().
