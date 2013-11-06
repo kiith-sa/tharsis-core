@@ -94,5 +94,38 @@ class EntityManager(Policy)
         }
     }
 
+    /// Stores components of all entities (either past or future).
+    /// 
+    /// Also stores component counts of every component type for every entity.
+    struct ComponentState
+    {
+        /// Stores component/component count buffers for all component types at 
+        /// indices set by the ComponentTypeID members of the component types.
+        ComponentTypeState[Policy.maxComponentTypes] self_;
+
+        /// Access the component type state array directly.
+        alias self_ this;
+
+        /// Clear the buffers.
+        ///
+        /// Used to clear future component buffers when starting a frame.
+        void resetBuffers()
+        {
+            foreach(ref data; this) if(data.enabled) { data.reset(); }
+        }
+
+        /// Inform the component counts buffers about increased (or equal) 
+        /// entity count.
+        /// 
+        /// Called between frames when entities are added.
+        void growEntityCount(const size_t count)
+        {
+            foreach(ref data; this) if(data.enabled) 
+            {
+                data.counts.growEntityCount(count);
+            }
+        }
+    }
+
 }
 
