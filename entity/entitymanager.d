@@ -48,6 +48,15 @@ class EntityManager(Policy)
     mixin validateEntityPolicy!Policy;
 
     alias Policy.ComponentCount ComponentCount;
+
+private:
+    /// If writtenComponentTypes_[i] is true, there is a process that writes 
+    /// components of type with ComponentTypeID equal to i.
+    bool[Policy.maxComponentTypes] writtenComponentTypes_;
+
+    /// Multiplier to apply when preallocating buffers.
+    double allocMult_ = 1.0;
+
     /// Stores both past and future game states.
     ///
     /// The past_ and future_ pointers are exchanged every frame, replacing past 
@@ -63,6 +72,35 @@ class EntityManager(Policy)
     /// including entities hat were added during the last frame.
     GameState* future_;
 
+    /// Wrappers that execute registered processes.
+    AbstractProcessWrapper!Policy[] processes_;
+
+    /// Registered resource managers.
+    AbstractResourceManager[] resourceManagers_;
+
+    /// Component type manager, including type info about registered component 
+    /// types.
+    AbstractComponentTypeManager!Policy componentTypeManager_;
+
+
+    /// A simple class wrapper over entities to add when the next frame starts.
+    ///
+    /// A class is used to allow convenient use of synchronized and shared.
+    /// A struct + mutex could be used if needed, but the GC overhead of this
+    /// single instance is very low.
+    class EntitiesToAdd
+    {
+        /// The ID of the next entity that will be created.
+        ///
+        /// 1 is used to ease detection of bugs with uninitialized data.
+        uint nextEntityID = 1;
+        /// Stores pointers to prototypes and IDs of the entities to add when
+        /// the next frame starts.
+        MallocArray!(Tuple!(immutable(EntityPrototype)*, EntityID)) prototypes;
+    }
+
+    /// Entities to add when the next frame starts.
+    shared(EntitiesToAdd) entitiesToAdd_;
     /// All state belonging to one component type.
     ///
     /// Stores the components and component counts for each entity.
