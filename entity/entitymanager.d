@@ -127,5 +127,19 @@ class EntityManager(Policy)
         }
     }
 
+    /// Stores all game state (entities and components).
+    ///
+    /// EntityManager has two instances of GameState; past and future.
+    struct GameState 
+    {
+        /// Stores components of all entities.
+        ComponentState components;
+
+        /// All existing entities (either past or future).
+        /// 
+        /// The entire length of this array is used; it doesn't have a unused 
+        /// part at the end.
+        Entity[] entities;
+    }
 }
 
