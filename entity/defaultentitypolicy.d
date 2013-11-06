@@ -13,6 +13,10 @@ import std.traits;
 import tharsis.entity.componenttypeinfo;
 
 
+//XXX if minComponentPerEntityPrealloc is >= 1, specify we never run out of
+//    component space during a frame, which allows us to simplify 
+//    some componentIterator code (e.g. no branch to check if we've ran out 
+//    of space).
 
 /// Default policy controlling compile-time parameters to the entity system.
 struct DefaultEntityPolicy
