@@ -575,6 +575,9 @@ private:
         return componentTypeManager_.componentTypeInfo;
     }
 
+    ////////////////////////////////////////////
+    /// BEGIN CODE CALLED BY execute_frame() ///
+    ////////////////////////////////////////////
 
     /// Show any useful debugging information (warnings) before running a frame,
     /// and check frame invariants.
@@ -743,6 +746,10 @@ private:
         // Clear to reuse during the next frame.
         entitiesToAdd.prototypes.clear();
     }
+
+    //////////////////////////////////////////
+    /// END CODE CALLED BY execute_frame() ///
+    //////////////////////////////////////////
 
 }
 
