@@ -493,5 +493,35 @@ private:
         foreach(resManager; resourceManagers_) { resManager.update(); }
     }
 
+    /// Copy the surviving entities from past to future entity buffer.
+    ///
+    /// Part of the code executed between frames in executeFrame().
+    ///
+    /// Params: past   = The new past, former future state.
+    ///         future = The new future, former past state. future.entities must 
+    ///                  be exactly as long as past.entities. Surviivng entities
+    ///                  will be copied here.
+    ///
+    /// Returns: The number of surviving entities written to futureEntities.
+    static size_t copyLiveEntitiesToFuture 
+        (const(GameState)* past, GameState* future) @trusted pure nothrow
+    {
+        assert(past.entities.length == future.entities.length, 
+               "Past/future entity counts do not match");
+
+        // Get the past LifeComponents.
+        enum lifeID = LifeComponent.ComponentTypeID;
+        auto rawLifeComponents = 
+            past.components[lifeID].buffer.committedComponentSpace;
+        auto lifeComponents = cast(immutable(LifeComponent)[])rawLifeComponents;
+
+        // Copy the alive entities to the future and count them.
+        size_t aliveEntities = 0;
+        foreach(i, pastEntity; past.entities) if(lifeComponents[i].alive)
+        {
+            future.entities[aliveEntities++] = pastEntity;
+        }
+        return aliveEntities;
+    }
 }
 
