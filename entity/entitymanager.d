@@ -48,6 +48,21 @@ class EntityManager(Policy)
     mixin validateEntityPolicy!Policy;
 
     alias Policy.ComponentCount ComponentCount;
+    /// Stores both past and future game states.
+    ///
+    /// The past_ and future_ pointers are exchanged every frame, replacing past 
+    /// with future and vice versa to reuse memory,
+    GameState[2] stateStorage_;
+
+    /// Game state from the previous frame. Stores entities and their 
+    /// components, including dead entities and entities that were added during 
+    /// the last frame.
+    immutable(GameState)* past_;
+
+    /// Game state in the current frame. Stores entities and their components,
+    /// including entities hat were added during the last frame.
+    GameState* future_;
+
     /// All state belonging to one component type.
     ///
     /// Stores the components and component counts for each entity.
