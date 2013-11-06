@@ -452,6 +452,14 @@ private:
         }
     }
 
+private:
+    /// A shortcut to access component type information.
+    ref const(ComponentTypeInfo[Policy.maxComponentTypes]) componentTypeInfo()
+        @safe pure nothrow const
+    {
+        return componentTypeManager_.componentTypeInfo;
+    }
+
 
     /// Show any useful debugging information (warnings) before running a frame,
     /// and check frame invariants.
