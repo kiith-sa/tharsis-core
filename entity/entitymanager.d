@@ -598,6 +598,17 @@ public:
         }
     }
 
+
+    /// Register specified resource manager.
+    ///
+    /// Once registered, components may refer to resources managed by this
+    /// resource manager, and the EntityManager will update it between frames.
+    void registerResourceManager(Manager)(Manager manager) @safe pure nothrow
+        if(is(Manager : AbstractResourceManager))
+    {
+        resourceManagers_ ~= manager;
+    }
+
 private:
     /// A shortcut to access component type information.
     ref const(ComponentTypeInfo[Policy.maxComponentTypes]) componentTypeInfo()
