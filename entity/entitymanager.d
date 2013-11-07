@@ -102,6 +102,37 @@ private:
     /// Entities to add when the next frame starts.
     shared(EntitiesToAdd) entitiesToAdd_;
 
+public:
+    /// Construct an EntityManager using component types registered with passed
+    /// ComponentTypeManager.
+    ///
+    /// Params: componentTypeManager = Component type manager storing component 
+    ///                                type information. Must be locked.
+    this(AbstractComponentTypeManager!Policy componentTypeManager)
+    {
+        componentTypeManager_ = componentTypeManager;
+        foreach(ref info; componentTypeInfo)
+        {
+            if(info.isNull) { continue; }
+            foreach(ref state; stateStorage_)
+            {
+                state.components[info.id].enable(info);
+            }
+        }
+
+        entitiesToAdd_ = cast(shared(EntitiesToAdd))new EntitiesToAdd();
+        auto entitiesToAdd = cast(EntitiesToAdd)&entitiesToAdd_;
+        entitiesToAdd.prototypes.reserve(Policy.maxNewEntitiesPerFrame);
+
+        past_   = cast(immutable(GameState*))&(stateStorage_[0]);
+        future_ = &(stateStorage_[1]);
+    }
+
+    /// Destroy an EntityManager.
+    ~this()
+    {
+        destroy(cast(EntitiesToAdd)entitiesToAdd_);
+    }
 
     /// Add a new entity, using components from specified prototype.
     ///
