@@ -599,6 +599,53 @@ public:
     }
 
 
+    /// Register a Process.
+    ///
+    /// Params: process = Process to register. For every component type there 
+    ///                   may be at most 1 process writing it (specifying it as
+    ///                   it's OutComponentType). The OutComponentType of the 
+    ///                   process must be registered with the 
+    ///                   ComponentTypeManager passed to the EntityManager's 
+    ///                   constructor.
+    void registerProcess(P)(P process) @trusted
+    {
+        assert(!writtenComponentTypes_[P.OutComponent.ComponentTypeID], 
+               "Can't register two systems with same output component types");
+        assert(componentTypeManager_.areTypesRegistered!(P.OutComponent),
+               "Registering a process with unregistered out component type " ~
+               P.OutComponent.stringof);
+
+        // All overloads of the process() method in the process.
+        alias overloads           = processOverloads!P;
+        // Component types passed as past components in process() methods of the
+        // process.
+        alias AllInComponentTypes = AllPastComponentTypes!P;
+        writefln("Registering process %s: %s overloads reading past components "
+                 "%s and writing future component %s", P.stringof, 
+                 overloads.length, componentIDs!AllInComponentTypes, 
+                 componentIDs!(P.OutComponent));
+
+        // This future component is now taken; no other process can write to it.
+        writtenComponentTypes_[P.OutComponent.ComponentTypeID] = true;
+
+        // A function executing the process during one frame.
+        // 
+        // Iterates over past entities. If an entity has all past components in 
+        // a signature of one of P.process() overloads, calls that overload,
+        // passing refs to those components and a ref/ptr to a future component
+        // of type P.OutComponent.
+        //
+        // More specific overloads have precedence over more general. For 
+        // example, if there are overloads process(A) and process(A, B), and an
+        // entity has components A and B, the latter overload is called.
+        static void runProcess(EntityManager self, P process)
+        {
+        }
+
+        // Add a wrapper for the process,
+        processes_ ~= new ProcessWrapper!(P, Policy)(process, &runProcess);
+    }
+
     /// Register specified resource manager.
     ///
     /// Once registered, components may refer to resources managed by this
