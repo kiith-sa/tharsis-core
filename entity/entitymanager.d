@@ -640,6 +640,25 @@ public:
         // entity has components A and B, the latter overload is called.
         static void runProcess(EntityManager self, P process)
         {
+            // Iterate over all alive entities, executing the process on those
+            // that match the process() methods of the Process.
+
+            // Using a for instead of foreach because DMD insists on copying the
+            // range in foreach for some reason, breaking the code.
+            for(auto entityRange = EntityRange!(P, AllInComponentTypes)(self);
+                !entityRange.empty(); entityRange.popFront())
+            {
+                entityRange.setFutureComponentCount(0); 
+                // Generates an if-else chain checking each overload, starting 
+                // with the most specific one. 
+                mixin(prioritizeProcessOverloads!P.map!(p => q{ 
+                    if(entityRange.matchComponents!(%s))
+                    {
+                        self.callProcessMethod!(overloads[%s])
+                                               (process, entityRange);
+                    }
+                }.format(p[0], p[1])).join("else ").outdent);
+            }
         }
 
         // Add a wrapper for the process,
