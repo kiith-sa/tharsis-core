@@ -840,5 +840,54 @@ private:
     /// END CODE CALLED BY execute_frame() ///
     //////////////////////////////////////////
 
+    /// Calls specified process() method of a Process.
+    ///
+    /// Params: F           = The process() method to call.
+    ///         process     = Process with the process() method.
+    ///         entityRange = Entity range to get the components to pass from.
+    static void callProcessMethod 
+        (alias F, P, ERange)(P process, ref ERange entityRange)
+    {
+        alias InTypes = PastComponentTypes!F;
+        /// (CTFE) Get a comma separated list of components to pass to a 
+        /// process() method. (Every item in this list accesses a past component
+        /// from the component buffer.
+        string pastComponents()
+        {
+            string[] parts;
+            foreach(i, T; InTypes)
+            {
+                parts ~= q{entityRange.pastComponent!(InTypes[%s])}.format(i);
+            }
+            return parts.join(", ");
+        }
+
+        // Call a process() method that does not write a future component.
+        static if(!hasFutureComponent!F)
+        {
+            mixin(q{process.process(%s);}.format(pastComponents()));
+        }
+        // If the future component is specified by pointer, process() may null 
+        // it, in which case the component won't exist in future.
+        else static if(futureComponentByPointer!F)
+        {
+            P.OutComponent* futureComponent = entityRange.futureComponent();
+            mixin(q{process.process(%s, futureComponent);}
+                  .format(pastComponents()));
+            // If futureComponent was not set to null, the future component was
+            // written.
+            if(futureComponent !is null)
+            {
+                entityRange.setFutureComponentCount(1);
+            }
+        }
+        // Call a process() method that takes the future component by reference.
+        else
+        {
+            mixin(q{process.process(%s, *entityRange.futureComponent);}
+                  .format(pastComponents()));
+            entityRange.setFutureComponentCount(1);
+        }
+    }
 }
 
