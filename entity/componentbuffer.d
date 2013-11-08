@@ -108,6 +108,10 @@ public:
     {
         assert(enabled_, 
                "Can't commit components to a buffer that's not enabled");
+        assert(committedComponents_ + count < allocatedComponents_,
+               "Trying to commit more components than can fit in allocated "
+               "space");
+        
         committedComponents_ += count;
     }
 
