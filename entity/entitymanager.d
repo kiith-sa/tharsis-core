@@ -454,8 +454,8 @@ public:
                 }.format(bufferName!Component, index, countsName!id));
             }
 
-            enum futureID = P.OutComponent.ComponentTypeID;
-            futureComponents_ = &entityManager.future_.components[futureID];
+                enum futureID = P.FutureComponent.ComponentTypeID;
+                futureComponents_ = &entityManager.future_.components[futureID];
 
             // Skip dead past entities at the beginning, if any, so front() 
             // points to an alive entity (unless we're empty)
@@ -513,12 +513,12 @@ public:
         }
         /// Get a pointer to where the future component should be written for
         /// the current entity.
-        P.OutComponent* futureComponent() @trusted nothrow
+        P.FutureComponent* futureComponent() @trusted nothrow
         {
-            enum neededSpace   = maxComponentsPerEntity!(P.OutComponent);
+            enum neededSpace   = maxComponentsPerEntity!(P.FutureComponent);
             auto unused = futureComponents_.buffer
                           .forceUncommittedComponentSpace(neededSpace);
-            return cast(P.OutComponent*)(unused.ptr);
+            return cast(P.FutureComponent*)(unused.ptr);
         }
 
         /// Specify how many future components have been written for the current 
@@ -588,12 +588,13 @@ public:
         /// entity.
         void nextFutureEntity() @safe pure nothrow 
         {
-            enum id = P.OutComponent.ComponentTypeID;
-            futureComponents_.buffer.commitComponents(futureComponentCount_);
-            futureComponents_.counts.setComponentsInEntity
-                (futureEntityIndex_, futureComponentCount_);
-            // Ease bug detection
-            futureComponentCount_ = ComponentCount.max;
+                enum id = P.FutureComponent.ComponentTypeID;
+                futureComponents_.buffer.commitComponents
+                    (futureComponentCount_);
+                futureComponents_.counts.setComponentsInEntity
+                    (futureEntityIndex_, futureComponentCount_);
+                // Ease bug detection
+                futureComponentCount_ = ComponentCount.max;
             ++futureEntityIndex_; 
         }
     }
@@ -609,31 +610,33 @@ public:
     ///                   constructor.
     void registerProcess(P)(P process) @trusted
     {
-        assert(!writtenComponentTypes_[P.OutComponent.ComponentTypeID], 
-               "Can't register two systems with same output component types");
-        assert(componentTypeManager_.areTypesRegistered!(P.OutComponent),
-               "Registering a process with unregistered out component type " ~
-               P.OutComponent.stringof);
 
         // All overloads of the process() method in the process.
         alias overloads           = processOverloads!P;
         // Component types passed as past components in process() methods of the
         // process.
         alias AllInComponentTypes = AllPastComponentTypes!P;
-        writefln("Registering process %s: %s overloads reading past components "
-                 "%s and writing future component %s", P.stringof, 
-                 overloads.length, componentIDs!AllInComponentTypes, 
-                 componentIDs!(P.OutComponent));
 
-        // This future component is now taken; no other process can write to it.
-        writtenComponentTypes_[P.OutComponent.ComponentTypeID] = true;
+        writef("Registering process %s: %s overloads reading past components "
+               "%s ", P.stringof, 
+                 overloads.length, componentIDs!AllInComponentTypes);
+            assert(!writtenComponentTypes_[P.FutureComponent.ComponentTypeID], 
+                   "Can't register 2 systems with same future component type");
+            assert(componentTypeManager_.areTypesRegistered!(P.FutureComponent),
+                   "Registering a process with unregistered future component "
+                   "type " ~ P.FutureComponent.stringof);
+
+            // This future component is now taken; no other process can write to it.
+            writtenComponentTypes_[P.FutureComponent.ComponentTypeID] = true;
+            writefln(" and writing future component %s", 
+                     componentIDs!(P.FutureComponent));
 
         // A function executing the process during one frame.
         // 
         // Iterates over past entities. If an entity has all past components in 
         // a signature of one of P.process() overloads, calls that overload,
         // passing refs to those components and a ref/ptr to a future component
-        // of type P.OutComponent.
+        // of type P.FutureComponent.
         //
         // More specific overloads have precedence over more general. For 
         // example, if there are overloads process(A) and process(A, B), and an
@@ -890,7 +893,7 @@ private:
         // it, in which case the component won't exist in future.
         else static if(futureComponentByPointer!F)
         {
-            P.OutComponent* futureComponent = entityRange.futureComponent();
+            P.FutureComponent* futureComponent = entityRange.futureComponent();
             mixin(q{process.process(%s, futureComponent);}
                   .format(pastComponents()));
             // If futureComponent was not set to null, the future component was

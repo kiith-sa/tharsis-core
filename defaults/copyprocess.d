@@ -16,8 +16,8 @@ module tharsis.defaults.copyprocess;
 class CopyProcess(ComponentType)
 {
 public:
-    /// OutComponent of this process is the copied component type.
-    alias ComponentType OutComponent;
+    /// FutureComponent of this process is the copied component type.
+    alias ComponentType FutureComponent;
 
     /// Takes a past components and copies it to a future version.
     void process(ref immutable(ComponentType) past, out ComponentType future)
