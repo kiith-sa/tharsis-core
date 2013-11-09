@@ -81,8 +81,16 @@ public:
 
 /// Does a process() method write to a future component?
 template hasFutureComponent(alias ProcessFunc)
+    if(isCallable!ProcessFunc)
 {
     enum hasFutureComponent = futureComponentIndex!ProcessFunc != size_t.max;
+}
+
+/// Does a Process write to some future component?
+template hasFutureComponent(Process)
+{
+    enum hasFutureComponent = 
+        __traits(compiles, Process.FutureComponent.sizeof);
 }
 
 /// Does a process() method write to a future component by pointer?
