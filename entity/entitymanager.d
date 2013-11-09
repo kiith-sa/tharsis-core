@@ -349,6 +349,11 @@ public:
     struct EntityRange(P, InComponents...)
     {
     private:
+        // True if the Process does not write to any future component.
+        // Usually processes that only read past components and produce
+        // some kind of output.
+        enum noFuture = !hasFutureComponent!P;
+
         // Indices of the components of the current entity in past component 
         // buffers. Only the indices of iterated component types are used.
         size_t[Policy.maxComponentTypes] componentOffsets_;
@@ -359,11 +364,23 @@ public:
         // Index of the future entity we're currently writing to.
         size_t futureEntityIndex_ = 0;
 
-        // Number of future components (of type P.OutComponent) written to the
-        // current future entity.
+        static if(!noFuture)
+        {
+
+        // Number of future components (of type P.FutureComponent) written 
+        // to the current future entity.
         //
         // Ease bug detection with a ridiculous value
         ComponentCount futureComponentCount_ = ComponentCount.max;
+
+        /// Component buffer and counts for the future components written 
+        /// by process P.
+        ///
+        /// We can't keep a typed slice as the internal buffer may get 
+        /// reallocated; so we cast on every future component access.
+        ComponentTypeState* futureComponents_;
+
+        }
 
         // Past entities in the entity manager.
         //
@@ -375,13 +392,6 @@ public:
         // Used to check if the current past entiity matches the current future 
         // entity.
         const(Entity[]) futureEntities_;
-
-        /// Component buffer and counts for the future components written 
-        /// by process P.
-        ///
-        /// We can't keep a typed slice as the internal buffer may get 
-        /// reallocated; so we cast on every future component access.
-        ComponentTypeState* futureComponents_;
 
         /// All processed component types.
         ///
@@ -454,8 +464,11 @@ public:
                 }.format(bufferName!Component, index, countsName!id));
             }
 
+            static if(!noFuture)
+            {
                 enum futureID = P.FutureComponent.ComponentTypeID;
                 futureComponents_ = &entityManager.future_.components[futureID];
+            }
 
             // Skip dead past entities at the beginning, if any, so front() 
             // points to an alive entity (unless we're empty)
@@ -511,6 +524,10 @@ public:
             mixin(q{return %s[componentOffsets_[id]];}
                   .format(bufferName!Component));
         }
+
+        static if(!noFuture)
+        {
+
         /// Get a pointer to where the future component should be written for
         /// the current entity.
         P.FutureComponent* futureComponent() @trusted nothrow
@@ -527,6 +544,8 @@ public:
             @safe pure nothrow
         {
             futureComponentCount_ = count;
+        }
+
         }
 
         /// Determine if the current entity contains components of all specified 
@@ -588,6 +607,8 @@ public:
         /// entity.
         void nextFutureEntity() @safe pure nothrow 
         {
+            static if(!noFuture)
+            {
                 enum id = P.FutureComponent.ComponentTypeID;
                 futureComponents_.buffer.commitComponents
                     (futureComponentCount_);
@@ -595,6 +616,7 @@ public:
                     (futureEntityIndex_, futureComponentCount_);
                 // Ease bug detection
                 futureComponentCount_ = ComponentCount.max;
+            }
             ++futureEntityIndex_; 
         }
     }
@@ -610,6 +632,10 @@ public:
     ///                   constructor.
     void registerProcess(P)(P process) @trusted
     {
+        // True if the Process does not write to any future component.
+        // Usually processes that only read past components and produce
+        // some kind of output.
+        enum noFuture = !hasFutureComponent!P;
 
         // All overloads of the process() method in the process.
         alias overloads           = processOverloads!P;
@@ -620,6 +646,8 @@ public:
         writef("Registering process %s: %s overloads reading past components "
                "%s ", P.stringof, 
                  overloads.length, componentIDs!AllInComponentTypes);
+        static if(!noFuture)
+        {
             assert(!writtenComponentTypes_[P.FutureComponent.ComponentTypeID], 
                    "Can't register 2 systems with same future component type");
             assert(componentTypeManager_.areTypesRegistered!(P.FutureComponent),
@@ -630,6 +658,11 @@ public:
             writtenComponentTypes_[P.FutureComponent.ComponentTypeID] = true;
             writefln(" and writing future component %s", 
                      componentIDs!(P.FutureComponent));
+        }
+        else 
+        {
+            writefln("");
+        }
 
         // A function executing the process during one frame.
         // 
@@ -651,7 +684,10 @@ public:
             for(auto entityRange = EntityRange!(P, AllInComponentTypes)(self);
                 !entityRange.empty(); entityRange.popFront())
             {
-                entityRange.setFutureComponentCount(0); 
+                static if(!noFuture)
+                {
+                    entityRange.setFutureComponentCount(0); 
+                }
                 // Generates an if-else chain checking each overload, starting 
                 // with the most specific one. 
                 mixin(prioritizeProcessOverloads!P.map!(p => q{ 
@@ -870,6 +906,10 @@ private:
     static void callProcessMethod 
         (alias F, P, ERange)(P process, ref ERange entityRange)
     {
+        // True if the Process does not write to any future component.
+        // Usually processes that only read past components and produce
+        // some kind of output.
+        enum noFuture = !hasFutureComponent!P;
         alias InTypes = PastComponentTypes!F;
         /// (CTFE) Get a comma separated list of components to pass to a 
         /// process() method. (Every item in this list accesses a past component
@@ -885,7 +925,7 @@ private:
         }
 
         // Call a process() method that does not write a future component.
-        static if(!hasFutureComponent!F)
+        static if(noFuture)
         {
             mixin(q{process.process(%s);}.format(pastComponents()));
         }
