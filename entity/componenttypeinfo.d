@@ -104,6 +104,9 @@ public:
     /// number of free preallocated components.
     size_t maxPerEntity = 1;
 
+    /// Is this a MultiComponent type?
+    bool isMulti = false;
+
     /// Name of the component type.
     string name = "";
 
@@ -173,15 +176,15 @@ public:
     /// Construct a ComponentTypeInfo for specified component type.
     static ComponentTypeInfo construct(Source, Component)() @trusted
     {
-        const fullName = Component.stringof;
-        assert(fullName.endsWith("Component"), 
-               "Component type name does not end with 'Component'");
+        mixin validateComponent!Component;
         alias FieldNamesTuple!Component Fields;
 
+        enum fullName = Component.stringof;
         ComponentTypeInfo result;
         result.sourceType_ = typeid(Source);
         result.id          = Component.ComponentTypeID;
         result.size        = Component.sizeof;
+        result.isMulti     = isMultiComponent!Component;
         result.name        = fullName[0 .. fullName.length - "Component".length];
         result.sourceName  = result.name[0 .. 1].toLower ~ result.name[1 .. $];
         result.fields.reserve(Fields.length);
