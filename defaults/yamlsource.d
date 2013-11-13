@@ -92,13 +92,16 @@ public:
         // Hack to allow nothrow to work.
         bool implementation(size_t index, ref YAMLSource target)
         {
-            if(!yaml_.isSequence || index < yaml_.length) { return false; }
+            if(!yaml_.isSequence || index >= yaml_.length) { return false; }
             try
             {
                 alias ref dyaml.node.Node delegate(size_t) const constIdx;
                 target = YAMLSource((cast(constIdx)&yaml_.opIndex!size_t)(index)); 
             }
-            catch(NodeException e) { return false; }
+            catch(NodeException e) 
+            {
+                return false; 
+            }
             return true;
         }
         alias bool delegate(size_t, ref YAMLSource) nothrow nothrowFunc;
