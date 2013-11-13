@@ -189,7 +189,7 @@ package:
 ///     /// 
 ///     /// Returns: true on success, false on failure. (e.g. if this Source is
 ///     ///          a not a sequence, or the index is out of range).
-///     bool getSequenceValue(string key, out TestSource target) @safe nothrow
+///     bool getSequenceValue(size_t index, out TestSource target) @safe nothrow
 ///     {
 ///         assert(false);
 ///     }
