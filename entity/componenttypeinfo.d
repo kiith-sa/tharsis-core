@@ -56,6 +56,12 @@ auto maxComponentsPerEntity(ComponentType)() @safe pure nothrow
     }
 }
 
+/// Determine if a component type is a MultiComponent type.
+template isMultiComponent(Component) 
+{
+    enum isMultiComponent = 
+        Unqual!Component.stringof.endsWith("MultiComponent");
+}
 /// Type information about a component type.
 struct ComponentTypeInfo
 {
