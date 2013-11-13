@@ -300,21 +300,21 @@ public:
         {
             enum id = Component.ComponentTypeID;
             assert(!builtinRegistered_ || id >= maxBuiltinComponentTypes,
-                   "Registering a user-defined component type with ID reserved "
-                   "for builtin component IDs. Use enum ComponentTypeID = "
-                   "maxBuiltinComponentTypes + (YOUR_ID); instead.");
+                "Registering a user-defined component type with ID reserved "
+                "for builtin component IDs. Use enum ComponentTypeID = "
+                "maxBuiltinComponentTypes + (YOUR_ID); instead.");
             assert(componentTypeInfo_[id].isNull, 
-                   "There already is a registered component type with this ID");
-            assert(id < Policy.maxComponentTypes, 
-                   "Component type IDs must be at most %s. This limit can be "
-                   "increased by overriding the Policy template parameter "
-                   "of the ComponentTypeManager"
-                   .format(Policy.maxComponentTypes - 1));
-            assert(maxComponentsPerEntity!Component <= Policy.ComponentCount.max, 
-                   "maxComponentsPerEntity of a component type is greater "
-                   "than the maximum value of ComponentCount type "
-                   "specified by the Policy template parameter of the "
-                   "ComponentTypeManager");
+                "There already is a registered component type with this ID");
+            static assert(id < Policy.maxComponentTypes, 
+                "Component type IDs must be at most %s. This limit can be "
+                "increased by overriding the Policy template parameter of the "
+                "ComponentTypeManager"
+                .format(Policy.maxComponentTypes - 1));
+            static assert(
+                maxComponentsPerEntity!Component <= Policy.ComponentCount.max, 
+                "maxComponentsPerEntity of a component type is greater than "
+                "the maximum value of ComponentCount type specified by the "
+                "Policy template parameter of the ComponentTypeManager");
             componentTypeInfo_[id] = 
                 ComponentTypeInfo.construct!(Source, Component);
         }
