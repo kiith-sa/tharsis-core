@@ -62,6 +62,26 @@ template isMultiComponent(Component)
     enum isMultiComponent = 
         Unqual!Component.stringof.endsWith("MultiComponent");
 }
+
+/// Validate a component type at compile-time.
+template validateComponent(Component)
+{
+    alias std.traits.Unqual!Component BaseType;
+    static assert(is(Component == struct),
+                  "All component types must be structs");
+    static assert(BaseType.stringof.endsWith("Component"), 
+                  "Component type name does not end with 'Component'");
+    static assert(__traits(hasMember, Component, "ComponentTypeID"),
+                  "Component type without a ComponentTypeID: "
+                  "add 'enum ComponentTypeID = <number>'");
+    static assert(!isMultiComponent!Component ||
+                  __traits(hasMember, Component, "maxComponentsPerEntity"),
+                  "MultiComponent types must specify maximum component "
+                  "count per entity: "
+                  "add 'enum maxComponentsPerEntity = <number>'");
+    //XXX assert no elaborate dtor
+}
+
 /// Type information about a component type.
 struct ComponentTypeInfo
 {
