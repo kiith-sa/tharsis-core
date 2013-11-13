@@ -94,7 +94,7 @@ public:
         assert(!locked_, "Adding a component to a locked EntityPrototype");
         assert(info.id >= maxBuiltinComponentTypes, 
                "Trying to add a builtin component type to an EntityPrototype");
-        assert(!componentTypeIDs_.canFind(info.id), 
+        assert(info.isMulti || !componentTypeIDs_.canFind(info.id), 
                "EntityPrototype with 2 non-multi components of the same type");
 
         assert(components_.length + info.size + 
