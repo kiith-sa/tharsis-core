@@ -59,7 +59,6 @@ public:
     void useMemory(ubyte[] memory) @safe pure nothrow
     {
         assert(!locked_, "Providing memory to a locked EntityPrototype");
-        
         assert(storage_ == null, 
                "Trying to provide memory to an EntityPrototype that already "
                "has memory");
@@ -103,7 +102,7 @@ public:
 
         components_ = storage_[0 .. components_.length + info.size];
 
-
+        // Position to write the component type ID at.
         const componentIDIndex = (cast(ushort[])storage_).length - 
                                  componentTypeIDs_.length - 1;
         componentTypeIDs_ = (cast(ushort[])storage_)[componentIDIndex .. $];
@@ -121,6 +120,7 @@ public:
     {
         const usedBytes = components_.length;
 
+        // Move componentTypeIDs_ to right after the used memory.
         const oldComponentIDs = componentTypeIDs_;
         const idBytes = oldComponentIDs.length * ushort.sizeof;
         componentTypeIDs_ = 
