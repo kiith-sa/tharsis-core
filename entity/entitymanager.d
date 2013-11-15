@@ -546,6 +546,9 @@ public:
         void setFutureComponentCount(const ComponentCount count)
             @safe pure nothrow
         {
+            assert(isMultiComponent!FutureComponent || count <= 1,
+                   "Trying to set future component count for a non-multi "
+                   "component to more than 1");
             futureComponentCount_ = count;
         }
 
