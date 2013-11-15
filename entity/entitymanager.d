@@ -522,6 +522,7 @@ public:
         /// Get a reference to the past component of specified type in the 
         /// current entity.
         ref immutable(Component) pastComponent(Component)() @safe nothrow const
+            if(!isMultiComponent!Component)
         {
             enum id = Component.ComponentTypeID;
             mixin(q{return %s[componentOffsets_[id]];}
