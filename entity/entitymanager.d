@@ -648,7 +648,7 @@ public:
 
         writef("Registering process %s: %s overloads reading past components "
                "%s ", P.stringof, 
-                 overloads.length, componentIDs!AllInComponentTypes);
+               overloads.length, componentIDs!AllInComponentTypes);
         static if(!noFuture)
         {
             assert(!writtenComponentTypes_[P.FutureComponent.ComponentTypeID], 
