@@ -36,8 +36,9 @@ unittest
 /// Get all past component types read by process() methods of a process.
 template AllPastComponentTypes(Process)
 {
-    alias AllPastComponentTypes =
-        NoDuplicates!(staticMap!(PastComponentTypes, processOverloads!Process));
+    alias overloads             = processOverloads!Process;
+    alias RawPastTypes          = staticMap!(PastComponentTypes, overloads);
+    alias AllPastComponentTypes = NoDuplicates!RawPastTypes;
 }
 unittest
 {
