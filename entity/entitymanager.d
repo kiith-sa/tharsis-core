@@ -367,6 +367,9 @@ public:
         static if(!noFuture)
         {
 
+        // Future component written by the process (if any).
+        alias FutureComponent = P.FutureComponent;
+
         // Number of future components (of type P.FutureComponent) written 
         // to the current future entity.
         //
@@ -466,7 +469,7 @@ public:
 
             static if(!noFuture)
             {
-                enum futureID = P.FutureComponent.ComponentTypeID;
+                enum futureID = FutureComponent.ComponentTypeID;
                 futureComponents_ = &entityManager.future_.components[futureID];
             }
 
@@ -609,7 +612,7 @@ public:
         {
             static if(!noFuture)
             {
-                enum id = P.FutureComponent.ComponentTypeID;
+                enum id = FutureComponent.ComponentTypeID;
                 futureComponents_.buffer.commitComponents
                     (futureComponentCount_);
                 futureComponents_.counts.setComponentsInEntity
