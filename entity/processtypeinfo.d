@@ -149,7 +149,6 @@ size_t futureComponentIndex(alias ProcessFunc)()
     return result;
 }
 
-
 /// Is specified method a valid process() method?
 ///
 /// Format of process() methods of a Process is not yet finalized.
