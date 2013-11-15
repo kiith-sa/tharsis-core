@@ -170,29 +170,85 @@ template isValidProcessMethod(alias Function)
                    "A parameter type to a process() method with name not " 
                    "ending by \"Component\": " ~ Param.stringof);
             */
-            if(isMutable!Param) 
+
+            enum storage = ParamStorageClasses[i];
+            enum isSlice = isArray!Param;
+            enum isPtr   = isPointer!Param;
+            // Get the actual component type 
+            // (the parameter may be a pointer or slice).
+            static if(isSlice)    { alias Component = typeof(Param.init[0]); }
+            else static if(isPtr) { alias Component = typeof(*Param.init); }
+            else                  { alias Component = Param; }
+
+            // MultiComponents must be passed by slices.
+            static if(isSlice)
+            {
+                assert(isMultiComponent!Component, 
+                       "A non-MultiComponent passed by slice as a future "
+                       "component of a process() method");
+            }
+            // Other component types may _not_ be passed by slices.
+            else
+            {
+                assert(!isMultiComponent!Component, 
+                       "A MultiComponent not passed by slice as a past "
+                       "component of a process() method");
+            }
+
+            // Future component.
+            static if(isMutable!Component) 
             {
                 ++nonConstCount;
-
-                enum storage = ParamStorageClasses[i];
-                assert((isPointer!Param && storage & ParameterStorageClass.ref_)
-                       || storage & ParameterStorageClass.out_,
-                       "Output component of a process() method must be 'out' "
-                       "or a 'ref' pointer");
+                // ref is required to allow the Process to downsize the slice.
+                static if(isSlice)
+                {
+                    assert(storage & ParameterStorageClass.ref_,
+                           "Slice for a future MultiComponent of a process() "
+                           "method must be 'ref'");
+                }
+                // out is just to write the future component, ref pointer also
+                // allows _not to write_ the component into future state.
+                else
+                {
+                    assert((isPtr && storage & ParameterStorageClass.ref_) ||
+                          (!isPtr && storage & ParameterStorageClass.out_),
+                           "Future non-multi component of a process() method "
+                           "must be 'out' or a 'ref' pointer");
+                }
             }
+            // Past component.
             else 
             {
-                assert((Param.ComponentTypeID in pastIDs) == null,
-                       "Two past components of the same type (or of types with "
-                       "the same ComponentTypeID) in a process() method "
-                       "signature");
-                pastIDs[Param.ComponentTypeID] = true;
-                assert(ParamStorageClasses[i] == ParameterStorageClass.ref_,
-                       "Input components of a process() method must be 'ref'");
+                assert(!isPtr, "Past components must not be passed by pointer");
+                assert((Component.ComponentTypeID in pastIDs) == null,
+                       "Two past components of the same type (or of types "
+                       "with the same ComponentTypeID) in a process() "
+                       "method signature");
+
+
+                // Past slices must have the default storage class so the 
+                // Process may not modify them.
+                static if(isSlice)
+                {
+                    assert(storage == ParameterStorageClass.none,
+                           "Slice for a past MultiComponent of a process() "
+                           "method must not be 'out', 'ref', 'scope' or "
+                           "'lazy'");
+                }
+                // Normal past components are passed by (const) ref.
+                else 
+                {
+                    assert(ParamStorageClasses[i] == ParameterStorageClass.ref_,
+                           "Past components of a process() method must be "
+                           "'ref'");
+                }
+
+                // Register this past component.
+                pastIDs[Component.ComponentTypeID] = true;
             }
         }
         assert(nonConstCount <= 1,
-               "A process() method with more than one output (non-const) " 
+               "A process() method with more than one future (non-const) " 
                "component type");
         return true;
     }
