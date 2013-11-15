@@ -137,6 +137,8 @@ size_t futureComponentIndex(alias ProcessFunc)()
     {
         if(paramStorage & ParameterStorageClass.out_ ||
            (isPointer!(ParamTypes[idx]) && 
+            paramStorage & ParameterStorageClass.ref_) ||
+           (isArray!(ParamTypes[idx]) &&
             paramStorage & ParameterStorageClass.ref_))
         {
             assert(result == size_t.max, 
