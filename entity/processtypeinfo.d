@@ -89,8 +89,18 @@ private:
                   "Can't get future component type of a process() method "
                   "writing no future component.");
 public:
-    alias FutureComponentType =
+    alias FutureParamType =
         Unqual!((ParameterTypeTuple!ProcessFunc)[paramIndex]);
+
+    // Get the actual component type (components may be passed by slice).
+    static if(isArray!FutureParamType)
+    {
+        alias FutureComponentType = typeof(FutureParamType.init[0]);
+    }
+    else 
+    {
+        alias FutureComponentType = FutureParamType;
+    }
 }
 
 /// Does a process() method write to a future component?
