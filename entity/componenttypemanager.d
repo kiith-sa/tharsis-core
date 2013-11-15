@@ -298,6 +298,7 @@ public:
                         "ComponentTypeManager");
         foreach(Component; Types)
         {
+            mixin validateComponent!Component;
             enum id = Component.ComponentTypeID;
             assert(!builtinRegistered_ || id >= maxBuiltinComponentTypes,
                 "Registering a user-defined component type with ID reserved "
