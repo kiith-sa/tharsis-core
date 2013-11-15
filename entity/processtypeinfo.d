@@ -56,8 +56,21 @@ unittest
 template PastComponentTypes(alias ProcessFunc)
     if(isValidProcessMethod!ProcessFunc)
 {
-    alias PastComponentTypes =
-        UnqualAll!(ConstTypes!(ParameterTypeTuple!ProcessFunc));
+    // Get the actual component type (Param may be a slice).
+    template BaseType(Param)
+    {
+        static assert(!isPointer!Param,
+                      "Past components can't be passed by pointer");
+        static if(isArray!Param) { alias BaseType = typeof(Param.init[0]); }
+        else                     { alias BaseType = Param; }
+    }
+
+    // Past components are passed by const.
+    alias constTypes         = ConstTypes!(ParameterTypeTuple!ProcessFunc);
+    // Get the actual component types.
+    alias baseTypes          = staticMap!(BaseType, constTypes);
+    // Remove qualifiers such as const.
+    alias PastComponentTypes = UnqualAll!baseTypes;
 }
 
 /// Get sorted array of IDs of past component types read by a process() method.
