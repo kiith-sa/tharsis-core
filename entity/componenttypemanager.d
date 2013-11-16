@@ -79,6 +79,21 @@ public:
         return result;
     }
 
+    /// Get the maximum number of components (of all types) in a single entity.
+    ///
+    /// Can only be called after this manager is locked.
+    size_t maxEntityComponents() @safe pure nothrow const
+    {
+        assert(locked, "Can't determine max components per entity before "
+                       "locking ComponentTypeManager");
+        size_t result;
+        foreach(ref componentType; componentTypeInfo_)
+        {
+            result += componentType.isNull ? 0 : componentType.maxPerEntity;
+        }
+        return result; 
+    }
+
 package:
     /// Get type information about all registered components.
     /// 
