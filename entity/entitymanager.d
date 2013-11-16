@@ -760,7 +760,7 @@ public:
         static if(!noFuture)
         {
             assert(!writtenComponentTypes_[P.FutureComponent.ComponentTypeID], 
-                   "Can't register 2 systems with same future component type");
+                   "Can't register 2 processes with one future component type");
             assert(componentTypeManager_.areTypesRegistered!(P.FutureComponent),
                    "Registering a process with unregistered future component "
                    "type " ~ P.FutureComponent.stringof);
