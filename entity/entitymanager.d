@@ -340,6 +340,7 @@ public:
         /// part at the end.
         Entity[] entities;
     }
+     
     /// A range used to iterate over entities in an EntityManager and their 
     /// components. 
     /// 
