@@ -151,12 +151,19 @@ package:
 ///     public:
 ///         /// Load a Source with specified name (e.g. entity file name).
 ///         ///
-///         /// (There is no requirement to load from actual files;
-///         /// this may be implemented by loading from some archive file or 
-///         /// from memory.)
 ///         ///
-///         /// On failure, the returned TestSource will be null.
-///         TestSource loadSource(string name) @safe nothrow 
+///         /// Params: name      = Name to identify the source by 
+///         ///                     (e.g. a file name).
+///         ///         logErrors = If true, errors generated during the use of
+///         ///                     the Source (such as loading errors, 
+///         ///                     conversion errors etc.) should be logged,
+///         ///                     accessible through the errorLog() method of 
+///         ///                     Source.
+///         ///
+///         /// There is no requirement to load from actual files;
+///         /// this may be implemented by loading from some archive file or 
+///         /// from memory.
+///         TestSource loadSource(string name, bool logErrors) @safe nothrow 
 ///         {
 ///             assert(false);
 ///         }
@@ -167,6 +174,13 @@ package:
 ///     /// A null Source may be returned when loading a Source fails, e.g. 
 ///     /// from Loader.loadSource().
 ///     bool isNull() @safe nothrow const
+///     {
+///         assert(false);
+///     }
+///
+///     /// If logging is enabled, returns errors logged during construction and use 
+///     /// of this Source. Otherwise returns a warning message.
+///     string errorLog() @safe pure nothrow const 
 ///     {
 ///         assert(false);
 ///     }
