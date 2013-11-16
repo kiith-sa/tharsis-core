@@ -631,6 +631,23 @@ public:
             }
             ++futureEntityIndex_; 
         }
+
+        /// A debug method to print the component counts for every processed 
+        /// component type in the current entity.
+        void printComponentCounts()
+        {
+            string[] parts;
+            foreach(C; ProcessedComponents)
+            {
+                enum id = C.ComponentTypeID;
+                mixin(q{
+                const count = %s.componentsInEntity(pastEntityIndex_);
+                }.format(countsName!id));
+                parts ~= "%s: %s".format(id, count);
+            }
+            return writefln("Component counts (typeid: count):\n%s",
+                            parts.join(","));
+        }
     }
 
 
