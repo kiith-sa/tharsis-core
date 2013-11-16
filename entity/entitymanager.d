@@ -590,6 +590,7 @@ public:
                 }
                 return parts.join(" * ");
             }
+
             mixin(q{return cast(bool)(%s);}.format(matchCode()));
         }
 
