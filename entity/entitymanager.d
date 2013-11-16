@@ -547,8 +547,14 @@ public:
             return cast(P.FutureComponent*)(unused.ptr);
         }
 
-        /// Specify how many future components have been written for the current 
+        /// Specify the number of future components written for the current 
         /// entity.
+        ///
+        /// May be called more than once while processing an entity, but the 
+        /// final number must match the number of components actually written.
+        ///
+        /// Params: count = The number of components writte. Must be 0 or 1 for
+        ///                 non-multi components.
         void setFutureComponentCount(const ComponentCount count)
             @safe pure nothrow
         {
