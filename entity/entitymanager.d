@@ -266,7 +266,14 @@ public:
 
         /// Stores component counts for every entity (at indices matching 
         /// indices of entities in entity storage).
-        ComponentCountBuffer!Policy counts;
+        MallocArray!ComponentCount counts;
+
+        /// Destroy the ComponentTypeState.
+        ~this()
+        {
+            // Not necessary, but useful to catch bugs.
+            if(enabled_) { reset(); }
+        }
 
         /// Enable the ComponentTypeState.
         ///
@@ -277,19 +284,44 @@ public:
         ///                    stored in this ComponentTypeState.
         void enable(ref const(ComponentTypeInfo) typeInfo) @safe pure nothrow
         {
+            assert(!enabled_, "Trying to enable ComponentTypeState that's " 
+                              "already enabled. Maybe two component types have "
+                              "the same ComponentTypeID?");
+
             buffer.enable(typeInfo.id, typeInfo.size);
-            counts.enable();
             enabled_ = true;
         }
 
         /// Is there a component type using this ComponentTypeState?
         bool enabled() @safe pure nothrow const { return enabled_; }
 
+        /// Grow the number of entities to store component counts for.
+        ///
+        /// Can only be used to _increase_ the number of entities. Component
+        /// counts for the new entities are set to zero. Used by EntityManager
+        /// e.g. after determining the number of future entities and before 
+        /// adding newly created entities.
+        ///
+        /// Params: count = The new entity count. Must be greater than the 
+        ///                 current entity count (set by a previous call to 
+        ///                 reset or growEntityCount).
+        void growEntityCount(const size_t count)
+        {
+            assert(enabled_, "This ComponentTypeState is not enabled");
+            counts.reserve(count);
+            const oldSize = counts.length;
+            counts.growUninitialized(count);
+            counts[oldSize .. $] = cast(ComponentCount)0;
+        }
+
         /// Reset the buffers, clearing them.
+        /// 
+        /// Sets the entity count to 0.
         void reset() @safe pure nothrow
         {
+            assert(enabled_, "This ComponentTypeState is not enabled");
             buffer.reset();
-            counts.reset();
+            counts.clear();
         }
     }
 
@@ -321,7 +353,7 @@ public:
         {
             foreach(ref data; this) if(data.enabled) 
             {
-                data.counts.growEntityCount(count);
+                data.growEntityCount(count);
             }
         }
     }
@@ -427,16 +459,16 @@ public:
             {
                 parts ~= q{ 
                 immutable(ProcessedComponents[%s][]) %s;
-                immutable(ComponentCountBuffer!Policy*) %s;
+                immutable(MallocArray!ComponentCount*) %s;
                 }.format(index, bufferName!Component, 
                          countsName!(Component.ComponentTypeID));
             }
             return parts.join("\n");
         }
 
-        /// Mixin typed slices to access all processed past components,
-        /// and component count buffers to access the number of components per 
-        /// entity.
+        /// Mixin typed slices to access all processed past components, and
+        /// pointers to component count buffers to access the number of 
+        /// components of every processed type per entity.
         ///
         /// These are casted from the untyped buffers in the ComponentBuffer
         /// struct of each type.
@@ -546,7 +578,7 @@ public:
             const offset = componentOffsets_[id];
 
             mixin(q{ 
-            const length = %s.componentsInEntity(pastEntityIndex_);
+            const length = (*%s)[pastEntityIndex_];
             return %s[offset .. offset + length]; 
             }.format(countsName!id, bufferName!Component));
         }
@@ -629,7 +661,7 @@ public:
                 foreach(id; ComponentTypeIDs)
                 {
                     parts ~= q{ 
-                    %s.componentsInEntity(pastEntityIndex_)
+                    (*%s)[pastEntityIndex_]
                     }.format(countsName!id);
                 }
                 return parts.join(" * ");
@@ -657,8 +689,7 @@ public:
             {
                 enum id = C.ComponentTypeID;
                 mixin(q{
-                componentOffsets_[id] +=
-                    %s.componentsInEntity(pastEntityIndex_);
+                componentOffsets_[id] += (*%s)[pastEntityIndex_];
                 }.format(countsName!id));
             }
             ++pastEntityIndex_;
@@ -675,8 +706,8 @@ public:
                 enum id = FutureComponent.ComponentTypeID;
                 futureComponents_.buffer.commitComponents
                     (futureComponentCount_);
-                futureComponents_.counts.setComponentsInEntity
-                    (futureEntityIndex_, futureComponentCount_);
+                futureComponents_.counts[futureEntityIndex_] 
+                    = futureComponentCount_;
                 // Ease bug detection
                 futureComponentCount_ = ComponentCount.max;
             }
@@ -692,7 +723,7 @@ public:
             {
                 enum id = C.ComponentTypeID;
                 mixin(q{
-                const count = %s.componentsInEntity(pastEntityIndex_);
+                const count = (*%s)[pastEntityIndex_];
                 }.format(countsName!id));
                 parts ~= "%s: %s".format(id, count);
             }
@@ -1050,7 +1081,7 @@ private:
             {
                 if(!target[typeID].enabled) { continue; }
                 const globalIndex = baseEntityCount + index;
-                target[typeID].counts.setComponentsInEntity(globalIndex, count);
+                target[typeID].counts[globalIndex] = count;
             }
         }
 
