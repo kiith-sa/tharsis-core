@@ -165,7 +165,7 @@ size_t futureComponentIndex(alias ProcessFunc)()
 }
 
 /// Validate a process() method.
-mixin template validateProcessMethod(alias Function)
+template validateProcessMethod(alias Function)
 {
     // The return type does not matter; it just allows us to call this method
     // with CTFE when this mixin is used.
