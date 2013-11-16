@@ -165,12 +165,6 @@ template isValidProcessMethod(alias Function)
         bool[size_t] pastIDs;
         foreach(i, Param; ParamTypes)
         {
-            /*
-            assert((Unqual!Param).stringof.endsWith("Component"), 
-                   "A parameter type to a process() method with name not " 
-                   "ending by \"Component\": " ~ Param.stringof);
-            */
-
             enum storage = ParamStorageClasses[i];
             enum isSlice = isArray!Param;
             enum isPtr   = isPointer!Param;
@@ -179,6 +173,11 @@ template isValidProcessMethod(alias Function)
             static if(isSlice)    { alias Component = typeof(Param.init[0]); }
             else static if(isPtr) { alias Component = typeof(*Param.init); }
             else                  { alias Component = Param; }
+
+            // TODO entities might also be supported later for some cases.
+            assert((Unqual!Component).stringof.endsWith("Component"), 
+                   "A parameter type to a process() method with name not " 
+                   "ending by \"Component\": " ~ Param.stringof);
 
             // MultiComponents must be passed by slices.
             static if(isSlice)
