@@ -268,6 +268,62 @@ template validateProcessMethod(alias Function)
 }
 
 
+/// Validate a Process type.
+mixin template validateProcess(Process)
+{
+    // For now processes must be classes.
+    static assert(is(Process == class), 
+        "Processes must be classes (structs may be allowed in future)");
+    alias overloads = processOverloads!Process;
+    // A Process without a process() method is not a Process.
+    static assert(overloads.length > 0,
+        "A Process must have at least one process() method");
+
+    // Validate the process() methods.
+    // Mixins don't work in CTFE so we directly call validate().
+    enum dummyValidateOverloads = {
+        foreach(o; overloads) { validateProcessMethod!o.validate(); }
+        return true;
+        }();
+
+    static if(hasFutureComponent!Process)
+    {
+        // Ensure all process() methods write the Process-specified 
+        // FutureComponent.
+        alias FutureComponent = Process.FutureComponent;
+        enum dummyCheckFutureComponent = {
+            foreach(o; overloads) 
+            {
+                static assert(is(FutureComponentType!o == FutureComponent),
+                    "Every process() method overload of a Process with a "
+                    "FutureComponent must write that FutureComponent (have "
+                    "exactly one non-const reference, pointer or slice (for "
+                    "MultiComponents) parameter, which must be of that future "
+                    "component type). \nMethod breaking this rule: %s\n"
+                    "Future component type written by that method: %s\n"
+                    .format(typeof(o).stringof,
+                            (FutureComponentType!o).stringof));
+            }
+            return true;}();
+    }
+    else 
+    {
+        // Ensure no process() methods write any FutureComponent.
+        enum dummyCheckFutureComponent = {
+            foreach(o; overloads) 
+            {
+                static assert(!hasFutureComponent!o,
+                    "process() method overloads of a Process without a "
+                    "FutureComponent must not write any future components "
+                    "(must not have non-const reference, pointer or slice "
+                    "parameters) \nMethod breaking this rule: %s\n"
+                    .format(typeof(o).stringof));
+            }
+            return true;}();
+    }
+}
+
+
 /// Prioritize overloads of the process() method from process P.
 /// 
 /// Returns: An array of 2-tuples sorted from the most specific process()
