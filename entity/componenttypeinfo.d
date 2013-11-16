@@ -64,7 +64,7 @@ template isMultiComponent(Component)
 }
 
 /// Validate a component type at compile-time.
-template validateComponent(Component)
+mixin template validateComponent(Component)
 {
     alias std.traits.Unqual!Component BaseType;
     static assert(is(Component == struct),
