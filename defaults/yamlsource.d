@@ -6,6 +6,8 @@
 module tharsis.defaults.yamlsource;
 
 
+import std.string;
+
 import dyaml.node;
 import dyaml.exception;
 
@@ -16,35 +18,54 @@ private:
     /// The underlying YAML node.
     dyaml.node.Node yaml_;
 
+    /// Errors logged during construction and use of this YAMLSource.
+    string errorLog_;
+
+    /// Should we log errors? (Disabled by default for performance).
+    bool logErrors_ = false;
+
 public:
     /// Handles loading of Sources.
     struct Loader
     {
     public:
-        /// Load a Source with specified name (e.g. entity file name).
+        /// Load a Source.
         ///
-        /// (There is no requirement to load from actual files;
+        /// Params: name      = Name to identify the source by 
+        ///                     (e.g. a file name).
+        ///         logErrors = If true, any errors generated during the use of
+        ///                     the Source (such as loading errors, conversion
+        ///                     errors, etc.) should be logged, accessible 
+        ///                     through the errorLog() method of Source.
+        ///
+        /// There is no requirement to load from actual files;
         /// this may be implemented by loading from some archive file or 
-        /// from memory.)
-        YAMLSource loadSource(string name) @trusted nothrow 
+        /// from memory.
+        YAMLSource loadSource(string name, bool logErrors = false) 
+            @trusted nothrow 
         {
             // Hack to allow nothrow to work.
-            static YAMLSource implementation(string name)
+            static YAMLSource implementation(string name, bool logErrors)
             {
-                import std.stdio;
                 try
                 {
                     return YAMLSource(dyaml.loader.Loader(name).load());
                 }
                 catch(YAMLException e)
                 {
-                    writeln(e.msg);
-                    return YAMLSource(dyaml.node.Node(YAMLNull()));
+                    auto result = YAMLSource(dyaml.node.Node(YAMLNull()));
+                    result.logErrors_ = logErrors;
+                    if(logErrors) 
+                    {
+                        result.errorLog_ = "Loader.loadSource: %s: %s\n"
+                                           .format(e, e.msg);
+                    }
+                    return result;
                 }
             }
 
-            alias YAMLSource function(string) nothrow nothrowFunc;
-            return (cast(nothrowFunc)&implementation)(name);
+            alias YAMLSource function(string, bool) nothrow nothrowFunc;
+            return (cast(nothrowFunc)&implementation)(name, logErrors);
         }
     }
 
@@ -54,17 +75,35 @@ public:
     /// from Loader.loadSource().
     bool isNull() @safe nothrow const { return yaml_.isNull(); }
 
+    /// If logging is enabled, returns errors logged during construction and use 
+    /// of this Source. Otherwise returns a warning message.
+    string errorLog() @safe pure nothrow const 
+    {
+        return logErrors_ ? errorLog_ : 
+               "WARNING: Logging not enabled for this YAMLSource. Pass "
+               "logErrors == true to YAMLSource.Loader.loadSource to enable "
+               "logging\n";
+    }
+
     /// Read a value of type T to target.
     /// 
     /// Returns: true if the value was successfully read. 
     ///          false if the Source isn't convertible to specified type.
-    bool readTo(T)(out T target) @trusted nothrow const
+    bool readTo(T)(out T target) @trusted nothrow
     {
         // Hack to allow nothrow to work.
         bool implementation(ref T target)
         {
             try                    { target = yaml_.as!(const T); }
-            catch(NodeException e) { return false; }
+            catch(NodeException e) 
+            {
+                if(logErrors_)
+                {
+                    errorLog_ ~= "YAMLSource.readTo(): %s: %s\n"
+                                 .format(e, e.msg);
+                }
+                return false; 
+            }
             return true;
         }
 
@@ -72,6 +111,7 @@ public:
         return (cast(nothrowFunc)&implementation)(target); 
     }
 
+    /// Assign one YAMLSource to another.
     void opAssign(Source)(auto ref Source rhs) @safe nothrow 
         if(is(Source == YAMLSource))
     {
@@ -87,12 +127,25 @@ public:
     /// 
     /// Returns: true on success, false on failure. (e.g. if this Source is
     ///          a not a sequence, or the index is out of range).
-    bool getSequenceValue(size_t index, out YAMLSource target) @trusted nothrow const
+    bool getSequenceValue(size_t index, out YAMLSource target) @trusted nothrow
     {
         // Hack to allow nothrow to work.
         bool implementation(size_t index, ref YAMLSource target)
         {
-            if(!yaml_.isSequence || index >= yaml_.length) { return false; }
+            if(!yaml_.isSequence)
+            {
+                if(logErrors_)
+                {
+                    errorLog_ ~= "YAMLSource.getSequenceValue(): %s\n"
+                                 .format("Called getSequenceValue() on a "
+                                         "non-sequence YAMLSource (e.g. a "
+                                         "mapping or a scalar value).");
+                }
+                return false;
+            }
+
+            if(index >= yaml_.length) { return false; }
+
             try
             {
                 alias ref dyaml.node.Node delegate(size_t) const constIdx;
@@ -100,6 +153,11 @@ public:
             }
             catch(NodeException e) 
             {
+                if(logErrors_)
+                {
+                    errorLog_ ~= "YAMLSource.getSequenceValue(): %s: %s\n"
+                                 .format(e, e.msg);
+                }
                 return false; 
             }
             return true;
@@ -117,7 +175,8 @@ public:
     /// 
     /// Returns: true on success, false on failure. (e.g. if this source is
     ///          a single value instead of a mapping.)
-    bool getMappingValue(string key, out YAMLSource target) @trusted nothrow const
+    bool getMappingValue(string key, out YAMLSource target)
+        @trusted nothrow
     {
         // Hack to allow nothrow to work.
         bool implementation(string key, ref YAMLSource target)
@@ -127,7 +186,15 @@ public:
                 alias ref dyaml.node.Node delegate(string) const constIdx;
                 target = YAMLSource((cast(constIdx)&yaml_.opIndex!string)(key)); 
             }
-            catch(NodeException e) { return false; }
+            catch(NodeException e) 
+            {
+                if(logErrors_)
+                {
+                    errorLog_ ~= "YAMLSource.getMappingValue(): %s: %s\n"
+                                 .format(e, e.msg);
+                }
+                return false; 
+            }
             return true;
         }
 
