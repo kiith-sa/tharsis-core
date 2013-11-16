@@ -30,10 +30,18 @@ struct EntityPrototype
 {
 private:
     /// Storage provided to the EntityPrototype by its owner.
+    /// Both componentTypeIDs_ and components_ point to this storage.
+    ///
+    /// Passed by useMemory(). Never resized; running out of this space triggers
+    /// an assertion error.
+    ///
+    /// After a call to lockAndTrimMemory, componentTypeIDs_ and components_ are
+    /// tightly packed and the length of storage_ is decreased to only the used
+    /// space.
     ubyte[] storage_;
 
     /// Part of storage_ used to store type IDs.
-    /// 
+    ///
     /// Before lockAndTrimMemory() is called, this is at the end of storage_
     /// and in reverse order. When the memory is trimmed, this is moved right 
     /// after components_ and reversed into the same order as the order of 
@@ -47,15 +55,21 @@ private:
     /// Set to true by lockAndTrimMemory(), after which no more components can 
     /// be added.
     bool locked_ = false;
-     
+
 public:
     /// Provide memory for the prototype to use. 
-    /// 
+    ///
     /// Must be called before adding any components.
-    /// Can't be called more than once.'
-    /// 
+    /// Can only be called once.
+    ///
+    /// The size of passed memory must be enough for all components that will
+    /// be added to this prototype, plus 2 bytes per component for component
+    /// type IDs. The size of passed memory should be aligned upwards to a 
+    /// multiple of 16.
+    ///
     /// Params: memory = Memory for the prototype to use. Must be enough for all 
-    ///                  components that will be added to the prototype.
+    ///                  components that will be added to the prototype, and 
+    ///                  length must be divisible by 16.
     void useMemory(ubyte[] memory) @safe pure nothrow
     {
         assert(!locked_, "Providing memory to a locked EntityPrototype");
@@ -64,6 +78,7 @@ public:
                "has memory");
         assert(memory.length % 16 == 0, 
                "EntityPrototype memory must be divisible by 16");
+
         storage_ = memory;
         components_  = memory[0 .. 0];
         componentTypeIDs_ = cast(ushort[])memory[$ .. $];
@@ -78,11 +93,11 @@ public:
     }
 
     /// Allocate space for a component in the prototype. 
-    /// 
+    ///
     /// Can only be called between calls to useMemory() and lockAndTrimMemory().
-    /// 
-    /// Params: info = Type information about the component. Except for 
-    ///                MultiComponents, multiple components of the same type 
+    ///
+    /// Params: info = Type information about the component. Except for
+    ///                MultiComponents, multiple components of the same type
     ///                can not be added.
     /// 
     /// Returns: A slice to write the component to. The component $(B must) be
@@ -113,7 +128,9 @@ public:
 
     /// Lock the prototype disallowing any future changes.
     ///
-    /// Returns: the part of the memory passed by useMemory that is used by the 
+    /// Trims used memory and aligns it to a multiple of 16.
+    ///
+    /// Returns: The part of the memory passed by useMemory that is used by the 
     ///          prototype. The rest is unused and can be used by the caller for 
     ///          something else.
     const(ubyte)[] lockAndTrimMemory() @trusted pure nothrow
@@ -130,7 +147,7 @@ public:
         const totalBytes = components_.length + idBytes;
         assert(storage_.length % 16 == 0, 
                "ComponentPrototype storage length not divisible by 16");
-        
+
         // Align the used memory to 16.
         const alignedBytes = ((totalBytes + 15) / 16) * 16;
 
