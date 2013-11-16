@@ -534,17 +534,61 @@ public:
                   .format(bufferName!Component));
         }
 
+        /// Access past multi components of one type in the current entity.
+        ///
+        /// Params: Component = Type of components to access.
+        ///
+        /// Returns: An immutable slice to the past components.
+        immutable(Component)[] pastComponent(Component)() @safe nothrow const
+            if(isMultiComponent!Component)
+        {
+            enum id = Component.ComponentTypeID;
+            const offset = componentOffsets_[id];
+
+            mixin(q{ 
+            const length = %s.componentsInEntity(pastEntityIndex_);
+            return %s[offset .. offset + length]; 
+            }.format(countsName!id, bufferName!Component));
+        }
+
+        // Only access the future component if the process writes any.
         static if(!noFuture)
         {
 
-        /// Get a pointer to where the future component should be written for
-        /// the current entity.
-        P.FutureComponent* futureComponent() @trusted nothrow
+        // Non-multi future component.
+        static if(!isMultiComponent!FutureComponent)
         {
-            enum neededSpace   = maxComponentsPerEntity!(P.FutureComponent);
-            auto unused = futureComponents_.buffer
-                          .forceUncommittedComponentSpace(neededSpace);
-            return cast(P.FutureComponent*)(unused.ptr);
+
+        /// Get a reference to where the future component for the current entity
+        /// should be written (the process() method may still decide not to 
+        /// write it).
+        ref FutureComponent futureComponent() @trusted nothrow
+        {
+            enum neededSpace = maxComponentsPerEntity!(FutureComponent);
+            // Ensures the needed space is allocated.
+            ubyte[] unused = futureComponents_.buffer
+                             .forceUncommittedComponentSpace(neededSpace);
+            return *cast(FutureComponent*)(unused.ptr);
+        }
+
+        }
+        // Multi future component.
+        else
+        {
+
+        /// Get a slice to where to write future (multi) components for the 
+        /// current entity. The slice is at least
+        /// FutureComponent.maxComponentsPerEntity long (the process() method 
+        /// may shorten it after passed).
+        FutureComponent[] futureComponent() @trusted nothrow
+        {
+            enum maxComponents = maxComponentsPerEntity!(FutureComponent);
+            // Ensures the needed space is allocated.
+            ubyte[] unused = futureComponents_.buffer
+                             .forceUncommittedComponentSpace(maxComponents);
+            return (cast(FutureComponent*)(unused.ptr))[0 .. maxComponents];
+        }
+
         }
 
         /// Specify the number of future components written for the current 
@@ -751,6 +795,90 @@ public:
     }
 
 private:
+    /// Calls specified process() method of a Process.
+    ///
+    /// Params: F           = The process() method to call.
+    ///         process     = Process with the process() method.
+    ///         entityRange = Entity range to get the components to pass from.
+    static void callProcessMethod 
+        (alias F, P, ERange)(P process, ref ERange entityRange)
+    {
+        // True if the Process does not write to any future component.
+        // Usually these processes read past components and produce
+        // some kind of output.
+        enum noFuture   = !hasFutureComponent!P;
+        alias PastTypes = PastComponentTypes!F;
+
+        /// (CTFE) Get components to pass to a process() method, comma separated
+        /// in a string. Every item accesses a past component/multicomponents
+        /// from the component buffer.
+        string pastComponents()
+        {
+            string[] parts;
+            foreach(i, T; PastTypes)
+            {
+                parts ~= q{entityRange.pastComponent!(PastTypes[%s])}.format(i);
+            }
+            return parts.join(", ");
+        }
+
+        // Call a process() method that does not write a future component.
+        static if(noFuture)
+        {
+            mixin(q{process.process(%s);}.format(pastComponents()));
+        }
+        // The process() method writes a slice of multicomponents of some type.
+        else static if(isMultiComponent!(P.FutureComponent))
+        {
+            // Pass a slice by ref (enforced by process validation). 
+            // The process will downsize the slice to only the size it uses.
+            P.FutureComponent[] futureComponents =
+                entityRange.futureComponent();
+            // For the assert below to ensure the process() method doesn't do
+            // anything funky like change the slice to point elsewhere.
+            debug { auto oldSlice = futureComponents; }
+
+            // Call the process() method.
+            mixin(q{
+            process.process(%s, futureComponents);
+            }.format(pastComponents()));
+
+            assert(oldSlice.ptr == futureComponents.ptr && 
+                   oldSlice.length >= futureComponents.length,
+                   "Process writing a future MultiComponent either changed the "
+                   "passed future MultiComponent slice to point to another "
+                   "location, or enlarged it");
+
+            // The number of components written.
+            const componentCount = cast(ComponentCount)futureComponents.length;
+            entityRange.setFutureComponentCount(componentCount);
+        }
+        // If the future component is specified by pointer, process() may null 
+        // it, in which case the component won't exist in future.
+        else static if(futureComponentByPointer!F)
+        {
+            // This is passed to process() by reference, allowing process() to 
+            // set this to null.
+            P.FutureComponent* futureComponent = &entityRange.futureComponent();
+            mixin(q{
+            process.process(%s, futureComponent);
+            }.format(pastComponents()));
+            // If futureComponent was not set to null, the future component was
+            // written.
+            if(futureComponent !is null)
+            {
+                entityRange.setFutureComponentCount(1);
+            }
+        }
+        // Call a process() method that takes the future component by reference.
+        else
+        {
+            mixin(q{process.process(%s, entityRange.futureComponent);}
+                  .format(pastComponents()));
+            entityRange.setFutureComponentCount(1);
+        }
+    }
+
     /// A shortcut to access component type information.
     ref const(ComponentTypeInfo[Policy.maxComponentTypes]) componentTypeInfo()
         @safe pure nothrow const
@@ -933,59 +1061,4 @@ private:
     //////////////////////////////////////////
     /// END CODE CALLED BY execute_frame() ///
     //////////////////////////////////////////
-
-    /// Calls specified process() method of a Process.
-    ///
-    /// Params: F           = The process() method to call.
-    ///         process     = Process with the process() method.
-    ///         entityRange = Entity range to get the components to pass from.
-    static void callProcessMethod 
-        (alias F, P, ERange)(P process, ref ERange entityRange)
-    {
-        // True if the Process does not write to any future component.
-        // Usually processes that only read past components and produce
-        // some kind of output.
-        enum noFuture = !hasFutureComponent!P;
-        alias InTypes = PastComponentTypes!F;
-        /// (CTFE) Get a comma separated list of components to pass to a 
-        /// process() method. (Every item in this list accesses a past component
-        /// from the component buffer.
-        string pastComponents()
-        {
-            string[] parts;
-            foreach(i, T; InTypes)
-            {
-                parts ~= q{entityRange.pastComponent!(InTypes[%s])}.format(i);
-            }
-            return parts.join(", ");
-        }
-
-        // Call a process() method that does not write a future component.
-        static if(noFuture)
-        {
-            mixin(q{process.process(%s);}.format(pastComponents()));
-        }
-        // If the future component is specified by pointer, process() may null 
-        // it, in which case the component won't exist in future.
-        else static if(futureComponentByPointer!F)
-        {
-            P.FutureComponent* futureComponent = entityRange.futureComponent();
-            mixin(q{process.process(%s, futureComponent);}
-                  .format(pastComponents()));
-            // If futureComponent was not set to null, the future component was
-            // written.
-            if(futureComponent !is null)
-            {
-                entityRange.setFutureComponentCount(1);
-            }
-        }
-        // Call a process() method that takes the future component by reference.
-        else
-        {
-            mixin(q{process.process(%s, *entityRange.futureComponent);}
-                  .format(pastComponents()));
-            entityRange.setFutureComponentCount(1);
-        }
-    }
 }
-
