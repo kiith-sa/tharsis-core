@@ -520,8 +520,12 @@ public:
 
             skipDeadEntities();
         }
-        /// Get a reference to the past component of specified type in the 
-        /// current entity.
+
+        /// Access a past (non-multi) component in the current entity.
+        ///
+        /// Params: Component = Type of component to access.
+        ///
+        /// Returns: An immutable reference to the past component.
         ref immutable(Component) pastComponent(Component)() @safe nothrow const
             if(!isMultiComponent!Component)
         {
