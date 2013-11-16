@@ -743,6 +743,7 @@ public:
     ///                   constructor.
     void registerProcess(P)(P process) @trusted
     {
+        mixin validateProcess!P;
         // True if the Process does not write to any future component.
         // Usually processes that only read past components and produce
         // some kind of output.
