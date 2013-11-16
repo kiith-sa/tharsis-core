@@ -80,8 +80,10 @@ template pastComponentIDs(alias ProcessFunc)
     enum pastComponentIDs = componentIDs!(PastComponentTypes!ProcessFunc);
 }
 
-/// Get the future component type written by a process() method.
-template FutureComponentType(alias ProcessFunc)
+/// Get the raw (with any qualifiers, as a reference, pointer or slice, as 
+/// specified in the signature) future component type written by a process() 
+/// method
+template RawFutureComponentType(alias ProcessFunc)
 {
 private:
     enum paramIndex = futureComponentIndex!ProcessFunc();
@@ -89,13 +91,25 @@ private:
                   "Can't get future component type of a process() method "
                   "writing no future component.");
 public:
-    alias FutureParamType =
-        Unqual!((ParameterTypeTuple!ProcessFunc)[paramIndex]);
+    alias RawFutureComponentType = ParameterTypeTuple!ProcessFunc[paramIndex];
+}
+
+/// Get the future component type written by a process() method.
+template FutureComponentType(alias ProcessFunc)
+{
+private:
+    alias FutureParamType = Unqual!(RawFutureComponentType!ProcessFunc);
+
+public:
 
     // Get the actual component type (components may be passed by slice).
     static if(isArray!FutureParamType)
     {
         alias FutureComponentType = typeof(FutureParamType.init[0]);
+    }
+    else static if(isPointer!FutureParamType)
+    {
+        alias FutureComponentType = typeof(*FutureParamType);
     }
     else 
     {
@@ -123,8 +137,9 @@ template hasFutureComponent(Process)
 /// the component into the future entity.
 template futureComponentByPointer(alias ProcessFunc)
 {
-    enum futureComponentByPointer = hasFutureComponent!ProcessFunc &&
-                                    isPointer!(FutureComponentType!ProcessFunc);
+    enum futureComponentByPointer = 
+        hasFutureComponent!ProcessFunc &&
+        isPointer!(RawFutureComponentType!ProcessFunc);
 }
 
 /// If ProcessFunc writes to a future component, return its index in the 
