@@ -55,8 +55,8 @@ unittest
 
 /// Get past component types read by specified process() method.
 template PastComponentTypes(alias ProcessFunc)
-    if(isValidProcessMethod!ProcessFunc)
 {
+    mixin validateProcessMethod!ProcessFunc;
     // Get the actual component type (Param may be a slice).
     template BaseType(Param)
     {
@@ -149,15 +149,12 @@ size_t futureComponentIndex(alias ProcessFunc)()
     return result;
 }
 
-/// Is specified method a valid process() method?
-///
-/// Format of process() methods of a Process is not yet finalized.
-template isValidProcessMethod(alias Function)
+/// Validate a process() method.
+mixin template validateProcessMethod(alias Function)
 {
-    enum isValidProcessMethod = validate();
-
-    //TODO finish once the process() method format stabilizes.
-    bool validate()
+    // The return type does not matter; it just allows us to call this method
+    // with CTFE when this mixin is used.
+    typeof(null) validate()
     {
         alias ParamTypes          = ParameterTypeTuple!Function;
         alias ParamStorageClasses = ParameterStorageClassTuple!Function;
@@ -249,8 +246,10 @@ template isValidProcessMethod(alias Function)
         assert(nonConstCount <= 1,
                "A process() method with more than one future (non-const) " 
                "component type");
-        return true;
+        return null;
     }
+
+    enum dummy = validate();
 }
 
 
