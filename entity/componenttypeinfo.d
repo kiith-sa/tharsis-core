@@ -79,7 +79,20 @@ template validateComponent(Component)
                   "MultiComponent types must specify maximum component "
                   "count per entity: "
                   "add 'enum maxComponentsPerEntity = <number>'");
-    //XXX assert no elaborate dtor
+    static assert(!std.traits.hasElaborateDestructor!Component,
+                  "Component type with an elaborate destructor: "
+                  "Neither a component type nor any of its data members may "
+                  "define a destructor.");
+    //TODO annotation allowing the user to force a pointer/slice/class reference
+    //     data member (e.g. to data allocated by a process).
+    static assert(!std.traits.hasIndirections!Component,
+                  "Component type with indirections (e.g. a pointer, slice "
+                  "or class reference data member. Components are not allowed "
+                  "to own any dynamically allocated memory; MultiComponents "
+                  "can be used to emulate arrays. Pointers or slices to "
+                  "externally allocated data, or class references may be "
+                  "allowed in future with a special annotation, but this is "
+                  "not implemented yet");
 }
 
 /// Type information about a component type.
