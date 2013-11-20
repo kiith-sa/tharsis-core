@@ -1,0 +1,428 @@
+\documentclass[ignorenonframetext,]{beamer}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+% \usepackage{ulem}
+\ifxetex
+  \usepackage{fontspec,xltxtra,xunicode}
+  \defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
+\else
+  \ifluatex
+    \usepackage{fontspec}
+    \defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
+  \else
+    \usepackage[utf8]{inputenc}
+  \fi
+\fi
+\usepackage{enumerate}
+\usepackage{graphicx}
+
+\title{A concurrent component-based entity architecture for game development}
+\author{Ferdinand Majerech}
+\author[Ferdinand Majerech]{Ferdinand Majerech\\{\small Supervisor: RNDr. Jozef Jirásek, PhD. \\Consultant: Mgr. Samuel Kupka}}
+\institute[UPJŠ]{Univerzita Pavla Jozefa Šafárika v Košiciach\\UPJŠ}
+
+
+\begin{document}
+
+\begin{frame}[plain] 
+  \titlepage
+\end{frame}
+
+
+\begin{frame}\frametitle{Entities}
+
+\begin{itemize}
+\item
+  Game entities:
+
+  \begin{itemize}
+  \item
+    Tree
+  \item
+    Localised sound effect
+  \item
+    Tank
+  \item
+    Tank with a jetpack and shark launcher
+  \end{itemize}
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}\frametitle{Entities - requirements}
+
+\begin{itemize}
+\item
+  As lightweight as possible
+\item
+  Data-defined
+
+  - Obsolete the programmer
+\item
+  Easy to modify
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}\frametitle{OOP entities v1}
+
+% \includegraphics{OOPEntities1.png}
+\begin{figure}[h!]
+\centerline{\includegraphics[width=0.8\textwidth]{OOPEntities1.png}}
+\end{figure}
+
+\begin{itemize}
+\item
+  This is simply not sane
+\item
+  Blobs can be data-defined, though
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}\frametitle{OOP entities v2}
+
+% \includegraphics{OOPEntities2.png}
+\begin{figure}[h!]
+\centerline{\includegraphics[width=0.8\textwidth]{OOPEntities2.png}}
+\end{figure}
+
+\begin{itemize}
+\item
+  Virtuals everywhere
+\item
+  Entities need to \emph{implement} interfaces
+
+  \begin{itemize}
+  \item
+    Which will lead to \emph{some} duplication in the \emph{best} case
+  \item
+    And can be inconsistent
+  \end{itemize}
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}\frametitle{Components v1}
+
+\begin{itemize}
+\item
+  Entity is an ID associated with components
+\item
+  Components consist of data and logic
+\item
+  Components may depend on other components
+\item
+  Expensive inter-component communication
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}\frametitle{RDBMS inspired components (current)}
+
+\begin{itemize}
+\item
+  Components are plain data (columns)
+\item
+  1 or 0 components of any type per entity
+\item
+  Logic is separated into \emph{systems}
+
+  \begin{itemize}
+  \item
+    A system specifies component types it processes.
+  \item
+    Entity system calls the process for every entity with matching
+    components.
+  \end{itemize}
+\item
+  Entities fully defined in data, emergent behavior
+\item
+  In some frameworks entities can be modified at run time
+\item
+  Systems affect each other during an update
+\item
+  Threading is still difficult
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}\frametitle{Tharsis (goals)}
+
+\begin{itemize}
+\item
+  Entity system designed for threading
+  \begin{itemize}
+  \item
+    \emph{Processes} (systems) don't affect each other during an update
+  \item
+    Processes automatically assigned to threads at run-time (unless overridden)
+  \item
+    Avoid locking where possible
+  \end{itemize}
+\item
+  Lightweight
+  \begin{itemize}
+  \item
+    Avoid cache misses and virtuals, inline what we can
+  \item
+    Process-specific generated code should minimize execution overhead
+  \end{itemize}
+
+\item
+  Easy to use and type-safe (with compile-time validation)
+\item
+  Data-driven entities that can be efficiently altered at run time
+\item
+  Builtin statistics; profiling?
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}\frametitle{A typical multi-threaded game (X:Rebirth)}
+
+\begin{itemize}
+\item
+  Main Thread 1
+\item
+  Main Thread 2
+\item
+  Graphic Driver Code Thread
+\item
+  Path Finding Thread
+\item
+  Sound Thread
+\item
+  Loading Thread
+\item
+  Workers where spawning won't murder performance
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}\frametitle{A (hypothetical) Tharsis game}
+
+\begin{itemize}
+\item
+  Any new piece of functionality is a new process.
+\item
+  Physics process
+\item
+  Locomotion process
+\item
+  Visual process
+\item
+  Controller process
+\item
+  Script process
+\item
+  Collision process
+\item
+  Spawner process
+\item
+  Sound process
+\item
+  Health process
+\item
+  Weapon process
+\item
+  \ldots{}
+\item
+  If enough cores, a process will be in a separate thread
+\item
+  Otherwise multiple processes will share a thread
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}\frametitle{Past and future}
+
+\begin{itemize}
+\item
+  Immutable data can be read without locking
+\item
+  \emph{Past}: a copy of all game state from the previous update
+
+  \begin{itemize}
+  \item
+    Processes don't affect each other during an update
+  \item
+    Processes can read data without locking
+  \end{itemize}
+
+\item
+  \emph{Future}: game state generated by processes
+
+  \begin{itemize}
+  \item
+    Generated on the fly, leaving no gaps
+  \item
+    To remove a component, don't copy it to future
+  \item
+    A process can only write one component type
+  \end{itemize}
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}\frametitle{Memory organization}
+
+\begin{itemize}
+\item
+  Arrays (past, future entities)
+\item
+  More arrays (past, future components of all types)
+\item
+  Even more arrays (auxiliary data (TBD))
+\item
+  CPUs like arrays a lot
+\item
+  Preallocate everything, only allocate in emergency
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}\frametitle{Memory organization}
+
+% \includegraphics{TharsisMemory.png}
+\begin{figure}[h!]
+\centerline{\includegraphics[width=0.8\textwidth]{TharsisMemory.png}}
+\end{figure}
+
+\end{frame}
+
+\begin{frame}\frametitle{Overhead}
+
+\begin{itemize}
+\item
+  Between updates
+\item
+  Per entity
+\item
+  Data must still be copied if a process is not scheduled to run
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}\frametitle{Overhead}
+
+% \includegraphics{TharsisFrame.png}
+\begin{figure}[h!]
+\centerline{\includegraphics[width=0.8\textwidth]{TharsisFrame.png}}
+\end{figure}
+
+\end{frame}
+
+\begin{frame}\frametitle{Scheduling}
+
+\begin{itemize}
+\item
+  TBD
+\item
+  Ensure equal load, avoid long updates
+\item
+  Processes should be able to skip updates if needed
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}\frametitle{Uncertainties}
+
+\begin{itemize}
+\item
+  Inter-system communication
+\item
+  Spatial management
+\item
+  Resource locking (entity creation, resource loading)
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}\frametitle{Sources}
+
+\begin{itemize}
+\item
+  Main inspiration: Adam Martin. \emph{Entity Systems are the future of
+  MMOG development}
+  (2007)
+\item
+  Chris Stoy. \emph{Game Object Component System} Game Programming Gems
+  6 (2006)
+\item
+  Michael A. Carr-Robb-John. \emph{The Game Entity} Game Developer
+  Magazine November 2011
+\item
+  Terrance Cohen. \emph{A Dynamic Component Architecture for High
+  Performance Gameplay} GDC Canada (2010)
+\item
+  Tony Albrecht. \emph{Pitfalls of Object Oriented Programming} Game
+  Connect: Asia Pacific 2009
+% \item
+%   Marcin Chady. \emph{Theory and Practice of the Game Object Component
+%   Architecture} GDC 2009
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}\frametitle{Roadmap}
+
+\begin{itemize}
+\item
+  Get all features to work without threads
+
+  \begin{itemize}
+  \item
+    Blog
+  \end{itemize}
+\item
+  Get threads to work
+
+  \begin{itemize}
+  \item
+    Fix unexpected issues
+  \item
+    Blog
+  \end{itemize}
+\item
+  Scheduling
+
+  \begin{itemize}
+  \item
+    Blog
+  \end{itemize}
+\item
+  Write paper
+
+  \begin{itemize}
+  \item
+    Blog?
+  \end{itemize}
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}\frametitle{More info}
+
+\begin{itemize}
+\item
+  D language
+\item
+  Open source, Boost license
+\item
+  Platform independent (x86 atm, ARM as D support matures)
+\item
+  Source:
+  \href{https://github.com/kiith-sa/Tharsis}{https://github.com/kiith-sa/Tharsis}
+\item
+  Design:
+  \href{https://github.com/kiith-sa/Tharsis/blob/master/tharsis.rst}{https://github.com/kiith-sa/Tharsis/blob/master/tharsis.rst}
+\item
+  Blog (not there yet):
+  \href{http://defenestrate.eu}{http://defenestrate.eu}
+\end{itemize}
+
+\end{frame}
+
+\end{document}
