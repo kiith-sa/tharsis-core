@@ -178,6 +178,21 @@ struct EntityPrototypeResource
     {
         /// The file name to load the prototype from.
         string fileName;
+
+        /// Load a Descriptor from a Source such as YAML.
+        ///
+        /// Allows to load non-trivial descriptors.
+        /// 
+        /// Params:  source = Source to load from.
+        ///          result = The descriptor will be written here, if loaded 
+        ///                   succesfully.
+        ///
+        /// Returns: true if succesfully loaded, false otherwise.
+        static bool load(Source)(ref Source source, out Descriptor result) 
+            @safe nothrow
+        {
+            return source.readTo(result.fileName);
+        }
     }
 
     /// No default construction.
