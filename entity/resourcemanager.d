@@ -14,6 +14,10 @@ import tharsis.entity.entitymanager;
 /// Base class to provide unified access to resource managers.
 abstract class AbstractResourceManager
 {
+public:
+    /// Get the resource type managed by this resource manager.
+    TypeInfo managedResourceType() @safe pure nothrow const;
+
 protected:
     /// Called by EntityManager between frames. 
     /// 
@@ -61,6 +65,11 @@ abstract class ResourceManager(Resource) : AbstractResourceManager
     alias Resource.Descriptor Descriptor;
 
 public:
+    override TypeInfo managedResourceType() @safe pure nothrow const
+    {
+        return typeid(Resource);
+    }
+
     /// Get a handle to resource defined with specified descriptor.
     /// 
     /// If the resource doesn't exist yet, this will create it.
