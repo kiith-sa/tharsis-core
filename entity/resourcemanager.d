@@ -25,7 +25,7 @@ protected:
     void update_() @trusted nothrow;
 
 package:
-    /// See_Also: update()_
+    /// See_Also: update_()
     final void update() @safe nothrow { update_(); }
 }
 
