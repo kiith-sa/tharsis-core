@@ -24,9 +24,26 @@ protected:
     /// Can handle e.g. resource loading.
     void update_() @trusted nothrow;
 
+    /// Get a raw (untyped) handle to a resource described by a descriptor.
+    ///
+    /// Params: descriptor = An untyped pointer to the descriptor. The 
+    ///                      descriptor must be of type Resource.Descriptor 
+    ///                      where Resource is the resource type managed by this 
+    ///                      resource manager.
+    /// 
+    /// Returns: A raw handle to the resource (which is in the ResourceState.New
+    ///          state).
+    RawResourceHandle rawHandle_(void* descriptor) @trusted nothrow;
+
 package:
     /// See_Also: update_()
     final void update() @safe nothrow { update_(); }
+
+    /// See_Also: rawHandle_()
+    final RawResourceHandle rawHandle(void* descriptor) @safe nothrow 
+    {
+        return rawHandle_(descriptor); 
+    }
 }
 
 /// An "untyped" resource handle, used where resource type is not known at
@@ -63,6 +80,12 @@ abstract class ResourceManager(Resource) : AbstractResourceManager
     alias ResourceHandle!Resource Handle;
     /// Ditto.
     alias Resource.Descriptor Descriptor;
+
+protected:
+    override RawResourceHandle rawHandle_(void* descriptor) @trusted nothrow
+    {
+        return handle(*cast(Descriptor*)descriptor).resourceID_;
+    }
 
 public:
     override TypeInfo managedResourceType() @safe pure nothrow const
