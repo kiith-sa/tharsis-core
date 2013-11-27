@@ -25,6 +25,10 @@ package:
     final void update() @safe nothrow { update_(); }
 }
 
+/// An "untyped" resource handle, used where resource type is not known at
+/// compile-time.
+package alias uint RawResourceHandle;
+
 /// Base class for resource managers managing a specific Resource type.
 /// 
 /// Any Resource type must define two utility types:
