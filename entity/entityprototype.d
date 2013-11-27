@@ -173,14 +173,6 @@ public:
 /// A resource wrapping an EntityPrototype. Managed by PrototypeManager.
 struct EntityPrototypeResource 
 {
-    /// Resource handle.
-    struct Handle 
-    {
-    package:
-        /// A simple unique ID.
-        uint resourceID_ = uint.max;
-    }
-
     /// Resource descriptor.
     struct Descriptor 
     {

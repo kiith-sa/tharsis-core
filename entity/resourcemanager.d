@@ -29,17 +29,34 @@ package:
 /// compile-time.
 package alias uint RawResourceHandle;
 
+
+/// Resource handle.
+/// 
+/// Templated by the resource type.
+struct ResourceHandle(R)
+{
+    alias Resource = R;
+package:
+    /// A simple unique ID.
+    RawResourceHandle resourceID_ = uint.max;
+
+    /// Construct from a raw handle.
+    this(const RawResourceHandle raw) @safe pure nothrow
+    {
+        resourceID_ = raw;
+    }
+}
+
+
 /// Base class for resource managers managing a specific Resource type.
 /// 
-/// Any Resource type must define two utility types:
-///
-/// Resource.Handle that is used to access a Resource instance,
-/// and Resource.Descriptor which stores the data needed for the ResourceManager
-/// to initialize the Resource (e.g. a file name).
+/// Any Resource type must define a Descriptor type, which stores the data 
+/// needed for the ResourceManager to initialize the Resource (e.g. a file 
+/// name).
 abstract class ResourceManager(Resource) : AbstractResourceManager
 {
     /// Shortcut alias.
-    alias Resource.Handle     Handle;
+    alias ResourceHandle!Resource Handle;
     /// Ditto.
     alias Resource.Descriptor Descriptor;
 
