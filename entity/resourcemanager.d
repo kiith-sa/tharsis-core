@@ -56,7 +56,13 @@ package alias uint RawResourceHandle;
 /// Templated by the resource type.
 struct ResourceHandle(R)
 {
+public:
+    /// The resource type this handle is used with.
+    ///
+    /// Public to allow generic code to determine the resource type a handle 
+    /// points to.
     alias Resource = R;
+
 package:
     /// A simple unique ID.
     RawResourceHandle resourceID_ = uint.max;
