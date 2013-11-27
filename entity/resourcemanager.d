@@ -50,6 +50,20 @@ package:
 /// compile-time.
 package alias uint RawResourceHandle;
 
+/// A type of delegates used to get a resource handles without compile-time
+/// type information.
+/// 
+/// Used when initializing handles in components to avoid passing compile-time 
+/// resource type parameters all over the place.
+///
+/// Params: TypeInfo = Type of resource to get the handle for.
+///         void*    = A void pointer to the resource descriptor.
+///                    The descriptor must be of the Descriptor type specified 
+///                    in the resource type.
+///
+/// Returns: A raw handle to the resource.
+package alias RawResourceHandle delegate(TypeInfo, void*) nothrow 
+        GetResourceHandle;
 
 /// Resource handle.
 /// 
