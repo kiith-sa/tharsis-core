@@ -256,3 +256,22 @@ public:
         return result;
     }
 }
+
+private:
+
+/// Is Component.field a resource handle?
+///
+/// Params: Component = A Component type.
+///         field     = Name of a data member of Component.
+///
+/// Returns: true if the field data member of Component is a resource handle,
+///          false otherwise.
+bool isResourceHandle(Component, string field)()
+{
+    mixin(q{
+    alias fieldType = Unqual!(typeof(Component.%s));
+    }.format(field));
+
+    enum fieldTypeString = fieldType.stringof;
+    return fieldTypeString.startsWith("ResourceHandle!");
+}
