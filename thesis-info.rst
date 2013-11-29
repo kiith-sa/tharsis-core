@@ -18,22 +18,18 @@ Thesis information
 * Sources:
 
   - Adam Martin. *Entity Systems are the future of MMOG development*
-
     http://t-machine.org/index.php/2007/09/03/entity-systems-are-the-future-of-mmog-development-part-1/,
     2007
 
   - Chris Stoy. *Game Object Component System* Game Programming Gems 6, 2006
 
   - Michael A. Carr-Robb-John. *The Game Entity* Game Developer Magazine, 
-
     November 2011
 
   - Terrance Cohen. *A Dynamic Component Architecture for High Performance Gameplay*
-
     GDC Canada, 2010
 
   - Tony Albrecht. *Pitfalls of Object Oriented Programming* 
-
     Game Connect: Asia Pacific, 2009.
 ..  \item
 ..    Marcin Chady. \emph{Theory and Practice of the Game Object Component
