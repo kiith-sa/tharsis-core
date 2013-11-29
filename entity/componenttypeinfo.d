@@ -255,6 +255,81 @@ public:
 
         return result;
     }
+
+private:
+    /// Loads a field of a Component from a Source.
+    ///
+    /// Params: Source            = The Source type to load from 
+    ///                             (e.g. YAMLSource).
+    ///         Component         = Component type we're loading.
+    ///         fieldName         = Name of the data member of Component to
+    ///                             load.
+    ///         componentBuffer   = The component we're loading as raw bytes.
+    ///         sourceVoid        = A void pointer to the Source we're loading
+    ///                             from.
+    ///         getResourceHandle = A function that will get a raw handle to a 
+    ///                             resource when passed resource type and 
+    ///                             descriptor. Used to initialize component 
+    ///                             fields that are resource handles.
+    static bool loadField(Source, Component, string fieldName)
+                         (ubyte[] componentBuffer, void* sourceVoid, 
+                          GetResourceHandle getResourceHandle)
+    {
+        assert(componentBuffer.length == Component.sizeof, 
+               "Size of component buffer doesn't match its type");
+
+        // TODO if a field has an explicit default value, allow it to be 
+        //      unspecified and set it to the default value here.
+
+        // The component is stored in a mapping; the field is stored in a 
+        // Source that is one of the values in that mapping.
+        Source fieldSource;
+        Source* source = cast(Source*)sourceVoid;
+        if(!source.getMappingValue(fieldName, fieldSource))
+        {
+            writefln("Failed to load component '%s': Couldn't find field: '%s'",
+                     Component.stringof, fieldName);
+            return false;
+        }
+        mixin(q{
+        auto fieldPtr = &((cast(Component*)componentBuffer.ptr).%s);
+        }.format(fieldName));
+        alias typeof(*fieldPtr) FieldType;
+
+        // If a component property is a resource handle, the Source contains a
+        // resource descriptor. We need to load the descriptor and then get the
+        // handle by getResourceHandle(), which will create a resource with the
+        // correct resource manager and return a handle to it.
+        static if(isResourceHandle!(Component, fieldName))
+        {
+            alias Resource   = FieldType.Resource;
+            alias Descriptor = Resource.Descriptor;
+            alias Handle     = ResourceHandle!Resource;
+
+            // Load the descriptor of the resource.
+            Descriptor desc;
+            if(!Descriptor.load(fieldSource, desc))
+            {
+                writefln("Failed to load component '%s' : Field '%s' does not "
+                         "match expected type: '%s'",
+                         Component.stringof, fieldName, Descriptor.stringof);
+                return false;
+            }
+
+            // Initialize the field which is a handle to the resource.
+            *fieldPtr = Handle(getResourceHandle(typeid(Resource), &desc));
+        }
+        // By default, properties are stored in the Source directly as values.
+        else if(!fieldSource.readTo(*fieldPtr))
+        {
+            writefln("Failed to load component '%s' : Field '%s' does not "
+                     "match expected type: '%s'",
+                     Component.stringof, fieldName, FieldType.stringof);
+            return false;
+        }
+
+        return true;
+    }
 }
 
 private:
