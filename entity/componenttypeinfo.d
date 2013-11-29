@@ -213,44 +213,10 @@ public:
         result.maxPerEntity = maxComponentsPerEntity!Component();
 
         // Compile-time foreach.
-        foreach(name; Fields)
+        foreach(f; Fields)
         {
-            // Generate a function to load this field.
-            // This whole thing is a huge mixin; search for '%s' to see the 
-            // substitutions.
-            mixin(q{
-            result.fields ~= Field(cast(Field.LoadField)
-            function bool(ubyte[] componentBuffer, void* sourceVoid)
-            {
-                Source* source = cast(Source*)sourceVoid;
-                assert(componentBuffer.length == Component.sizeof, 
-                       "Size of component buffer doesn't match its type");
-
-                // TODO if a field has a default value, allow it to be 
-                //      unspecified and set it to the default value here.
-                Source value;
-                if(!source.getMappingValue(name, value))
-                {
-                    writeln("Failed to load component '", Component.stringof,
-                            "' : Could not find field: '", name, "'");
-                    return false;
-                }
-
-                alias typeof(Component.%s) FieldType;
-
-                FieldType* field = &((cast(Component*)componentBuffer.ptr).%s);
-
-                if(!value.readTo(*field))
-                {
-                    writeln("Failed to load component '", Component.stringof, 
-                            "' : Field '", name, "' does not match expected "
-                            "type: '", FieldType.stringof, "'");
-                    return false;
-                }
-
-                return true;
-            });
-            }.format(name, name));
+            result.fields ~= 
+                Field(cast(Field.LoadField)&loadField!(Source, Component, f));
         }
 
         return result;
