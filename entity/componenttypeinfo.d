@@ -137,17 +137,22 @@ public:
     {
         /// A function type to load the field.
         ///
-        /// Params: ubyte[]: Component to load the field into, passed as a
-        ///                  raw byte array.
-        ///         void*:   Data source to load the field from.
-        ///                  (e.g. a YAML node defining the component)
-        ///                  Although a void pointer is used, the source must 
-        ///                  match the type of the source used with the 
-        ///                  construct! function that created this 
-        ///                  ComponentTypeInfo.
+        /// Params: ubyte[]:          Component to load the field into, passed 
+        ///                           as a raw byte array.
+        ///         void*:            Data source to load the field from.
+        ///                           (e.g. a YAML node defining the component)
+        ///                           Although a void pointer is used, the 
+        ///                           source must match the type of the source
+        ///                           used with the construct! function that 
+        ///                           created this ComponentTypeInfo.
+        ///         GetResourceHandle A delegate that, given (at runtime) a 
+        ///                           resource type and descriptor, returns a
+        ///                           raw resource handle. Used to initialize 
+        ///                           fields that are resource handles.
         ///
         /// Returns: true if the field was successfully loaded, false otherwise.
-        alias bool function(ubyte[], void*) nothrow LoadField;
+        alias bool function(ubyte[], void*, GetResourceHandle) 
+            nothrow LoadField;
 
         /// The function to load the field.
         LoadField loadField;
@@ -162,10 +167,18 @@ public:
 
     /// Loads a component of this component type.
     ///
-    /// Params:  componentData = Component to load into, as a raw bytes buffer.
-    ///          source        = Source to load the component from (e.g. a YAML 
-    ///                          node defining the component).
-    bool loadComponent(Source)(ubyte[] componentData, ref Source source)
+    /// Params:  componentData     = Component to load into, as a raw bytes 
+    ///                              buffer.
+    ///          source            = Source to load the component from (e.g. a 
+    ///                              YAML node defining the component).
+    ///          GetResourceHandle = A delegate that, given (at runtime) a 
+    ///                              resource type and descriptor, returns a
+    ///                              raw resource handle. Used to initialize 
+    ///                              fields that are resource handles.
+    bool loadComponent(Source)
+                      (ubyte[] componentData, 
+                       ref Source source,
+                       GetResourceHandle getResourceHandle)
         @trusted nothrow const
     {
         assert(typeid(Source) is sourceType_, 
@@ -178,9 +191,16 @@ public:
         //      (note; Field struct must include the name of the field for this)
         assert(componentData.length == size, 
                "Size of component to load doesn't match its component type");
+        // Try to load all the fields. If we fail to load any single field,
+        // loading fails.
         foreach(ref f; fields)
         {
-            if(!f.loadField(componentData, cast(void*)&source)) {return false;}
+            if(!f.loadField(componentData, 
+                            cast(void*)&source,
+                            getResourceHandle))
+            {
+                return false;
+            }
         }
 
         return true;
