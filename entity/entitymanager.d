@@ -816,6 +816,7 @@ public:
         processes_ ~= new ProcessWrapper!(P, Policy)(process, &runProcess);
     }
 
+    //XXX need a "locked" state when no new stuff can be registered.
     /// Register specified resource manager.
     ///
     /// Once registered, components may refer to resources managed by this
@@ -823,7 +824,31 @@ public:
     void registerResourceManager(Manager)(Manager manager) @safe pure nothrow
         if(is(Manager : AbstractResourceManager))
     {
+        //XXX assert no other manager manages this type
         resourceManagers_ ~= manager;
+    }
+
+package:
+    /// Get a resource handle without compile-time type information.
+    ///
+    /// Params: type       = Type of the resource. There must be a resource 
+    ///                      manager managing resources of this type.
+    ///         descriptor = A void pointer to the descriptor of the resource.
+    ///                      The actual type of the descriptor must be the 
+    ///                      Descriptor type of the resource type.
+    ///
+    /// Returns: A raw handle to the resource.
+    RawResourceHandle rawResourceHandle(TypeInfo type, void* descriptor)
+        nothrow
+    {
+        foreach(manager; resourceManagers_)
+        {
+            if(manager.managedResourceType is type)
+            {
+                return manager.rawHandle(descriptor);
+            }
+        }
+        assert(false, "No resource manager for type " ~ to!string(type));
     }
 
 private:
