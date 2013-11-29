@@ -198,7 +198,7 @@ public:
         result.id          = Component.ComponentTypeID;
         result.size        = Component.sizeof;
         result.isMulti     = isMultiComponent!Component;
-        result.name        = fullName[0 .. fullName.length - "Component".length];
+        result.name        = fullName[0 .. $ - "Component".length];
         result.sourceName  = result.name[0 .. 1].toLower ~ result.name[1 .. $];
         result.fields.reserve(Fields.length);
 
