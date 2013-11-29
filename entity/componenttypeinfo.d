@@ -16,9 +16,10 @@ import std.traits;
 import std.typetuple;
 
 import tharsis.util.traits;
-
-
 import tharsis.entity.lifecomponent;
+import tharsis.entity.resourcemanager;
+
+
 /// A tuple of all builtin component types.
 alias TypeTuple!(LifeComponent) BuiltinComponents;
 
