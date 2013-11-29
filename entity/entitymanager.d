@@ -52,7 +52,7 @@ class EntityManager(Policy)
 private:
     /// If writtenComponentTypes_[i] is true, there is a process that writes 
     /// components of type with ComponentTypeID equal to i.
-    bool[Policy.maxComponentTypes] writtenComponentTypes_;
+    bool[maxComponentTypes!Policy] writtenComponentTypes_;
 
     /// Multiplier to apply when preallocating buffers.
     double allocMult_ = 1.0;
@@ -332,7 +332,7 @@ public:
     {
         /// Stores component/component count buffers for all component types at 
         /// indices set by the ComponentTypeID members of the component types.
-        ComponentTypeState[Policy.maxComponentTypes] self_;
+        ComponentTypeState[maxComponentTypes!Policy] self_;
 
         /// Access the component type state array directly.
         alias self_ this;
@@ -389,7 +389,7 @@ public:
 
         // Indices of the components of the current entity in past component 
         // buffers. Only the indices of iterated component types are used.
-        size_t[Policy.maxComponentTypes] componentOffsets_;
+        size_t[maxComponentTypes!Policy] componentOffsets_;
 
         // Index of the past entity we're currently reading.
         size_t pastEntityIndex_ = 0;
@@ -937,7 +937,7 @@ private:
     }
 
     /// A shortcut to access component type information.
-    ref const(ComponentTypeInfo[Policy.maxComponentTypes]) componentTypeInfo()
+    ref const(ComponentTypeInfo[maxComponentTypes!Policy]) componentTypeInfo()
         @safe pure nothrow const
     {
         return componentTypeManager_.componentTypeInfo;
@@ -1082,7 +1082,7 @@ private:
             const(ubyte)[] rawBytes = prototype.rawComponentBytes;
 
             // Component counts of each component type for this entity.
-            ComponentCount[Policy.maxComponentTypes] componentCounts;
+            ComponentCount[maxComponentTypes!Policy] componentCounts;
             // Copy components from the prototype to component buffers.
             foreach(typeID; prototype.componentTypeIDs)
             {
@@ -1157,7 +1157,7 @@ unittest
 
     struct TimeoutComponent
     {
-        enum ushort ComponentTypeID = maxBuiltinComponentTypes + 1;
+        enum ushort ComponentTypeID = userComponentTypeID!1;
 
         enum minPrealloc = 8192;
 
@@ -1166,7 +1166,7 @@ unittest
 
     struct PhysicsComponent
     {
-        enum ushort ComponentTypeID = maxBuiltinComponentTypes + 2;
+        enum ushort ComponentTypeID = userComponentTypeID!2;
 
         enum minPrealloc = 16384;
 

@@ -21,11 +21,12 @@ import tharsis.entity.componenttypeinfo;
 /// Default policy controlling compile-time parameters to the entity system.
 struct DefaultEntityPolicy
 {
-    /// Maximum possible component type count.
+    /// Maximum possible number of user-defined component types.
     ///
     /// ComponentTypeIDs of user-defined component types must be 
-    /// >= maxBuiltinComponentTypes and < maxComponentTypes.
-    enum maxComponentTypes = 64;
+    /// >= maxReservedComponentTypes and 
+    /// <  maxReservedComponentTypes + maxUserComponentTypes.
+    enum maxUserComponentTypes = 64;
 
     /// Maximum entities added during one frame.
     enum maxNewEntitiesPerFrame = 4096;
@@ -52,10 +53,18 @@ struct DefaultEntityPolicy
 /// Check if an entity policy is valid.
 template validateEntityPolicy(Policy)
 {
-    static assert(Policy.maxComponentTypes > maxBuiltinComponentTypes,
-                  "maxComponentTypes too low");
     static assert(std.traits.isUnsigned!(Policy.ComponentCount),
                   "ComponentCount must be an unsigned integer type");
     static assert(Policy.reallocMult > 1.0,
                   "reallocMult must be greater than 1");
+}
+
+/// The maximum possible number of component types when using specified entity 
+/// policy, , including builtins, defaults and user defined.
+template maxComponentTypes(Policy)
+{
+    enum maxComponentTypes = 
+        maxReservedComponentTypes + Policy.maxUserComponentTypes;
+    static assert(maxComponentTypes < ushort.max,
+                  "Too many component types");
 }

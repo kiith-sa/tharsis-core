@@ -24,10 +24,30 @@ import tharsis.entity.resourcemanager;
 alias TypeTuple!(LifeComponent) BuiltinComponents;
 
 /// Maximum possible number of builtin, mandatory component types.
+package enum ushort maxBuiltinComponentTypes = 8;
+
+/// Maximum possible number of component types in the 'defaults' package.
+package enum ushort maxDefaultsComponentTypes = 24;
+
+/// The number of component type IDs reserved for tharsis builtins and the 
+/// defaults package.
 ///
-/// Component type IDs of user-defined components should add to this number to 
-/// avoid collisions with builtin components.
-enum ushort maxBuiltinComponentTypes = 8;
+/// Component type IDs of user-defined should use userComponentTypeID to avoid
+/// collisions with builtin components.
+enum ushort maxReservedComponentTypes =
+    maxBuiltinComponentTypes + maxDefaultsComponentTypes;
+ 
+/// Generate a component type ID for a user-defined component type.
+///
+/// Params: base = The base component type ID specified by the user. This must 
+///                be different for every user-defined component type and must 
+///                be less that the maxUserComponentTypes enum in the Policy 
+///                parameter of the EntityManager; by default, this is 64.
+template userComponentTypeID(ushort base)
+{
+    enum userComponentTypeID =
+        maxBuiltinComponentTypes + maxDefaultsComponentTypes + base;
+}
 
 /// A 'null' component type ID, e.g. to specify a unused component buffer.
 enum ushort nullComponentTypeID = 0;
