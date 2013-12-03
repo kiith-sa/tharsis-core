@@ -156,6 +156,8 @@ enum ResourceState
 {
     /// The resource has not been loaded yet.
     New,
+    /// The resource is currently being loaded.
+    Loading,
     /// The resource has been loaded successfully and can be used.
     Loaded,
     /// The resource has failed to load and can not be used.
