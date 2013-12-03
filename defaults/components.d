@@ -1,0 +1,70 @@
+//          Copyright Ferdinand Majerech 2013.
+// Distributed under the Boost Software License, Version 1.0.
+//    (See accompanying file LICENSE_1_0.txt or copy at
+//          http://www.boost.org/LICENSE_1_0.txt)
+
+module tharsis.defaults.components;
+
+
+import tharsis.entity.componenttypeinfo;
+import tharsis.entity.entityprototype;
+public import tharsis.entity.lifecomponent;
+import tharsis.entity.resourcemanager;
+
+/// Contains data about an entity to spawn.
+///
+/// The condition which triggers the spawn is represented by a
+/// TimedSpawnConditionMultiComponent, and may be represented by other
+/// spawn condition component types in future.
+@("defaultsComponent") 
+struct SpawnerMultiComponent 
+{
+    enum ComponentTypeID = maxBuiltinComponentTypes + 1;
+
+    /// Resource handle to the prototype of the entity to spawn.
+    ResourceHandle!EntityPrototypeResource spawnPrototype_;
+
+    /// It's unlikely that one entity would spawn more than 1024 different 
+    /// entities.
+    enum maxComponentsPerEntity = 1024;
+
+    /// Spawn conditions match this to specify which SpawnerMultiComponent they 
+    /// affect.
+    ushort spawnerID;
+
+}
+unittest 
+{
+
+    import tharsis.defaults.yamlsource;
+    import tharsis.entity.componenttypemanager;
+    auto compTypeMgr = 
+        new ComponentTypeManager!YAMLSource(YAMLSource.Loader());
+    compTypeMgr.registerComponentTypes!SpawnerMultiComponent();
+}
+
+/// Triggers a spawn after specified time.
+///
+/// Also supports periodic spawns.
+@("defaultsComponent") 
+struct TimedSpawnConditionMultiComponent
+{
+    enum ComponentTypeID = maxBuiltinComponentTypes + 2;
+
+    /// Should be enough even for extreme cases.
+    enum maxComponentsPerEntity = 1024;
+
+    /// Time since the creation of the entity when to spawn.
+    ///
+    /// If periodic, this is the period.
+    float time;
+    /// The time left until the condition is triggered.
+    ///
+    /// Can be set from the start to a different value to force the condition to 
+    /// be triggered earlier.
+    float timeLeft;
+    /// If true, spawns periodically, not just once.
+    bool periodic;
+    /// A condition applies to a SpawnerMultiComponent with matching spawnerID.
+    ushort spawnerID;
+}
