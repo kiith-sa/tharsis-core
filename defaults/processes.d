@@ -64,21 +64,22 @@ public:
         {
             foreach(ref condition; spawnConditions)
             {
-                // Spawn if the condition matches the spawner and 
-                // timeLeft is <= 0.
-                if(condition.spawnerID != spawner.spawnerID || 
-                   condition.timeLeft > 0.0f) 
-                {
-                    continue; 
-                }
+                // Don't even consider combinations where the spawner ID doesn't
+                // match.
+                if(condition.spawnerID != spawner.spawnerID) { continue; }
 
+                // Regardless of spawn time, if spawner ID does match, we will
+                // likely want to spawn this sooner or later, so make sure the 
+                // prototype is loaded.
                 const protoHandle = spawner.spawnPrototype_;
                 const state = prototypeManager_.state(protoHandle);
-
                 if(state == ResourceState.New)
                 {
                     prototypeManager_.requestLoad(protoHandle);
                 }
+
+                // We've not reached the time to spawn yet.
+                if(condition.timeLeft > 0.0f) { continue; }
 
                 // We simply don't spawn if the prototype of the entity to spawn
                 // is not yet loaded. In future, we might add 'delayed' spawns.
