@@ -51,4 +51,3 @@ public:
         future[] = past[];
     }
 }
-
