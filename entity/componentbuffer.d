@@ -108,7 +108,7 @@ public:
     {
         assert(enabled_, 
                "Can't commit components to a buffer that's not enabled");
-        assert(committedComponents_ + count < allocatedComponents_,
+        assert(committedComponents_ + count <= allocatedComponents_,
                "Trying to commit more components than can fit in allocated "
                "space");
 
@@ -142,8 +142,8 @@ public:
             writefln("WARNING: Unexpected buffer reallocation for component "
                      "type %s: consider preallocating more space ",
                      componentTypeID_);
-            const components = to!size_t(allocatedSize * Policy.reallocMult);
-            reallocateComponentSpace(components);
+            const components = 
+                max(minLength, to!size_t(allocatedSize * Policy.reallocMult));
             reserveComponentSpace(components);
             return uncommittedComponentSpace;
         }}
