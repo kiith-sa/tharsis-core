@@ -22,7 +22,7 @@ import tharsis.util.mallocarray;
 /// accessing unused memory with unusedSpace(), writing the components, and 
 /// "comitting" them with commitComponents(). If there's not enough space for 
 /// new components, the buffer must be reallocated with 
-/// reallocateComponentSpace().
+/// reserveComponentSpace().
 struct ComponentBuffer(Policy)
 {
 private:
@@ -111,7 +111,7 @@ public:
         assert(committedComponents_ + count < allocatedComponents_,
                "Trying to commit more components than can fit in allocated "
                "space");
-        
+
         committedComponents_ += count;
     }
 
@@ -144,6 +144,7 @@ public:
                      componentTypeID_);
             const components = to!size_t(allocatedSize * Policy.reallocMult);
             reallocateComponentSpace(components);
+            reserveComponentSpace(components);
             return uncommittedComponentSpace;
         }}
 
@@ -189,10 +190,11 @@ public:
     /// method calls.
     ///
     /// Params: componentCounts = Number of components to allocate space for.
-    void reallocateComponentSpace(const size_t componentCount) @trusted nothrow
+    void reserveComponentSpace(const size_t componentCount) 
+        @trusted nothrow
     {
         assert(enabled_, 
-                "Calling reallocateComponentSpace on a non-enabled buffer");
+                "Calling reserveComponentSpace on a non-enabled buffer");
         if(allocatedComponents_ >= componentCount) { return; }
         const oldBytes = storage_.length;
         const bytes    = componentSize_ * componentCount;

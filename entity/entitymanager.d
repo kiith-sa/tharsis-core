@@ -1046,7 +1046,7 @@ private:
                 max(basePreallocPerEntity, specificPreallocPerEntity);
             const size_t prealloc =
                 cast(size_t)(allocMult_ * max(minPrealloc, preallocPerEntity));
-            state.components[info.id].buffer.reallocateComponentSpace(prealloc);
+            state.components[info.id].buffer.reserveComponentSpace(prealloc);
         }
     }
 
