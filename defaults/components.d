@@ -28,6 +28,12 @@ struct SpawnerMultiComponent
     /// entities.
     enum maxComponentsPerEntity = 1024;
 
+    /// Cheap enough and won't be exceeded in most cases.
+    enum minPrealloc = 4096;
+
+    /// Assume a third of entities can spawn (e.g. entities with weapons).
+    enum minPreallocPerEntity = 0.3;
+
     /// Spawn conditions match this to specify which SpawnerMultiComponent they 
     /// affect.
     ushort spawnerID;
@@ -53,6 +59,13 @@ struct TimedSpawnConditionMultiComponent
 
     /// Should be enough even for extreme cases.
     enum maxComponentsPerEntity = 1024;
+
+    /// Cheap enough and won't be exceeded in most cases.
+    enum minPrealloc = 4096;
+
+    /// Assume a third of entities can spawn (e.g. entities with weapons).
+    enum minPreallocPerEntity = 0.3;
+
 
     /// Time since the creation of the entity when to spawn.
     ///
