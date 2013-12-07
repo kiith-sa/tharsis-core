@@ -329,7 +329,6 @@ public:
             mixin validateComponent!Component;
             enum id = Component.ComponentTypeID;
             alias attributes = TypeTuple!(__traits(getAttributes, Component));
-            pragma(msg, attributes);
             static if(staticIndexOf!("defaultsComponent", attributes) != -1)
             {
                 const endDefaults = 
