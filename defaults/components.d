@@ -21,9 +21,6 @@ struct SpawnerMultiComponent
 {
     enum ComponentTypeID = maxBuiltinComponentTypes + 1;
 
-    /// Resource handle to the prototype of the entity to spawn.
-    ResourceHandle!EntityPrototypeResource spawnPrototype_;
-
     /// It's unlikely that one entity would spawn more than 1024 different 
     /// entities.
     enum maxComponentsPerEntity = 1024;
@@ -34,10 +31,12 @@ struct SpawnerMultiComponent
     /// Assume a third of entities can spawn (e.g. entities with weapons).
     enum minPreallocPerEntity = 0.3;
 
+    /// Resource handle to the prototype of the entity to spawn.
+    ResourceHandle!EntityPrototypeResource spawn;
+
     /// Spawn conditions match this to specify which SpawnerMultiComponent they 
     /// affect.
     ushort spawnerID;
-
 }
 unittest 
 {

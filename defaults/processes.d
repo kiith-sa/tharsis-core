@@ -60,6 +60,10 @@ public:
     void process(immutable SpawnerMultiComponent[] spawners,
                  immutable TimedSpawnConditionMultiComponent[] spawnConditions)
     {
+        // Spawner components are kept even if any condition that may spawn them
+        // is removed (i.e. even if no condition matches the spawnerID of  
+        // a spawner component). This is to allow the spawner component to be 
+        // triggered if a new condition matching its ID is added.
         outer: foreach(ref spawner; spawners)
         {
             foreach(ref condition; spawnConditions)
@@ -71,7 +75,7 @@ public:
                 // Regardless of spawn time, if spawner ID does match, we will
                 // likely want to spawn this sooner or later, so make sure the 
                 // prototype is loaded.
-                const protoHandle = spawner.spawnPrototype_;
+                const protoHandle = spawner.spawn;
                 const state = prototypeManager_.state(protoHandle);
                 if(state == ResourceState.New)
                 {
@@ -135,7 +139,7 @@ public:
                 // timeLeft < 0 triggers a spawn in SpawnerProcess (if there is 
                 // a SpawnerComponents to which this condition applies). After a 
                 // spawn, if the condition is not periodic, we can forget the
-                // component.
+                // spawn condition component.
                 if(!past.periodic) { continue; }
 
                 // Start the next period.
