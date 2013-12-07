@@ -373,7 +373,7 @@ Tuple!(string, size_t)[] prioritizeProcessOverloads(P)()
         size_t handlerOverload = size_t.max;
         foreach(i, ids; staticMap!(pastComponentIDs, overloads))
         {
-            if(ids.setIntersection(combined).array.length == combined.length)
+            if(ids == combined)
             {
                 handlerOverload = i;
                 break;
