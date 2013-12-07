@@ -558,7 +558,8 @@ public:
         /// Params: Component = Type of component to access.
         ///
         /// Returns: An immutable reference to the past component.
-        ref immutable(Component) pastComponent(Component)() @safe nothrow const
+        ref immutable(Component) pastComponent(Component)() 
+            @safe nothrow const
             if(!isMultiComponent!Component)
         {
             enum id = Component.ComponentTypeID;
@@ -646,7 +647,9 @@ public:
         /// types.
         bool matchComponents(ComponentTypeIDs...)() @trusted
         {
+            // Type IDs all component types this range iterates over.
             enum processedIDs = componentIDs!ProcessedComponents;
+            // Type IDs of component types we're matching.
             enum sortedIDs    = std.algorithm.sort([ComponentTypeIDs]);
             static assert(sortedIDs.setDifference(processedIDs).empty, 
                           "One or more matched component types are not "
@@ -667,7 +670,8 @@ public:
                 return parts.join(" * ");
             }
 
-            mixin(q{return cast(bool)(%s);}.format(matchCode()));
+            mixin(q{const result = cast(bool)(%s);}.format(matchCode()));
+            return result;
         }
 
     private:
@@ -699,7 +703,8 @@ public:
         ///
         /// Also definitively commits the future components for the current 
         /// entity.
-        void nextFutureEntity() @safe pure nothrow 
+        void nextFutureEntity()
+            @safe pure nothrow 
         {
             static if(!noFuture)
             {
@@ -800,6 +805,7 @@ public:
                 {
                     entityRange.setFutureComponentCount(0); 
                 }
+
                 // Generates an if-else chain checking each overload, starting 
                 // with the most specific one. 
                 mixin(prioritizeProcessOverloads!P.map!(p => q{ 
@@ -1026,7 +1032,8 @@ private:
     /// during frame.
     ///
     /// Params: state = Game state (past or future) to preallocate space for.
-    void preallocateComponents(GameState* state) @safe nothrow
+    void preallocateComponents(GameState* state)
+        @safe nothrow
     {
         // Preallocate space for components based on hints in the Policy
         // and component type info.
