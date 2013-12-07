@@ -109,7 +109,7 @@ private:
 
 public:
     /// A function type that gets the length (seconds) of the last game update.
-    alias double delegate () @safe pure nothrow const GetUpdateLength;
+    alias double delegate () @safe pure nothrow GetUpdateLength;
 
     alias TimedSpawnConditionMultiComponent FutureComponent;
 
