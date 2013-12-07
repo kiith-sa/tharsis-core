@@ -393,6 +393,11 @@ Tuple!(string, size_t)[] prioritizeProcessOverloads(P)()
     Tuple!(string, size_t)[] result;
     foreach(ids, overload; cases) 
     {
+        assert(!result.canFind!(pair => pair[1] == overload),
+               "Same overload assigned to multiple component combinations\n"
+               "result: %s\n ids: %s\n overload: %s\n"
+               .format(result, ids, overload));
+
         result ~= tuple(ids.map!(to!string).join(", "), overload); 
     }
     // Sort from most specific (reading most past components) to least specific
