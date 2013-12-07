@@ -57,8 +57,8 @@ public:
 
     /// Reads spawners and spawn conditions. It spawns new 
     /// entities, and doesn't write any future components.
-    void process(immutable(SpawnerMultiComponent)[] spawners,
-                 immutable(TimedSpawnConditionMultiComponent)[] spawnConditions)
+    void process(immutable SpawnerMultiComponent[] spawners,
+                 immutable TimedSpawnConditionMultiComponent[] spawnConditions)
     {
         outer: foreach(ref spawner; spawners)
         {
@@ -121,7 +121,7 @@ public:
     }
 
     /// Reads and updates timed spawn conditions.
-    void process(immutable(TimedSpawnConditionMultiComponent)[] pastConditions,
+    void process(immutable TimedSpawnConditionMultiComponent[] pastConditions,
                  ref TimedSpawnConditionMultiComponent[] futureConditions)
     {
         size_t index;
