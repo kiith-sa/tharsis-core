@@ -42,7 +42,7 @@ private:
     MallocArray!ubyte storage_;
 
     /// The size of storage_ in components.
-    size_t allocatedComponents_;
+    size_t allocatedComponents_ = 0;
 
     /// The number of component committed (written) so far.
     size_t committedComponents_;
@@ -228,7 +228,6 @@ public:
     {
         assert(enabled_, "Can't reset a non-enabled buffer");
         storage_[]           = 0;
-        allocatedComponents_ = 0;
         committedComponents_ = 0;
     }
 }
