@@ -8,6 +8,7 @@
 module tharsis.entity.componentbuffer;
 
 
+import std.algorithm;
 import std.conv;
 import std.stdio;
 
