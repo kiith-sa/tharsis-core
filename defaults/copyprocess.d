@@ -7,14 +7,19 @@
 /// A dummy process template that preserves a component into future.
 module tharsis.defaults.copyprocess;
 
+import tharsis.entity.componenttypeinfo;
 
 
-/// A dummy process template that preserves a component into future.
+/// A dummy process template that preserves components of a normal component 
+/// type into future.
 ///
 /// All this process does is that it copies the component of specified type into
-/// future space, ensuring the component does not disappear.
+/// future state, ensuring the component does not disappear.
 class CopyProcess(ComponentType)
+    if(!isMultiComponent!ComponentType)
 {
+    mixin validateComponent!ComponentType;
+
 public:
     /// FutureComponent of this process is the copied component type.
     alias ComponentType FutureComponent;
