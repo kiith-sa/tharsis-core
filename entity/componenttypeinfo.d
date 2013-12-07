@@ -87,6 +87,10 @@ template isMultiComponent(Component)
 /// Validate a component type at compile-time.
 mixin template validateComponent(Component)
 {
+    // Mixins only see the imports of the module where they are mixed in; so
+    // we also need to mix in the required imports.
+    import std.algorithm;
+
     alias std.traits.Unqual!Component BaseType;
     static assert(is(Component == struct),
                   "All component types must be structs");
