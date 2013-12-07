@@ -3,10 +3,13 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
+// Provides access to all processes packaged with Tharsis by default.
 module tharsis.defaults.processes;
 
 
 import tharsis.defaults.components;
+public import tharsis.defaults.copyprocess;
+
 import tharsis.entity.entity;
 import tharsis.entity.entityid;
 import tharsis.entity.entityprototype;
