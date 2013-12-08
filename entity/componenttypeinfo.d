@@ -303,7 +303,7 @@ private:
     /// Params: Source            = The Source type to load from 
     ///                             (e.g. YAMLSource).
     ///         Component         = Component type we're loading.
-    ///         fieldName         = Name of the data member of Component to
+    ///         fieldNameInternal = Name of the data member of Component to
     ///                             load.
     ///         componentBuffer   = The component we're loading as raw bytes.
     ///         sourceVoid        = A void pointer to the Source we're loading
@@ -312,7 +312,7 @@ private:
     ///                             resource when passed resource type and 
     ///                             descriptor. Used to initialize component 
     ///                             fields that are resource handles.
-    static bool loadField(Source, Component, string fieldName)
+    static bool loadField(Source, Component, string fieldNameInternal)
                          (ubyte[] componentBuffer, void* sourceVoid, 
                           GetResourceHandle getResourceHandle)
     {
@@ -326,6 +326,10 @@ private:
         // Source that is one of the values in that mapping.
         Source fieldSource;
         Source* source = cast(Source*)sourceVoid;
+
+        // The field name used when loading from the Source. May be different 
+        // from the name of the Component's field.
+        enum string fieldName = fieldNameSource!(Component, fieldNameInternal);
         if(!source.getMappingValue(fieldName, fieldSource))
         {
             writefln("Failed to load component '%s': Couldn't find field: '%s'",
@@ -334,14 +338,14 @@ private:
         }
         mixin(q{
         auto fieldPtr = &((cast(Component*)componentBuffer.ptr).%s);
-        }.format(fieldName));
+        }.format(fieldNameInternal));
         alias typeof(*fieldPtr) FieldType;
 
         // If a component property is a resource handle, the Source contains a
         // resource descriptor. We need to load the descriptor and then get the
         // handle by getResourceHandle(), which will create a resource with the
         // correct resource manager and return a handle to it.
-        static if(isResourceHandle!(Component, fieldName))
+        static if(isResourceHandle!(Component, fieldNameInternal))
         {
             alias Resource   = FieldType.Resource;
             alias Descriptor = Resource.Descriptor;
