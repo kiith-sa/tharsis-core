@@ -120,6 +120,15 @@ mixin template validateComponent(Component)
                   "not implemented yet");
 }
 
+/// Used as an user-defined attribute for component properties to override the 
+/// name of the property in the Source it's loaded from (e.g. YAML).
+struct FieldName
+{
+    /// The name of the property in a Source such as YAML.
+    string name;
+}
+
+
 /// Type information about a component type.
 struct ComponentTypeInfo
 {
