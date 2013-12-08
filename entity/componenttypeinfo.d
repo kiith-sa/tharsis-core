@@ -277,6 +277,27 @@ public:
     }
 
 private:
+    /// Get the name of a field used to load it from a Source such as YAML.
+    ///
+    /// The field name is, by default, the same in a Source as in the component 
+    /// type definition, but it can be overridden by a FieldName attribute.
+    /// This is useful e.g. if a field name would collide with a D keyword.
+    static string fieldNameSource(Component, string fieldNameInternal)()
+    {
+        string result;
+        mixin(q{
+        alias fieldAttribs = TypeTuple!(__traits(getAttributes, Component.%s));
+        }.format(fieldNameInternal));
+        foreach(attrib; fieldAttribs) if(is(typeof(attrib) == FieldName))
+        {
+            assert(result is null, 
+                   "More than one FieldName attribute on a component field");
+            result = attrib.name;
+        }
+
+        return result is null ? fieldNameInternal : result;
+    }
+
     /// Loads a field of a Component from a Source.
     ///
     /// Params: Source            = The Source type to load from 
