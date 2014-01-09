@@ -11,6 +11,7 @@ import core.memory;
 
 import std.algorithm;
 import std.traits;
+import std.typecons;
 
 import tharsis.util.alloc;
 
@@ -21,7 +22,11 @@ import tharsis.util.alloc;
 ///
 /// This is pretty much a placeholder until Phobos gets allocators working and 
 /// fixes its containers.
-struct MallocArray(T)
+///
+/// Params: T       = The type stored in the array.
+///         forceGC = Force the garbage collector to scan this array for 
+///                   pointers (regardless of what type T is)?
+struct MallocArray(T, Flag!"ForceGC" forceGC = No.ForceGC)
     if(isBasicType!T || is(T == struct))
 {
 private:
@@ -48,7 +53,10 @@ public:
         if(data_ != []) 
         {
             // True if the GC needs to scan this type.
-            if(typeid(T).flags) { GC.removeRange(cast(void*)data_.ptr); }
+            if(forceGC || typeid(T).flags)
+            {
+                GC.removeRange(cast(void*)data_.ptr); 
+            }
             freeMemory(cast(void[])data_); 
         }
         usedData_ = null;
@@ -79,14 +87,20 @@ public:
         if(data_.length >= bytes) { return; }
         data_ = cast(ubyte[])allocateMemory(bytes, typeid(T));
         // True if the GC needs to scan this type.
-        if(typeid(T).flags) { GC.addRange(cast(void*)data_.ptr, data_.length); }
+        if(forceGC || typeid(T).flags)
+        {
+            GC.addRange(cast(void*)data_.ptr, data_.length); 
+        }
 
         auto oldUsedData = usedData_;
         usedData_ = (cast(T[])data_)[0 .. this.length];
         // Avoid postblits or copy-ctors.
         (cast(ubyte[])usedData_)[] = (cast(ubyte[])oldUsedData)[];
         // True if the GC needs to scan this type.
-        if(typeid(T).flags) { GC.removeRange(cast(void*)oldUsedData.ptr); }
+        if(forceGC || typeid(T).flags)
+        {
+            GC.removeRange(cast(void*)oldUsedData.ptr); 
+        }
         freeMemory(cast(void[])oldUsedData);
     }
 
