@@ -77,15 +77,24 @@ public:
     /// points to.
     alias Resource = R;
 
-package:
-    /// A simple unique ID.
-    RawResourceHandle resourceID_ = uint.max;
-
     /// Construct from a raw handle.
     this(const RawResourceHandle raw) @safe pure nothrow
     {
         resourceID_ = raw;
     }
+
+    /// Get the raw resource handle.
+    ///
+    /// May be used e.g. as an index into an array of resources in a resource 
+    /// manager.
+    @property RawResourceHandle rawHandle() @safe const pure nothrow 
+    {
+        return resourceID_;
+    }
+
+package:
+    /// A simple unique ID.
+    RawResourceHandle resourceID_ = uint.max;
 }
 
 
