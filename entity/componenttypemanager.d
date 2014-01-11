@@ -96,7 +96,6 @@ public:
         return result; 
     }
 
-package:
     /// Get type information about all registered components.
     /// 
     /// Returns a reference to a fixed-size array; if there are less than
