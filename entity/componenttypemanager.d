@@ -113,6 +113,9 @@ package:
     }
 }
 
+/// Maximum size of an instance of a Source type in bytes.
+enum maxSourceBytes = 512;
+
 
 /// Manages component type information and loading.
 /// 
@@ -128,7 +131,7 @@ package:
 ///                  See tharsis.entity.defaultentitypolicy.d for the default 
 ///                  Policy type.
 /// 
-/// Source Example:
+/// Example:
 /// --------------------
 /// // struct SomeSource
 /// // SomeSource.Loader loader
@@ -146,6 +149,14 @@ package:
 /// // Construct the entity manager.
 /// auto entityManager = new EntityManager(componentTypes);
 /// --------------------
+///
+/// Limitations of a Source struct:
+///
+/// sizeof of a Source struct can be at most maxSourceBytes (currently set to 
+/// 512). A Source struct must be copyable; if it includes nested data 
+/// (such as JSON/XML/YAML subnodes), copying a Source must either also copy
+/// this nested data or share it by using e.g. reference counting or garbage 
+/// collector managed storage.
 /// 
 /// Skeleton of a Source struct:
 /// --------------------
