@@ -20,6 +20,9 @@ class CopyProcess(ComponentType)
 {
     mixin validateComponent!ComponentType;
 
+    /// If set to true, every processed component will be printed to stdout.
+    bool printComponents_;
+
 public:
     /// FutureComponent of this process is the copied component type.
     alias ComponentType FutureComponent;
@@ -28,6 +31,22 @@ public:
     void process(ref immutable(ComponentType) past, out ComponentType future)
     {
         future = past;
+        import std.stdio;
+        if(printComponents_) { writeln(past); }
+    }
+
+    /// If set to true, every processed component will be printed to stdout.
+    ///
+    /// Useful for debugging.
+    @property void printComponents(bool rhs) @safe pure nothrow 
+    {
+        printComponents_ = rhs;
+    }
+
+    /// Is printing of processed components to stdout enabled?
+    @property bool printComponents() @safe const pure nothrow 
+    {
+        return printComponents_;
     }
 }
 
