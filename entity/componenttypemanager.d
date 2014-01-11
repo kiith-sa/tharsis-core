@@ -67,6 +67,8 @@ public:
 
     /// Get the maximum size of all components in a single entity in bytes.
     ///
+    /// Useful when preallocating memory for entity prototypes.
+    ///
     /// Can only be called after this manager is locked.
     size_t maxEntityBytes() @safe pure nothrow const 
     {
