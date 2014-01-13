@@ -11,8 +11,7 @@ module tharsis.entity.descriptors;
 
 /// A resource descriptor represented by a single string.
 ///
-/// Can be used e.g. for resources loaded from files where the descriptor is a 
-/// file name.
+/// Used e.g. for resources loaded from files with file name as the descriptor.
 ///
 /// Params: Resource = The resource type the descriptor describes. Templating by 
 ///                    the resource type avoids accidental assignments between
