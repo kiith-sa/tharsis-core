@@ -182,7 +182,7 @@ struct EntityPrototypeResource
 
     /// Construct a new (not loaded) EntityPrototypeResource with specified 
     /// descriptor.
-    this(const ref Descriptor descriptor) @safe pure nothrow
+    this(ref Descriptor descriptor) @safe pure nothrow
     {
         this.descriptor = descriptor;
     }
