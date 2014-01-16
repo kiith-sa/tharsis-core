@@ -189,7 +189,7 @@ struct EntityPrototypeResource
 
     // Data can be public as we use this through immutable.
 
-    /// The stored prototype, is state is ResourceState.New.
+    /// The stored prototype.
     EntityPrototype prototype;
 
     /// Descriptor of the prototype (i.e. its file name).
