@@ -127,7 +127,7 @@ public:
     /// If the resource doesn't exist yet, this will create it.
     /// The resource may or may not be loaded. Use the loaded() method to 
     /// determine that.
-    Handle handle(ref const Descriptor descriptor) @safe nothrow;
+    Handle handle(ref Descriptor descriptor) @safe nothrow;
 
     /// Get the current state of the resource with specified handle.
     /// 
