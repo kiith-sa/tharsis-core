@@ -11,8 +11,10 @@ import std.algorithm;
 import std.range;
 
 import tharsis.entity.componenttypeinfo;
+import tharsis.entity.componenttypemanager;
 import tharsis.entity.descriptors;
 import tharsis.entity.resourcemanager;
+import tharsis.util.alloc;
 
 
 /// Stores data to create an entity from.
