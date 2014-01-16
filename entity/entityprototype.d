@@ -69,9 +69,8 @@ public:
     /// component type IDs. The size of passed memory should be aligned upwards 
     /// to a multiple of 16.
     ///
-    /// Params: memory = Memory for the prototype to use. Must be enough for all 
-    ///                  components that will be added to the prototype, and 
-    ///                  length must be divisible by 16.
+    /// Params: memory = Memory for the prototype to use. Must be at least
+    ///                  maxPrototypeBytes() bytes long.
     void useMemory(ubyte[] memory) @safe pure nothrow
     {
         assert(!locked_, "Providing memory to a locked EntityPrototype");
@@ -84,6 +83,25 @@ public:
         storage_ = memory;
         components_  = memory[0 .. 0];
         componentTypeIDs_ = cast(ushort[])memory[$ .. $];
+    }
+
+    /// Get the maximum number of bytes any entity prototype might need.
+    ///
+    /// Used to determine the minimum size of memory to pass to 
+    /// EntityPrototype.useMemory(). Most prototypes are likely to be very
+    /// small; this is the size of memory needed to avoid *any* prototype 
+    /// running out of memory.
+    ///
+    /// TParams: Policy = The entity policy used with the current EntityManager.
+    ///
+    /// Params: componentTypeManager = Component type manager with which all
+    ///                                used component types are registered.
+    static size_t maxPrototypeBytes(Policy)
+        (ComponentTypeManager!Policy componentTypeManager)
+        @safe pure nothrow
+    {
+        return componentTypeManager.maxEntityBytes + 32 +
+               componentTypeManager.maxEntityComponents * ushort.sizeof;
     }
 
     /// Get the stored components as raw bytes.
