@@ -39,8 +39,7 @@ private:
     /// an assertion error.
     ///
     /// After a call to lockAndTrimMemory, componentTypeIDs_ and components_ are
-    /// tightly packed and the length of storage_ is decreased to only the used
-    /// space.
+    /// packed and the length of storage_ is decreased to only the used space.
     ubyte[] storage_;
 
     /// Part of storage_ used to store type IDs.
@@ -66,9 +65,9 @@ public:
     /// Can only be called once.
     ///
     /// The size of passed memory must be enough for all components that will
-    /// be added to this prototype, plus 2 bytes per component for component
-    /// type IDs. The size of passed memory should be aligned upwards to a 
-    /// multiple of 16.
+    /// be added to this prototype, plus ushort.sizeof per component for
+    /// component type IDs. The size of passed memory should be aligned upwards 
+    /// to a multiple of 16.
     ///
     /// Params: memory = Memory for the prototype to use. Must be enough for all 
     ///                  components that will be added to the prototype, and 
@@ -181,7 +180,7 @@ struct EntityPrototypeResource
     /// No default construction.
     @disable this();
 
-    /// Construct a New (not loaded) EntityPrototypeResource with specified 
+    /// Construct a new (not loaded) EntityPrototypeResource with specified 
     /// descriptor.
     this(const ref Descriptor descriptor) @safe pure nothrow
     {
