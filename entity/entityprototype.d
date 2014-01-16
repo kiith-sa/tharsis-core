@@ -123,7 +123,7 @@ public:
     /// Returns: A slice to write the component to. The component $(B must) be
     ///          written to this slice or the prototype must be thrown away.
     ubyte[] allocateComponent 
-        (ComponentTypeInfo)(ref const(ComponentTypeInfo) info) @trusted nothrow
+        (ref const(ComponentTypeInfo) info) @trusted nothrow
     {
         assert(!locked_, "Adding a component to a locked EntityPrototype");
         assert(info.id >= maxBuiltinComponentTypes, 
