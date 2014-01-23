@@ -193,6 +193,7 @@ public:
 /// A resource wrapping an EntityPrototype. Managed by PrototypeManager.
 struct EntityPrototypeResource 
 {
+    /// Described by the prototype filename, which is a string.
     alias StringDescriptor!EntityPrototypeResource Descriptor;
 
     /// No default construction.
