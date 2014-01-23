@@ -15,6 +15,7 @@ import tharsis.entity.componenttypemanager;
 import tharsis.entity.descriptors;
 import tharsis.entity.resourcemanager;
 import tharsis.util.alloc;
+import tharsis.util.array;
 import tharsis.util.math;
 import tharsis.util.stackbuffer;
 
@@ -225,6 +226,90 @@ public:
                "prototype");
         return componentTypeIDs_;
     }
+}
+
+
+/// Merge two entity prototypes; components from over override components from 
+/// base. The returned prototype is not locked/trimmed.
+///
+/// The result is created by taking all components from base and adding 
+/// components of each type from over. If components of the same type are both
+/// in base and over, the component/s from over are used (overriding base).
+///
+/// Params: base           = The base for the merged prototype.
+///         over           = Prototype with components added to/overriding 
+///                          components in base.
+///         memory         = Memory to use for the new entity prototype.
+///                          Must be at least 
+///                          EntityPrototype.maxPrototypeBytes() bytes long.
+///         componentTypes = Type information about all registered component 
+///                          types.
+///
+/// Returns: The merged prototype. The prototype is not locked, allowing more
+///          components to be added. To be used it must be locked by calling
+///          EntityPrototype.lockAndTrimMemory().
+EntityPrototype mergePrototypesOverride
+    (ref const(EntityPrototype) base, ref const(EntityPrototype) over, 
+     ubyte[] memory, const(ComponentTypeInfo)[] componentTypes)
+{
+    EntityPrototype result;
+    result.useMemory(memory);
+    const(ushort)[] baseIDs        = base.componentTypeIDs;
+    const(ushort)[] overIDs        = over.componentTypeIDs;
+    const(ubyte)[]  baseComponents = base.rawComponentBytes;
+    const(ubyte)[]  overComponents = over.rawComponentBytes;
+
+    while(!baseIDs.empty || !overIDs.empty)
+    {
+        // Both baseIDs and overIDs are sorted. If baseIDs.front is less,
+        // there's no component with that ID in overIDs so use component/s from
+        // base. If overIDs.front is less, only overIDs contains that ID so we
+        // use component/s from over. If baseIDs.front and overIDs.front are
+        // equal, both base and over have this component and over overrides
+        // base. If either is empty, we use the other one.
+
+        const bool useBase = overIDs.empty ? true  // only baseIDs has items
+                           : baseIDs.empty ? false // only overIDs has items
+                           : baseIDs.front < overIDs.front;
+        const typeID = useBase ? baseIDs.front : overIDs.front;
+
+        // Copies components to the result while they match the current type.
+        // Skips the corresponding components in the ignored buffer.
+        // (Which one is used and ignored depends on whether there's a component
+        // with this type in base and over - over overrides base.)
+        static void copyComponents
+            (ref EntityPrototype result,     ref const ComponentTypeInfo type,
+             ref const(ushort)[] usedIDs,    ref const(ubyte)[] usedComponents,
+             ref const(ushort)[] ignoredIDs, ref const(ubyte)[] ignoredComponents)
+        {
+            const typeID = usedIDs.front;
+            const size = type.size;
+            // Copy all components until we reach components of a different type
+            // or until usedIDs is empty.
+            while(usedIDs.frontOrIfEmpty(ushort.max) == typeID)
+            {
+                ubyte[] target        = result.allocateComponent(type);
+                const(ubyte)[] source = usedComponents[0 .. size];
+                usedComponents        = usedComponents[size .. $];
+                target[] = source[];
+                usedIDs.popFront();
+            }
+            // Ignore all overridden components from base.
+            while(ignoredIDs.frontOrIfEmpty(ushort.max) == typeID)
+            {
+                ignoredComponents = ignoredComponents[size .. $];
+                ignoredIDs.popFront();
+            }
+        }
+
+        copyComponents(result, componentTypes[typeID], 
+                       useBase ? baseIDs        : overIDs,
+                       useBase ? baseComponents : overComponents,
+                       useBase ? overIDs        : baseIDs,
+                       useBase ? overComponents : baseComponents);
+    }
+    
+    return result;
 }
 
 
