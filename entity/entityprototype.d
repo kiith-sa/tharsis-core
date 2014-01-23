@@ -15,6 +15,8 @@ import tharsis.entity.componenttypemanager;
 import tharsis.entity.descriptors;
 import tharsis.entity.resourcemanager;
 import tharsis.util.alloc;
+import tharsis.util.math;
+import tharsis.util.stackbuffer;
 
 
 /// Stores data to create an entity from.
@@ -45,13 +47,15 @@ private:
     /// Part of storage_ used to store type IDs.
     ///
     /// Before lockAndTrimMemory() is called, this is at the end of storage_
-    /// and in reverse order. When the memory is trimmed, this is moved right 
-    /// after components_ and reversed into the same order as the order of 
-    /// components stored in components_.
+    /// and in reverse order. When the memory is trimmed, this is reordered 
+    /// to match the order of the (now sorted) components_ 
+    /// (not in reverse order), and moved to the end of storage_, while it may
+    /// start right after components_ or after an alignment gap.
     ushort[] componentTypeIDs_;
 
     /// Part of storage_ used to store components. Starts at the beginning of
-    /// storage_.
+    /// storage_. After a call to loacAndTrimMemory, the components are sorted 
+    /// by component type ID.
     ubyte[] components_;
 
     /// Set to true by lockAndTrimMemory(), after which no more components can 
@@ -145,33 +149,67 @@ public:
         return components_[$ - info.size .. $];
     }
 
-
     /// Lock the prototype disallowing any future changes.
     ///
     /// Trims used memory and aligns it to a multiple of 16.
     ///
+    /// Params: componentTypes = Type information about all registered component
+    ///                          types.
+    ///
     /// Returns: The part of the memory passed by useMemory that is used by the 
     ///          prototype. The rest is unused and can be used by the caller for 
     ///          something else.
-    const(ubyte)[] lockAndTrimMemory() @trusted pure nothrow
+    const(ubyte)[] lockAndTrimMemory(const(ComponentTypeInfo)[] componentTypes)
+        @trusted nothrow
     {
-        const usedBytes = components_.length;
+        const idBytes      = componentTypeIDs_.length * ushort.sizeof;
+        const totalBytes   = components_.length + idBytes;
+        // Used memory must be aligned to 16 bytes.
+        const alignedBytes = totalBytes.alignUp(16);
 
-        // Move componentTypeIDs_ to right after the used memory.
-        const oldComponentIDs = componentTypeIDs_;
-        const idBytes = oldComponentIDs.length * ushort.sizeof;
-        componentTypeIDs_ = 
-            cast(ushort[])storage_[usedBytes .. usedBytes + idBytes];
-        foreach(i, id; oldComponentIDs) { componentTypeIDs_[$ - i - 1] = id; }
+        // Sort the components by type ID (simplifies component overriding when
+        // merging entity prototypes).
 
-        const totalBytes = components_.length + idBytes;
+        // Avoid heap allocation by using stack if the prototype is small.
+        auto scratchBuffer = StackBuffer!(ubyte, 16 * 1024)(alignedBytes);
+
+        // Number of components sorted so far.
+        size_t sortedCount  = 0;
+        // Offset in scratchBuffer where to place the next sorted component.
+        size_t offsetNew    = 0;
+        const compCount     = componentTypeIDs_.length;
+        auto newCompTypeIDs = (cast(ushort[])scratchBuffer)[$ - compCount .. $];
+
+        // Add components of every type (in order) to the sorted buffer.
+        foreach(ref type; componentTypes.filter!(t => !t.isNull)
+                                        .until!(t => sortedCount == compCount))
+        {
+            assert(sortedCount <= compCount, 
+                   "Processed more components than present in the prototype");
+
+            size_t offsetOld = 0;
+            // Copy every component with matching type ID to the sorted buffer.
+            // Using foreach_reverse since componentTypeIDs_ are in reverse
+            // order during the construction of the prototype.
+            foreach_reverse(id; componentTypeIDs_)
+            {
+                const bytes = componentTypes[id].size;
+                scope(exit) { offsetOld += bytes; }
+                if(id != type.id) { continue; }
+
+                const component = components_[offsetOld .. offsetOld + bytes];
+                scratchBuffer[offsetNew .. offsetNew + bytes] = component[];
+                offsetNew += bytes;
+                newCompTypeIDs[sortedCount++] = id;
+            }
+        }
+
         assert(storage_.length % 16 == 0, 
-               "ComponentPrototype storage length not divisible by 16");
-
-        // Align the used memory to 16.
-        const alignedBytes = ((totalBytes + 15) / 16) * 16;
-
+               "EntityPrototype storage length not aligned to 16");
         storage_ = storage_[0 .. alignedBytes];
+        // Copy the sorted result to storage_.
+        storage_[] = scratchBuffer[];
+        componentTypeIDs_ = (cast(ushort[])storage_)[$ - compCount .. $];
 
         locked_ = true;
         return storage_;
