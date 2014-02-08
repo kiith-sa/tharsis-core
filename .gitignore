@@ -1,4 +1,5 @@
 /entity/unittest.o
+meta/*
 *.directory
 *.bkp
 *.bkp?
