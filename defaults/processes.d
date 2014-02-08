@@ -7,13 +7,20 @@
 module tharsis.defaults.processes;
 
 
+import std.typecons;
+
 import tharsis.defaults.components;
 public import tharsis.defaults.copyprocess;
+import tharsis.defaults.resources;
 
+import tharsis.entity.componenttypeinfo;
+import tharsis.entity.componenttypemanager;
 import tharsis.entity.entity;
 import tharsis.entity.entityid;
 import tharsis.entity.entityprototype;
 import tharsis.entity.resourcemanager;
+
+import tharsis.util.pagedarray;
 
 
 
@@ -23,11 +30,32 @@ import tharsis.entity.resourcemanager;
 class SpawnerProcess
 {
 private:
-    /// A function that takes an entity prototype and adds a new entity.
+    /// A function that takes an entity prototype and adds a new entity to the 
+    /// EntityManager (at the beginning of the next game update).
     AddEntity addEntity_;
 
     /// Manages EntityPrototype resources.
     ResourceManager!EntityPrototypeResource prototypeManager_;
+
+    /// Manages entity prototypes defined inline in entities
+    /// (in this case, SpawnerMultiComponent.override).
+    ResourceManager!InlineEntityPrototypeResource inlinePrototypeManager_;
+
+    /// Entity prototypes to spawn during the next game update.
+    ///
+    /// Cleared at the beginning of the next game update (after entity manager
+    /// adds the new entities).
+    PagedArray!EntityPrototype toSpawn_;
+
+    /// Memory used by prototypes in toSpawn_ to store components.
+    PartiallyMutablePagedBuffer toSpawnData_;
+
+    /// Type info about all registered component types.
+    const(ComponentTypeInfo)[] componentTypes_;
+
+    /// The number of bytes to reserve when creating an entity prototype to
+    /// ensure any prototype can fit.
+    size_t maxPrototypeBytes_;
 
 public:
     /// A type of delegates that create a new entity.
@@ -40,22 +68,44 @@ public:
 
     /// Construct a SpawnerProcess.
     ///
-    /// Params: addEntity        = Delegate to add an entity.
-    ///         prototypeManager = Manages entity prototype resources.
+    /// Params: addEntity              = Delegate to add an entity.
+    ///         prototypeManager       = Manages entity prototype resources.
+    ///         inlinePrototypeManager = Manages entity prototype resources
+    ///                                  defined inline in an entity.
+    ///         componentTypeManager   = The component type manager where all
+    ///                                  used component types are registered.
     ///
     /// Examples:
     /// --------------------
     /// // EntityManager entityManager
     /// // ResourceManager!EntityPrototypeResource prototypeManager
+    /// // ComponentTypeManager componentTypeManager
     /// auto spawner = new SpawnerProcess(&entityManager.addEntity,
-    ///                                   prototypeManager);
+    ///                                   prototypeManager,
+    ///                                   componentTypeManager);
     /// --------------------
-    this(AddEntity addEntity,
-         ResourceManager!EntityPrototypeResource prototypeManager)
+    this(Policy)
+        (AddEntity addEntity,
+         ResourceManager!EntityPrototypeResource prototypeManager,
+         ResourceManager!InlineEntityPrototypeResource inlinePrototypeManager,
+         ComponentTypeManager!Policy componentTypeManager)
         @safe pure nothrow
     {
-        addEntity_        = addEntity;
-        prototypeManager_ = prototypeManager;
+        addEntity_              = addEntity;
+        prototypeManager_       = prototypeManager;
+        inlinePrototypeManager_ = inlinePrototypeManager;
+        componentTypes_         = componentTypeManager.componentTypeInfo[];
+        maxPrototypeBytes_
+            = EntityPrototype.maxPrototypeBytes(componentTypeManager);
+    }
+
+    /// Called at the beginning of a game update before processing any entities.
+    void preProcess()
+    {
+        // Delete prototypes from the previous game update; they should be
+        // spawned by now.
+        destroy(toSpawn_);
+        toSpawnData_.clear();
     }
 
     /// Reads spawners and spawn conditions. It spawns new 
@@ -63,44 +113,104 @@ public:
     void process(immutable SpawnerMultiComponent[] spawners,
                  immutable TimedSpawnConditionMultiComponent[] spawnConditions)
     {
-        // Spawner components are kept even if any condition that may spawn them
-        // is removed (i.e. even if no condition matches the spawnerID of  
-        // a spawner component). This is to allow the spawner component to be 
+        // Spawner components are kept even if any condition that may spawn
+        // them is removed (i.e. even if no condition matches the spawnerID of
+        // a spawner component). This allows the spawner component to be
         // triggered if a new condition matching its ID is added.
         outer: foreach(ref spawner; spawners)
         {
+            // Find spawn conditions matching current spawner component, and
+            // spawn if found.
             foreach(ref condition; spawnConditions)
             {
-                // Don't even consider combinations where the spawner ID doesn't
-                // match.
+                // Spawn condition must match the spawner component.
                 if(condition.spawnerID != spawner.spawnerID) { continue; }
 
-                // Regardless of spawn time, if spawner ID does match, we will
-                // likely want to spawn this sooner or later, so make sure the 
-                // prototype is loaded.
-                const protoHandle = spawner.spawn;
-                const state = prototypeManager_.state(protoHandle);
-                if(state == ResourceState.New)
-                {
-                    prototypeManager_.requestLoad(protoHandle);
-                }
+                const baseHandle = spawner.spawn;
+                const overHandle = spawner.overrideComponents;
+
+                // If we determine that the spawner is not fully loaded yet
+                // (any of its resources not in the Loaded state), we ignore
+                // the spawner completely and move on to the next one.
+                //
+                // This means we miss spawns when a spawner is not loaded.
+                // We may add 'delayed' spawns to compensate for this in future.
+                if(!spawnerReady(baseHandle, overHandle)) { continue outer; }
 
                 // We've not reached the time to spawn yet.
                 if(condition.timeLeft > 0.0f) { continue; }
 
-                // We simply don't spawn if the prototype of the entity to spawn
-                // is not yet loaded. In future, we might add 'delayed' spawns.
-                if(state != ResourceState.Loaded)
-                {
-                    // Regardless of the condition, this spawner's prototype is
-                    // not loaded yet, so skip to the next spawner.
-                    continue outer;
-                }
-
-                // Spawn the entity.
-                addEntity_(prototypeManager_.resource(protoHandle).prototype);
+                spawn(baseHandle, overHandle);
             }
         }
+    }
+
+private:
+    /// Are spawner resources ready (loaded) for spawning?
+    ///
+    /// Starts (async) loading of the resources if not yet loaded.
+    ///
+    /// Params: baseHandle = Handle to the base prototype of the entity to spawn
+    ///                      (e.g. a unit type).
+    ///         overHandle = Handle to a prototype storing components added to
+    ///                      or overriding those in base (e.g. unit position
+    ///                      or other components that may vary between entities
+    ///                      of same 'type').
+    ///
+    /// Returns: True if the resources are loaded and can be used to spawn 
+    ///          an entity. False otherwise.
+    bool spawnerReady 
+        (const ResourceHandle!EntityPrototypeResource baseHandle,
+         const ResourceHandle!InlineEntityPrototypeResource overHandle)
+    {
+        const baseState  = prototypeManager_.state(baseHandle);
+        const overState  = inlinePrototypeManager_.state(overHandle);
+        if(baseState == ResourceState.New)
+        {
+            prototypeManager_.requestLoad(baseHandle);
+        }
+        if(overState == ResourceState.New)
+        {
+            inlinePrototypeManager_.requestLoad(overHandle);
+        }
+
+        return baseState == ResourceState.Loaded &&
+               overState == ResourceState.Loaded;
+    }
+
+    /// Spawn a new entity created by applying an overriding prototype to a
+    /// base prototype.
+    ///
+    /// Params: baseHandle = Handle to the base prototype of the entity to spawn
+    ///                      (e.g. a unit type).
+    ///         overHandle = Handle to a prototype storing components added to
+    ///                      or overriding those in base (e.g. unit position
+    ///                      or other components that may vary between entities
+    ///                      of same 'type').
+    void spawn(const ResourceHandle!EntityPrototypeResource baseHandle,
+               const ResourceHandle!InlineEntityPrototypeResource overHandle)
+    {
+        // Entity prototype serving as the base of the new entity.
+        auto base = prototypeManager_.resource(baseHandle).prototype;
+        // Entity prototype storing components applied to (overriding) base to
+        // create the new entity.
+        auto over = inlinePrototypeManager_.resource(overHandle).prototype;
+
+        // Allocate memory for the new component.
+        auto memory = toSpawnData_.getBytes(maxPrototypeBytes_);
+        // Create the prototype of the entity to spawn.
+        EntityPrototype combined = 
+            mergePrototypesOverride(base, over, memory, componentTypes_);
+
+        toSpawnData_.lockBytes(combined.lockAndTrimMemory(componentTypes_));
+
+        // Add the prototype to toSpawn_ to ensure it exists until the
+        // beginning of the next game update when it is spawned.  It will be
+        // deleted before executing this process during the next game update.
+
+        toSpawn_.appendImmutable(combined);
+        // Spawn the entity (at the beginning of the next game update).
+        addEntity_(toSpawn_.atImmutable(toSpawn_.length - 1));
     }
 }
 
