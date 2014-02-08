@@ -30,10 +30,8 @@ import tharsis.entity.resourcemanager;
 import tharsis.util.bitmanip;
 import tharsis.util.mallocarray;
 
-}
                 }
                 outColliders[colliderCount++] = ColliderMultiComponent(entityID);
-}
 /// The central, "World" object of Tharsis.
 ///
 /// EntityManager fullfills multiple roles:
