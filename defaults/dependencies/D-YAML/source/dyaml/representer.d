@@ -69,7 +69,7 @@ final class Representer
          *                                   functions for default types.
          */
         this(const Flag!"useDefaultRepresenters" useDefaultRepresenters = Yes.useDefaultRepresenters) 
-            @safe
+            @safe pure
         {
             if(!useDefaultRepresenters){return;}
             addRepresenter!YAMLNull(&representNull);
@@ -130,7 +130,7 @@ final class Representer
          * --------------------
          * import std.string;
          *
-         * import yaml;
+         * import dyaml.all;
          *
          * struct MyStruct
          * {
@@ -171,7 +171,7 @@ final class Representer
          * --------------------
          * import std.string;
          *
-         * import yaml;
+         * import dyaml.all;
          *
          * class MyClass
          * {
@@ -224,10 +224,11 @@ final class Representer
          * }
          * --------------------
          */
-        void addRepresenter(T)(Node function(ref Node, Representer) representer) @trusted
+        void addRepresenter(T)(Node function(ref Node, Representer) representer) 
+            @trusted pure
         {
             assert((typeid(T) in representers_) is null, 
-                   "Representer function for data type " ~ typeid(T).toString() ~
+                   "Representer function for data type " ~ T.stringof ~
                    " already specified. Can't specify another one");
             representers_[typeid(T)] = representer;
         }
