@@ -31,6 +31,8 @@ import tharsis.util.bitmanip;
 import tharsis.util.mallocarray;
 
 }
+                }
+                outColliders[colliderCount++] = ColliderMultiComponent(entityID);
 }
 /// The central, "World" object of Tharsis.
 ///
@@ -793,6 +795,10 @@ public:
         // entity has components A and B, the latter overload is called.
         static void runProcess(EntityManager self, P process)
         {
+            // If the process has a 'preProcess' method, call it before 
+            // processing any entities.
+            static if(hasMember!(P, "preProcess")) { process.preProcess(); }
+
             // Iterate over all alive entities, executing the process on those
             // that match the process() methods of the Process.
 
@@ -816,6 +822,10 @@ public:
                     }
                 }.format(p[0], p[1])).join("else ").outdent);
             }
+
+            // If the process has a 'postProcess' method, call it after 
+            // processing all entities.
+            static if(hasMember!(P, "postProcess")) { process.postProcess(); }
         }
 
         // Add a wrapper for the process,
