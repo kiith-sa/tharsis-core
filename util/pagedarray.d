@@ -198,6 +198,14 @@ public:
         ++length_;
     }
 
+    /// Add a new item to the end of the array and mark it immutable.
+    void appendImmutable(U : T)(auto ref U element) @safe nothrow
+        if(isImplicitlyConvertible!(T, U))
+    {
+        this.opCatAssign(element);
+        markImmutable(length - 1);
+    }
+
     /// Get the number of items stored in the array.
     @property size_t length() @safe const pure nothrow {return length_;}
 
