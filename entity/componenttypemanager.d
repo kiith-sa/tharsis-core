@@ -296,7 +296,30 @@ enum maxSourceBytes = 512;
 /// --------------------
 /// struct Policy
 /// {
+///     /// Maximum possible number of user-defined component types.
 ///     enum maxUserComponentTypes = 128;
+///
+///     /// Maximum entities added during one frame.
+///     enum maxNewEntitiesPerFrame = 4096;
+///
+///     /// Minimum size of component buffers (in components) for every 
+///     /// component type to preallocate.
+///     enum minComponentPrealloc = 1024;
+///
+///     /// The multiplier to increase allocated size during an emergency
+///     /// reallocation.
+///     enum reallocMult = 2.5;
+///
+///     /// Minimum relative size of component buffers (in components) for every 
+///     /// component type compared to entity count.
+///     enum minComponentPerEntityPrealloc = 0.05;
+///
+///     /// Data type used internally for component counts in an entity.
+///     ///
+///     /// The maximum number of components of one type in an entity is 
+///     /// ComponentCount.max. Using data types such as uint or ulong will
+///     /// increase memory usage.
+///     alias ushort ComponentCount;
 /// }
 /// --------------------
 class ComponentTypeManager(Source, Policy = DefaultEntityPolicy)
