@@ -182,8 +182,12 @@ void main(string[] args)
                        ".+?D-YAML/test/.+?",
                        ".+?D-YAML/cdc.d"];
 
-    void compile_(string[] args, string[] files, string binaryName, string[] ignore)
+    void compile_(string[] files, string binaryName, string[] ignore,
+                  const(string)[] modifiers)
     {
+        auto args = modifiers.canFind("release")     ? release      :
+                    modifiers.canFind("nocontracts") ? no_contracts :
+                                                       dbg;
         compile(args ~ extra_args ~ ("-of" ~ binaryName), files, ignore);
     }
 
@@ -194,13 +198,14 @@ void main(string[] args)
         foreach(target; targets)
         {
             writeln("processing target: ", target);
-            switch(target)
+            const parts = target.split("-");
+            switch(parts.front)
             {
                 case "unittest":
-                    compile_(dbg, filesTest, "unittest", baseIgnore);
+                    compile_(filesTest, "unittest", baseIgnore, parts[1 .. $]);
                     break;
                 case "all":
-                    compile_(dbg, filesTest, "unittest", baseIgnore);
+                    compile_(filesTest, "unittest", baseIgnore, parts[1 .. $]);
                     break;
                 default:
                     writeln("unknown target: ", target);
@@ -235,12 +240,27 @@ void help()
         "Available build targets:\n"
         "    unittest        Build unit tests.\n"
         "    all             All of the above.\n"
+        "Build target name can be followed by a build type, separated by '-'.\n"
+        "The default build type is 'debug'.\n"
+        "Supported build types:\n"
+        "    debug           Build with debug symbols, no optimization,\n"
+        "                    and contracts/asserts\n"
+        "    nocontracts     A debug build without contracts/asserts\n"
+        "    release         A release build; no debug symbols or contracts,\n"
+        "                    full optimization.\n"
         "\n"
         "Available options:\n"
         " -h --help          Show this help information.\n"
         "    --gdc           Use GDC for compilation.\n"
         "    --dmd           Use DMD for compilation.\n"
         "    --ldc           Use LDC for compilation. (not tested)\n"
+        "\n"
+        "Examples:\n"
+        "    ./cdc unittest-debug"
+        "        Builds a debug build of the unittests with the same compiler\n"
+        "        that was used to build this script\n"
+        "    ./cdc --gdc all-release\n"
+        "        Builds a release build of all targets using GDC\n"
         ;
     writeln(help);
 }
