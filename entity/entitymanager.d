@@ -914,11 +914,13 @@ private:
             process.process(%s, futureComponents);
             }.format(pastComponents()));
 
-            assert(oldSlice.ptr == futureComponents.ptr && 
-                   oldSlice.length >= futureComponents.length,
-                   "Process writing a future MultiComponent either changed the "
-                   "passed future MultiComponent slice to point to another "
-                   "location, or enlarged it");
+            // For some reason, this assert is compiled even in release mode,
+            // so we use 'debug' to explicitly disable it outside of debug mode.
+            debug assert(oldSlice.ptr == futureComponents.ptr && 
+                         oldSlice.length >= futureComponents.length,
+                         "Process writing a future MultiComponent either "
+                         "changed the passed future MultiComponent slice to "
+                         "point to another location, or enlarged it");
 
             // The number of components written.
             const componentCount = cast(ComponentCount)futureComponents.length;
