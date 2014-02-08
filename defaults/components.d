@@ -6,10 +6,12 @@
 module tharsis.defaults.components;
 
 
+import tharsis.defaults.resources;
 import tharsis.entity.componenttypeinfo;
 import tharsis.entity.entityprototype;
 public import tharsis.entity.lifecomponent;
 import tharsis.entity.resourcemanager;
+
 
 /// Contains data about an entity to spawn.
 ///
@@ -33,6 +35,13 @@ struct SpawnerMultiComponent
 
     /// Resource handle to the prototype of the entity to spawn.
     ResourceHandle!EntityPrototypeResource spawn;
+
+    /// Resource handle to a prototype storing all components to apply on top 
+    /// of spawn, overriding components of spawn.
+    ///
+    /// Used to modify entities directly in the spawner component source.
+    @(FieldName("override")) 
+    ResourceHandle!InlineEntityPrototypeResource overrideComponents;
 
     /// Spawn conditions match this to specify which SpawnerMultiComponent they 
     /// affect.
