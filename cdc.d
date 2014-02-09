@@ -169,9 +169,10 @@ void main(string[] args)
     //if(targets.length == 0){targets = ["debug"];}
     if(targets.length == 0) {targets = ["unittest"];}
 
-    auto dbg          = ["-unittest", "-gc", "-debug"];
-    auto no_contracts = ["-release", "-gc"];
-    auto release      = ["-O", "-inline", "-release", "-gc"];
+    auto dbg             = ["-unittest", "-gc", "-debug"];
+    auto no_contracts    = ["-release", "-gc"];
+    auto release         = ["-O", "-inline", "-release", "-gc"];
+    auto releasenoinline = ["-O", "-release", "-gc"];
 
     auto dependencies = cast(string[])[];
     auto sources      = ["entity", "util"];
@@ -185,9 +186,10 @@ void main(string[] args)
     void compile_(string[] files, string binaryName, string[] ignore,
                   const(string)[] modifiers)
     {
-        auto args = modifiers.canFind("release")     ? release      :
-                    modifiers.canFind("nocontracts") ? no_contracts :
-                                                       dbg;
+        auto args = modifiers.canFind("release")         ? release         :
+                    modifiers.canFind("releasenoinline") ? releasenoinline :
+                    modifiers.canFind("nocontracts")     ? no_contracts    :
+                                                           dbg;
         compile(args ~ extra_args ~ ("-of" ~ binaryName), files, ignore);
     }
 
@@ -248,6 +250,7 @@ void help()
         "    nocontracts     A debug build without contracts/asserts\n"
         "    release         A release build; no debug symbols or contracts,\n"
         "                    full optimization.\n"
+        "    releasenoinline A release build without function inlining.\n"
         "\n"
         "Available options:\n"
         " -h --help          Show this help information.\n"
