@@ -239,6 +239,9 @@ private:
         return cast(inout(T)[])((*page)[0 .. pageItemBytes]);
     }
 
+    /// Get a slice of flags (mutability, etc.) of items in a page.
+    ///
+    /// The last pageItemFlagsBytes of a page store these flags.
     inout(ItemFlags)[] pageItemFlags(inout(PagedArrayBase.Page)* page) 
         @trusted inout nothrow
     {
