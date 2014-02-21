@@ -18,6 +18,12 @@ public:
     /// Get the resource type managed by this resource manager.
     TypeInfo managedResourceType() @safe pure nothrow const;
 
+    /// Clear the resource manager, deleting all resources.
+    ///
+    /// Must not be called while the EntityManager where the resource manager
+    /// is registered runs.
+    void clear() @safe;
+
 protected:
     /// Called by EntityManager between frames. 
     /// 
