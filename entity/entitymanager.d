@@ -128,10 +128,22 @@ public:
         future_ = &(stateStorage_[1]);
     }
 
-    /// Destroy an EntityManager.
-    ~this()
+    /// Destroy the EntityManager.
+    ///
+    /// Must be called after using the entity manager.
+    ///
+    /// Params: clearResources = Destroy all resources in the registered
+    ///                          resource managers? If this is false, the user
+    ///                          must manually call the clear() method of every
+    ///                          resource manager to free the resources.
+    void destroy(Flag!"ClearResources" clearResources = Yes.ClearResources)
+        @trusted
     {
-        destroy(cast(EntitiesToAdd)entitiesToAdd_);
+        .destroy(cast(EntitiesToAdd)entitiesToAdd_);
+        if(clearResources) foreach(manager; resourceManagers_)
+        {
+            manager.clear();
+        }
     }
 
     /// Add a new entity, using components from specified prototype.
