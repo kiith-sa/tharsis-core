@@ -145,7 +145,11 @@ public:
     ///
     /// The resource may be Loaded at some later time, or loading may fail,
     /// resulting in a LoadFailed state.
-    ResourceState state(const Handle handle) @safe pure nothrow const;
+    ///
+    /// This method is not const to allow for non-const internal operations
+    /// (such as mutex locking), but it should be logically const from the
+    /// user's point of view.
+    ResourceState state(const Handle handle) @safe pure nothrow;
 
     /// Request the resource with specified handle to be loaded by the manager.
     ///
@@ -163,8 +167,11 @@ public:
     ///
     /// This can only be called if the state of the resource is
     /// ResourceState.Loaded.
-    ref immutable(Resource) resource(const Handle handle) 
-        @safe pure nothrow const;
+    ///
+    /// This method is not const to allow for non-const internal operations
+    /// (such as mutex locking), but it should be logically const from the
+    /// user's point of view.
+    ref immutable(Resource) resource(const Handle handle) @safe pure nothrow;
 }
 
 /// Enumerates resource states.
