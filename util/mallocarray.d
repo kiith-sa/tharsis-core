@@ -131,7 +131,7 @@ public:
     }
 
     /// Get the number of items this MallocArray can store without reallocating.
-    size_t capacity() @safe pure nothrow
+    size_t capacity() @safe pure nothrow const
     {
         return data_.length / usedData_.sizeof;
     }
