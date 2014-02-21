@@ -404,7 +404,6 @@ unittest
 }
 
 
-private:
 
 /// A basic, untyped paged array.
 ///
@@ -414,6 +413,7 @@ private:
 ///       allocations are needed.
 struct PagedArrayBase
 {
+private:
     /// Fixed page size. 
     ///
     /// This limits the maximum size of slices allocated from paged arrays;
