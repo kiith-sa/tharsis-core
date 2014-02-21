@@ -33,4 +33,19 @@ struct StringDescriptor(Resource)
     {
         return source.readTo(result.fileName);
     }
+
+    /// Determine if this descriptor maps to the same resource handle as another
+    /// descriptor.
+    ///
+    /// Usually, this returns true if two descriptors describe the same resource
+    /// (e.g. if the descriptors are equal).
+    /// 
+    /// The resource manager uses this when a resource handle is requested to
+    /// decide whether to load a new resource or to reuse an existing one
+    /// (if a descriptor maps to the same handle as a descriptor of already
+    /// existing resource).
+    bool mapsToSameHandle(ref const(StringDescriptor) rhs) @safe pure nothrow const
+    {
+        return fileName == rhs.fileName;
+    }
 }
