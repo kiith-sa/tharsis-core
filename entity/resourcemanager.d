@@ -25,9 +25,11 @@ public:
     void clear() @safe;
 
 protected:
-    /// Called by EntityManager between frames. 
-    /// 
+    /// Called by EntityManager between game updates.
+    ///
     /// Can handle e.g. resource loading.
+    /// Called between game updates when the processes don't run, so
+    /// implementations don't need to synchronize data written to by processes.
     void update_() @trusted nothrow;
 
     /// Get a raw (untyped) handle to a resource described by a descriptor.
@@ -105,7 +107,7 @@ package:
 
 
 /// Base class for resource managers managing a specific Resource type.
-/// 
+///
 /// Any Resource type must define a Descriptor type, which stores the data 
 /// needed for the ResourceManager to initialize the Resource (e.g. a file 
 /// name).
@@ -146,19 +148,20 @@ public:
     ResourceState state(const Handle handle) @safe pure nothrow const;
 
     /// Request the resource with specified handle to be loaded by the manager.
-    /// 
-    /// The ResourceManager will try to load the resource asynchronously.
     ///
-    /// There is no way to force a resource to be loaded immediately; the 
+    /// The ResourceManager will try to load the resource asynchronously.
+    /// If the resource is already loaded, requestLoad() will do nothing.
+    ///
+    /// There is no way to force a resource to be loaded immediately; the
     /// resource may or may not be loaded by the next frame; it may even fail
     /// to load.
-    /// 
+    ///
     /// See_Also: state
     void requestLoad(const Handle handle) @safe nothrow;
 
     /// Get an immutable reference to resource with specified handle.
-    /// 
-    /// This can only be called if the state of the resource is 
+    ///
+    /// This can only be called if the state of the resource is
     /// ResourceState.Loaded.
     ref immutable(Resource) resource(const Handle handle) 
         @safe pure nothrow const;
