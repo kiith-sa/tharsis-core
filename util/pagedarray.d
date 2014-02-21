@@ -73,10 +73,23 @@ private:
     ///
     /// In page 'page', stored items take page[0 .. pageItemBytes],
     /// and their flags take page[$ - pageItemFlagsBytes .. $].
+    ///
+    /// Members are manually delegated instead of using alias this because of
+    /// DMD issues (as of DMD 2.053).
     PagedArrayBase base_;
 
-    /// Allow direct access to pages, as with a base class.
-    alias base_ this;
+    /// Shortcut aliases.
+    alias PagedArrayBase.Page Page;
+    alias PagedArrayBase.PageSize PageSize;
+
+    /// Access the pages as if they were a direct data member.
+    ref inout(Page*[]) pages_() inout { return base_.pages_; }
+
+    /// Add a new page with type info about the stored type for debugging.
+    void addPage(TypeInfo typeInfo) @trusted nothrow 
+    {
+        base_.addPage(typeInfo); 
+    }
 
     /// The number of items stored in the array.
     uint length_;
