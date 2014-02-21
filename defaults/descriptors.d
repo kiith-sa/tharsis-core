@@ -74,4 +74,34 @@ public:
         result.wrappedSource = new SourceWrapper!Source(source);
         return true;
     }
+
+    /// Determine if this descriptor maps to the same resource handle as another
+    /// descriptor.
+    ///
+    /// Usually, this returns true if two descriptors describe the same resource
+    /// (e.g. if the descriptors are equal). SourceWrapperDescriptors are 
+    /// assumed to never map to the same handle (the resource is loaded 
+    /// directly from a source fragment of a larger resource's definition). 
+    /// 
+    /// The resource manager uses this when a resource handle is requested to
+    /// decide whether to load a new resource or to reuse an existing one
+    /// (if a descriptor maps to the same handle as a descriptor of already
+    /// existing resource).
+    bool mapsToSameHandle(ref const(SourceWrapperDescriptor) rhs)
+        @safe pure nothrow const
+    {
+        // Handles to resources using SourceWrapperDescriptors are initialized
+        // as members of components where those resources are defined inline.
+        // That is, they are initialized together with the entity prototype of
+        // the entities containing the component which has the resource handle
+        // as a data member. Therefore, all entities created from the same
+        // prototype (usually corresponding to one source file) are going to
+        // have copies of an already initialized handle, with no need to call
+        // handle() of the resource manager managing the resource.  Because of
+        // this, even if we assume any two SourceWrapperDescriptors (even
+        // identical) never map to the same handle, the resource manager will
+        // only load a resource from one descriptor once (per prototype) instead
+        // of loading it for every single entity.
+        return false;
+    } 
 }
