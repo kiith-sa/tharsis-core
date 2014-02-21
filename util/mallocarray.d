@@ -135,6 +135,12 @@ public:
     {
         return data_.length / usedData_.sizeof;
     }
+
+    /// Is the array empty?
+    bool empty() @safe pure nothrow const
+    {
+        return usedData_.length == 0;
+    }
 }
 
 
