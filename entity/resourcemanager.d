@@ -9,6 +9,7 @@ module tharsis.entity.resourcemanager;
 
 
 import tharsis.entity.entitymanager;
+import tharsis.util.interfaces;
 
 
 /// Base class to provide unified access to resource managers.
@@ -172,7 +173,13 @@ public:
     /// (such as mutex locking), but it should be logically const from the
     /// user's point of view.
     ref immutable(Resource) resource(const Handle handle) @safe pure nothrow;
+
+    /// Access descriptors of all resources that failed to load.
+    ///
+    /// Used for debugging.
+    Foreachable!(const(Descriptor)) loadFailedDescriptors();
 }
+
 
 /// Enumerates resource states.
 /// 
