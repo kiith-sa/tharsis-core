@@ -176,7 +176,10 @@ void main(string[] args)
 
     auto dependencies = cast(string[])[];
     auto sources      = ["entity", "util"];
-    auto defaults     = ["defaults"];
+    // The testsbuiltin package depends on defaults. 
+    // To create a build without the default builtin 
+    // components/processes/resources, neither of these can be compiled in.
+    auto defaults     = ["defaults", "testsbuiltin"];
 
     auto baseIgnore = [".+?D-YAML/unittest.d", 
                        ".+?D-YAML/examples/.+?",
