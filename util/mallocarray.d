@@ -69,8 +69,9 @@ public:
     void opCatAssign(U : T)(U element) @trusted nothrow
         if(isImplicitlyConvertible!(T, U))
     {
-        const oldLength = this.length;
-        if(data_.length == oldLength) { reserve((data_.length + 8) * 2); }
+        const oldLength      = this.length;
+        const oldLengthBytes = oldLength * T.sizeof;
+        if(data_.length == oldLengthBytes) { reserve((data_.length + 8) * 2); }
 
         usedData_ = (cast(T[])data_)[0 .. oldLength + 1];
         usedData_[oldLength] = element;
