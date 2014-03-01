@@ -436,7 +436,11 @@ protected:
 
         // Need to add resources repeatedly; newly loaded resources (prototypes)
         // may contain handles adding new resources to resourcesToAdd_.
-        while(!resourcesToAdd_.assumeUnshared.empty)
+        //
+        // Even if there are no newly added resources, there may be resources
+        // requested to be loaded (indicesToLoad_).
+        while(!resourcesToAdd_.assumeUnshared.empty ||
+              !indicesToLoad_.assumeUnshared.empty)
         {
             // DMD (as of DMD 2.053) breaks the release build if we don't
             // iterate by reference here.
