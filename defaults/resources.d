@@ -56,3 +56,43 @@ struct InlineEntityPrototypeResource
     /// Current state of the resource,
     ResourceState state = ResourceState.New;  
 }
+
+
+/// Manages entity prototypes defined inline in a Source (e.g. embedded in YAML
+/// source of another prototype).
+///
+/// Descriptor for this resource contains the entire Source of the prototype.
+class InlinePrototypeManager: BasePrototypeManager!InlineEntityPrototypeResource
+{
+public:
+    /// Construct an InlinePrototypeManager.
+    ///
+    /// Params: Source               = Type of source to load prototypes from
+    ///                                (e.g. YAMLSource)
+    ///         Policy               = Policy used with the entity manager,
+    ///                                specifying compile-time tweakables.
+    ///         componentTypeManager = Component type manager where all used
+    ///                                component types are registered.
+    ///         entityManager        = The entity manager.
+    this(Source, Policy)
+        (ComponentTypeManager!(Source, Policy) componentTypeManager, 
+         EntityManager!Policy entityManager)
+    {
+        super(componentTypeManager, entityManager,
+              (ref Descriptor d) => d.source!Source);
+    }
+}
+unittest
+{
+    import tharsis.entity.defaultentitypolicy;
+    import tharsis.entity.componenttypemanager;
+    import tharsis.defaults.components;
+    import tharsis.defaults.yamlsource;
+    auto compTypeMgr = 
+        new ComponentTypeManager!YAMLSource(YAMLSource.Loader());
+    compTypeMgr.registerComponentTypes!(TimedSpawnConditionMultiComponent);
+    compTypeMgr.lock();
+    auto entityMgr = new EntityManager!DefaultEntityPolicy(compTypeMgr);
+    auto manager = 
+        new InlinePrototypeManager(compTypeMgr, entityMgr);
+}
