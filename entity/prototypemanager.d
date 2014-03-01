@@ -489,8 +489,7 @@ private:
 }
 
 
-/// A resource manager managing entity prototypes defined in separate files,
-/// with filename descriptors.
+/// Manages entity prototypes defined in files, with filename descriptors.
 class PrototypeManager: BasePrototypeManager!EntityPrototypeResource
 {
 public:
