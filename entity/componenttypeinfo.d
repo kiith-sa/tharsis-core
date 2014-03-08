@@ -29,19 +29,19 @@ package enum ushort maxBuiltinComponentTypes = 8;
 /// Maximum possible number of component types in the 'defaults' package.
 package enum ushort maxDefaultsComponentTypes = 24;
 
-/// The number of component type IDs reserved for tharsis builtins and the 
+/// The number of component type IDs reserved for tharsis builtins and the
 /// defaults package.
 ///
 /// Component type IDs of user-defined should use userComponentTypeID to avoid
 /// collisions with builtin components.
 enum ushort maxReservedComponentTypes =
     maxBuiltinComponentTypes + maxDefaultsComponentTypes;
- 
+
 /// Generate a component type ID for a user-defined component type.
 ///
-/// Params: base = The base component type ID specified by the user. This must 
-///                be different for every user-defined component type and must 
-///                be less that the maxUserComponentTypes enum in the Policy 
+/// Params: base = The base component type ID specified by the user. This must
+///                be different for every user-defined component type and must
+///                be less that the maxUserComponentTypes enum in the Policy
 ///                parameter of the EntityManager; by default, this is 64.
 template userComponentTypeID(ushort base)
 {
@@ -63,7 +63,7 @@ ushort[] componentIDs(ComponentTypes...)() @trusted
 
 /// Get the maximum possible components of this type at entity may have.
 ///
-/// Used mainly by MultiComponents. For normal Components this is a minimum 
+/// Used mainly by MultiComponents. For normal Components this is a minimum
 /// number of free preallocated components.
 auto maxComponentsPerEntity(ComponentType)() @safe pure nothrow
 {
@@ -71,16 +71,16 @@ auto maxComponentsPerEntity(ComponentType)() @safe pure nothrow
     {
         return ComponentType.maxComponentsPerEntity;
     }
-    else 
+    else
     {
         return 1;
     }
 }
 
 /// Determine if a component type is a MultiComponent type.
-template isMultiComponent(Component) 
+template isMultiComponent(Component)
 {
-    enum isMultiComponent = 
+    enum isMultiComponent =
         Unqual!Component.stringof.endsWith("MultiComponent");
 }
 
@@ -94,7 +94,7 @@ mixin template validateComponent(Component)
     alias std.traits.Unqual!Component BaseType;
     static assert(is(Component == struct),
                   "All component types must be structs");
-    static assert(BaseType.stringof.endsWith("Component"), 
+    static assert(BaseType.stringof.endsWith("Component"),
                   "Component type name does not end with 'Component'");
     static assert(__traits(hasMember, Component, "ComponentTypeID"),
                   "Component type without a ComponentTypeID: "
@@ -120,7 +120,7 @@ mixin template validateComponent(Component)
                   "not implemented yet");
 }
 
-/// Used as an user-defined attribute for component properties to override the 
+/// Used as an user-defined attribute for component properties to override the
 /// name of the property in the Source it's loaded from (e.g. YAML).
 struct FieldName
 {
@@ -134,7 +134,7 @@ struct ComponentTypeInfo
 {
 private:
     /// Type information about the source type the components are loaded from.
-    /// 
+    ///
     /// Ensures that a correct Source is passed to loadComponent.
     TypeInfo sourceType_;
 
@@ -147,7 +147,7 @@ public:
 
     /// Maximum possible components of this type at entity may have.
     ///
-    /// Used mainly by MultiComponents. For normal Components this is a minimum 
+    /// Used mainly by MultiComponents. For normal Components this is a minimum
     /// number of free preallocated components.
     size_t maxPerEntity = 1;
 
@@ -167,25 +167,25 @@ public:
     double minPreallocPerEntity = 0;
 
     /// Type information about a component type field (data member).
-    struct Field 
+    struct Field
     {
         /// A function type to load the field.
         ///
-        /// Params: ubyte[]:          Component to load the field into, passed 
+        /// Params: ubyte[]:          Component to load the field into, passed
         ///                           as a raw byte array.
         ///         void*:            Data source to load the field from.
         ///                           (e.g. a YAML node defining the component)
-        ///                           Although a void pointer is used, the 
+        ///                           Although a void pointer is used, the
         ///                           source must match the type of the source
-        ///                           used with the construct! function that 
+        ///                           used with the construct! function that
         ///                           created this ComponentTypeInfo.
-        ///         GetResourceHandle A delegate that, given (at runtime) a 
+        ///         GetResourceHandle A delegate that, given (at runtime) a
         ///                           resource type and descriptor, returns a
-        ///                           raw resource handle. Used to initialize 
+        ///                           raw resource handle. Used to initialize
         ///                           fields that are resource handles.
         ///
         /// Returns: true if the field was successfully loaded, false otherwise.
-        alias bool function(ubyte[], void*, GetResourceHandle) 
+        alias bool function(ubyte[], void*, GetResourceHandle)
             nothrow LoadField;
 
         /// The function to load the field.
@@ -210,12 +210,12 @@ public:
     ///                              raw resource handle. Used to initialize 
     ///                              fields that are resource handles.
     bool loadComponent(Source)
-                      (ubyte[] componentData, 
+                      (ubyte[] componentData,
                        ref Source source,
-                       GetResourceHandle getResourceHandle)
+                       GetResourceHandle getHandle)
         @trusted nothrow const
     {
-        assert(typeid(Source) is sourceType_, 
+        assert(typeid(Source) is sourceType_,
                "Source type used to construct a ComponentTypeInfo doesn't "
                "match the source type passed to its loadComponent method");
 
@@ -223,7 +223,7 @@ public:
         //      call loadField only for those fields that are present.
         //      The rest simply won't be overwritten.
         //      (note; Field struct must include the name of the field for this)
-        assert(componentData.length == size, 
+        assert(componentData.length == size,
                "Size of component to load doesn't match its component type");
         // Try to load all the fields. If we fail to load any single field,
         // loading fails.
@@ -267,7 +267,7 @@ public:
         // Compile-time foreach.
         foreach(f; Fields)
         {
-            result.fields ~= 
+            result.fields ~=
                 Field(cast(Field.LoadField)&loadField!(Source, Component, f));
         }
 
@@ -277,7 +277,7 @@ public:
 private:
     /// Get the name of a field used to load it from a Source such as YAML.
     ///
-    /// The field name is, by default, the same in a Source as in the component 
+    /// The field name is, by default, the same in a Source as in the component
     /// type definition, but it can be overridden by a FieldName attribute.
     /// This is useful e.g. if a field name would collide with a D keyword.
     static string fieldNameSource(Component, string fieldNameInternal)()
@@ -288,7 +288,7 @@ private:
         }.format(fieldNameInternal));
         foreach(attrib; fieldAttribs) if(is(typeof(attrib) == FieldName))
         {
-            assert(result is null, 
+            assert(result is null,
                    "More than one FieldName attribute on a component field");
             result = attrib.name;
         }
@@ -298,7 +298,7 @@ private:
 
     /// Loads a field of a Component from a Source.
     ///
-    /// Params: Source            = The Source type to load from 
+    /// Params: Source            = The Source type to load from
     ///                             (e.g. YAMLSource).
     ///         Component         = Component type we're loading.
     ///         fieldNameInternal = Name of the data member of Component to
@@ -306,26 +306,26 @@ private:
     ///         componentBuffer   = The component we're loading as raw bytes.
     ///         sourceVoid        = A void pointer to the Source we're loading
     ///                             from.
-    ///         getResourceHandle = A function that will get a raw handle to a 
-    ///                             resource when passed resource type and 
-    ///                             descriptor. Used to initialize component 
+    ///         getHandle         = A function that will get a raw handle to a
+    ///                             resource when passed resource type and
+    ///                             descriptor. Used to initialize component
     ///                             fields that are resource handles.
     static bool loadField(Source, Component, string fieldNameInternal)
-                         (ubyte[] componentBuffer, void* sourceVoid, 
-                          GetResourceHandle getResourceHandle)
+                         (ubyte[] componentBuffer, void* sourceVoid,
+                          GetResourceHandle getHandle)
     {
-        assert(componentBuffer.length == Component.sizeof, 
+        assert(componentBuffer.length == Component.sizeof,
                "Size of component buffer doesn't match its type");
 
-        // TODO if a field has an explicit default value, allow it to be 
+        // TODO if a field has an explicit default value, allow it to be
         //      unspecified and set it to the default value here.
 
-        // The component is stored in a mapping; the field is stored in a 
+        // The component is stored in a mapping; the field is stored in a
         // Source that is one of the values in that mapping.
         Source fieldSource;
         Source* source = cast(Source*)sourceVoid;
 
-        // The field name used when loading from the Source. May be different 
+        // The field name used when loading from the Source. May be different
         // from the name of the Component's field.
         enum string fieldName = fieldNameSource!(Component, fieldNameInternal);
         if(!source.getMappingValue(fieldName, fieldSource))
@@ -341,7 +341,7 @@ private:
 
         // If a component property is a resource handle, the Source contains a
         // resource descriptor. We need to load the descriptor and then get the
-        // handle by getResourceHandle(), which will create a resource with the
+        // handle by getHandle(), which will create a resource with the
         // correct resource manager and return a handle to it.
         static if(isResourceHandle!(Component, fieldNameInternal))
         {
@@ -360,7 +360,7 @@ private:
             }
 
             // Initialize the field which is a handle to the resource.
-            *fieldPtr = Handle(getResourceHandle(typeid(Resource), &desc));
+            *fieldPtr = Handle(getHandle(typeid(Resource), &desc));
         }
         // By default, properties are stored in the Source directly as values.
         else if(!fieldSource.readTo(*fieldPtr))
