@@ -77,8 +77,10 @@ template PastComponentTypes(alias ProcessFunc)
 
     // Past components are passed by const.
     alias constTypes         = ConstTypes!(ParameterTypeTuple!ProcessFunc);
+
+    alias constComponents    = Filter!(templateNot!isEntityAccess, constTypes);
     // Get the actual component types.
-    alias baseTypes          = staticMap!(BaseType, constTypes);
+    alias baseTypes          = staticMap!(BaseType, constComponents);
     // Remove qualifiers such as const.
     alias PastComponentTypes = UnqualAll!baseTypes;
 }
