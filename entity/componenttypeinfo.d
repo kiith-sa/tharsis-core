@@ -198,17 +198,15 @@ public:
     /// Is this ComponentTypeInfo null (i.e. doesn't describe any type)?
     bool isNull() @safe pure nothrow const { return id == nullComponentTypeID; }
 
-
     /// Loads a component of this component type.
     ///
-    /// Params:  componentData     = Component to load into, as a raw bytes 
-    ///                              buffer.
-    ///          source            = Source to load the component from (e.g. a 
-    ///                              YAML node defining the component).
-    ///          GetResourceHandle = A delegate that, given (at runtime) a 
-    ///                              resource type and descriptor, returns a
-    ///                              raw resource handle. Used to initialize 
-    ///                              fields that are resource handles.
+    /// Params:  componentData = Component to load into, as a raw bytes buffer.
+    ///          source        = Source to load the component from (e.g. a YAML
+    //.                          node defining the component).
+    ///          getHandle     = A delegate that, given (at runtime) a resource
+    ///                          type and descriptor, returns a raw resource
+    ///                          handle. Used to initialize fields that are
+    ///                          resource handles.
     bool loadComponent(Source)
                       (ubyte[] componentData,
                        ref Source source,
