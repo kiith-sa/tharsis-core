@@ -441,11 +441,10 @@ Tuple!(string, size_t)[] prioritizeProcessOverloads(P)()
             }
         }
 
-        assert(handlerOverload != size_t.max, "Ambigous process() "
-               "overloads in %s: %s, %s. Add an overload handling "
-               "past components processed by both overloads %s."
-               .format(P.stringof, 
-                       typeof(o1).stringof, typeof(o2).stringof, combined));
+        assert(handlerOverload != size_t.max, "Ambigous process() overloads in "
+               "%s: %s, %s. Add an overload handling past components processed "
+               "by both overloads %s.".format(P.stringof, typeof(o1).stringof,
+                                              typeof(o2).stringof, combined));
 
         cases[cast(immutable(ushort)[])combined] = handlerOverload;
     }
