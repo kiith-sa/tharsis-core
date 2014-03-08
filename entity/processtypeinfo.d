@@ -232,94 +232,82 @@ template validateProcessMethod(alias Function)
     // with CTFE when this mixin is used.
     typeof(null) validate()
     {
-        alias ParamTypes          = ParameterTypeTuple!Function;
-        alias ParamStorageClasses = ParameterStorageClassTuple!Function;
-        uint nonConstCount;
+        uint futureCount = 0;
         bool[size_t] pastIDs;
-        foreach(i, Param; ParamTypes)
+
+        void testFutureComponent(alias Info)()
         {
-            enum storage = ParamStorageClasses[i];
-            enum isSlice = isArray!Param;
-            enum isPtr   = isPointer!Param;
-            // Get the actual component type 
-            // (the parameter may be a pointer or slice).
-            static if(isSlice)    { alias Component = typeof(Param.init[0]); }
-            else static if(isPtr) { alias Component = typeof(*Param.init); }
-            else                  { alias Component = Param; }
+            ++futureCount;
+            // If slice is used, the param is a MultiComponent.
+            // ref is required to allow the Process to downsize the slice.
+            assert(!Info.isSlice || Info.isRef,
+                   "Slice for a future MultiComponent of a process() method "
+                   "must be 'ref'");
+            // Slice is not used; the param is not a MultiComponent
+            // out is used when the future component is always written, ref
+            // pointer also allows _not to write_ the component into future 
+            // state.
+            assert(Info.isSlice || 
+                   (Info.isPtr && Info.isRef) || (!Info.isPtr && Info.isOut),
+                   "Future non-multi component of a process() method must be "
+                   "'out' or a 'ref' pointer");
+        }
 
-            // TODO entities might also be supported later for some cases.
-            assert((Unqual!Component).stringof.endsWith("Component"), 
-                   "A parameter type to a process() method with name not " 
-                   "ending by \"Component\": " ~ Param.stringof);
+        void testPastComponent(alias Info)()
+        {
+            assert(!Info.isPtr, 
+                   "Past components must not be passed by pointer");
+            assert((Info.Component.ComponentTypeID in pastIDs) == null,
+                   "Two past components of the same type (or of types with the "
+                   "same ComponentTypeID) in a process() method signature");
 
-            // MultiComponents must be passed by slices.
-            static if(isSlice)
+            // MultiComponent past slices must have the default storage class so
+            // the Process may not change the size of the passed slice.
+            assert(!Info.isSlice || Info.storage == ParameterStorageClass.none,
+                   "Slice for a past MultiComponent of a process() method must "
+                   "not be 'out', 'ref', 'scope' or 'lazy'");
+
+            // Non-multi past components are passed by (const) ref.
+            assert(Info.isSlice || Info.isRef,
+                   "Past components of a process() method must be 'ref'");
+
+            // Remember this past component to check for duplicates.
+            pastIDs[Info.Component.ComponentTypeID] = true;
+        }
+
+        foreach(Info; processMethodParamInfo!Function)
+        {
+            static if(Info.isEntityAccess)
             {
-                assert(isMultiComponent!Component, 
+                assert(!isMutable!(Info.Param),
+                       "EntityAccess parameter of process() must be const");
+            }
+            else static if(Info.isComponent)
+            {
+                alias Component = Info.Component;
+                assert((Unqual!Component).stringof.endsWith("Component"), 
+                       "A non-EntityAccess parameter type to a process() "
+                       "method with name not ending by \"Component\": " ~
+                       Info.ParamTypeName);
+                // MultiComponents must be passed by slices.
+                assert(!Info.isSlice || isMultiComponent!Component, 
                        "A non-MultiComponent passed by slice as a future "
                        "component of a process() method");
-            }
-            // Other component types may _not_ be passed by slices.
-            else
-            {
-                assert(!isMultiComponent!Component, 
+                // Other component types may _not_ be passed by slices.
+                assert(Info.isSlice || !isMultiComponent!Component,
                        "A MultiComponent not passed by slice as a past "
                        "component of a process() method");
-            }
 
-            // Future component.
-            static if(isMutable!Component) 
-            {
-                ++nonConstCount;
-                // ref is required to allow the Process to downsize the slice.
-                static if(isSlice)
-                {
-                    assert(storage & ParameterStorageClass.ref_,
-                           "Slice for a future MultiComponent of a process() "
-                           "method must be 'ref'");
-                }
-                // out is just to write the future component, ref pointer also
-                // allows _not to write_ the component into future state.
-                else
-                {
-                    assert((isPtr && storage & ParameterStorageClass.ref_) ||
-                          (!isPtr && storage & ParameterStorageClass.out_),
-                           "Future non-multi component of a process() method "
-                           "must be 'out' or a 'ref' pointer");
-                }
+                static if(isMutable!Component) { testFutureComponent!Info(); }
+                else                           { testPastComponent!Info(); }
             }
-            // Past component.
             else 
             {
-                assert(!isPtr, "Past components must not be passed by pointer");
-                assert((Component.ComponentTypeID in pastIDs) == null,
-                       "Two past components of the same type (or of types "
-                       "with the same ComponentTypeID) in a process() "
-                       "method signature");
-
-
-                // Past slices must have the default storage class so the 
-                // Process may not modify them.
-                static if(isSlice)
-                {
-                    assert(storage == ParameterStorageClass.none,
-                           "Slice for a past MultiComponent of a process() "
-                           "method must not be 'out', 'ref', 'scope' or "
-                           "'lazy'");
-                }
-                // Normal past components are passed by (const) ref.
-                else 
-                {
-                    assert(ParamStorageClasses[i] == ParameterStorageClass.ref_,
-                           "Past components of a process() method must be "
-                           "'ref'");
-                }
-
-                // Register this past component.
-                pastIDs[Component.ComponentTypeID] = true;
+                assert(false, "A process() method with a non-EntityAccess, "
+                              "non-Component parameter");
             }
         }
-        assert(nonConstCount <= 1,
+        assert(futureCount <= 1,
                "A process() method with more than one future (non-const) " 
                "component type");
         return null;
