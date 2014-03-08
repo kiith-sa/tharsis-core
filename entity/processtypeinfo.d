@@ -54,6 +54,14 @@ unittest
     static assert(AllPastComponentTypes!S.length == 3);
 }
 
+/// Is the specified type an EntityAccess type?
+/// 
+/// (Passed to some process() functions to access entity info.)
+template isEntityAccess(T)
+{
+    alias isEntityAccess = hasMember!(T, "isEntityAccess_");
+}
+
 /// Get past component types read by specified process() method.
 template PastComponentTypes(alias ProcessFunc)
 {
