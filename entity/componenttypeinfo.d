@@ -229,9 +229,7 @@ public:
         // loading fails.
         foreach(ref f; fields)
         {
-            if(!f.loadField(componentData, 
-                            cast(void*)&source,
-                            getResourceHandle))
+            if(!f.loadField(componentData, cast(void*)&source, getHandle))
             {
                 return false;
             }
