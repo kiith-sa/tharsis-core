@@ -161,6 +161,8 @@ size_t futureComponentIndex(alias ProcessFunc)()
     alias ParamTypes = ParameterTypeTuple!ProcessFunc;
     foreach(idx, paramStorage; ParameterStorageClassTuple!ProcessFunc)
     {
+        // Future component is either passed by out, or by a ref pointer, or
+        // (MultiComponent types) by a ref slice (array).
         if(paramStorage & ParameterStorageClass.out_ ||
            (isPointer!(ParamTypes[idx]) && 
             paramStorage & ParameterStorageClass.ref_) ||
