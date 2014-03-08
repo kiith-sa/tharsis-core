@@ -17,6 +17,7 @@ import std.typetuple;
 import tharsis.entity.componenttypeinfo;
 import tharsis.util.bitmanip;
 import tharsis.util.traits;
+import tharsis.util.typetuple;
 
 
 /// Get all overloads of the process() method in a given Process type.
@@ -175,6 +176,53 @@ size_t futureComponentIndex(alias ProcessFunc)()
         }
     }
     return result;
+}
+
+/// Get a tuple containing type information for every parameter of a process()
+/// method.
+///
+/// Each element of a tuple is a ParamInfo template, which contains various type
+/// information about the corresponding parameter of the process() method.
+template processMethodParamInfo(alias Method)
+{
+    alias ParamTypes          = ParameterTypeTuple!Method;
+    alias ParamStorageClasses = ParameterStorageClassTuple!Method;
+
+    /// Information about the process() method parameter at specified index
+    /// in ParamTypes.
+    template ParamInfo(int i)
+    {
+        /// Type of the parameter.
+        alias Param        = ParamTypes[i];
+        /// Storage class of the parameter.
+        enum storage       = ParamStorageClasses[i];
+        /// Is the parameter a slice (used with MultiComponents)?
+        enum isSlice       = isArray!Param;
+        /// Is the parameter a pointer (used for optional future components)?
+        enum isPtr         = isPointer!Param;
+        /// Is the parameter passed by reference?
+        enum isRef         = storage & ParameterStorageClass.ref_;
+        /// Is the parameter passed by an 'out' reference?
+        enum isOut         = storage & ParameterStorageClass.out_;
+        /// Name of the parameter type.
+        enum ParamTypeName = Param.stringof;
+        /// Is the parameter an EntityAccess struct?
+        enum isEntityAccess = .isEntityAccess!Param;
+        /// Is the parameter a component?
+        enum isComponent    = !isEntityAccess;
+        /// If the parameter is a component, the Component alias specifies the
+        /// component type (with any slice or pointer information removed).
+        static if(isComponent)
+        {
+            // Get the actual component type (Param may be a pointer or slice).
+            static if(isSlice)    { alias Component = typeof(Param.init[0]); }
+            else static if(isPtr) { alias Component = typeof(*Param.init); }
+            else                  { alias Component = Param; }
+        }
+    }
+
+    alias processMethodParamInfo = 
+        staticMap!(ParamInfo, tupleIndices!ParamTypes);
 }
 
 /// Validate a process() method.
