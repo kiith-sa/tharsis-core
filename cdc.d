@@ -100,6 +100,7 @@ import std.array;
 import std.exception;
 import std.conv;
 import std.file;
+import std.format;
 import std.path;
 import std.process;
 import std.range;
