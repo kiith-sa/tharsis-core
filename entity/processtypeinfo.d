@@ -3,6 +3,7 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
+/// Analysis and type information of process() methods in Processes.
 module tharsis.entity.processtypeinfo;
 
 import std.algorithm;
