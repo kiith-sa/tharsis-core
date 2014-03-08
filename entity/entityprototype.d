@@ -302,13 +302,13 @@ EntityPrototype mergePrototypesOverride
             }
         }
 
-        copyComponents(result, componentTypes[typeID], 
+        copyComponents(result, componentTypes[typeID],
                        useBase ? baseIDs        : overIDs,
                        useBase ? baseComponents : overComponents,
                        useBase ? overIDs        : baseIDs,
                        useBase ? overComponents : baseComponents);
     }
-    
+
     return result;
 }
 
