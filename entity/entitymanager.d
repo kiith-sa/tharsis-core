@@ -42,7 +42,7 @@ import tharsis.util.mallocarray;
 /// * Manages past and future entities and components.
 ///
 /// Params: Policy = A struct with enum members specifying various compile-time 
-///                  parameters and hints. See defaultentitypolicy.d for an example.
+///                  parameters and hints. See entitypolicy.d for an example.
 class EntityManager(Policy)
 {
     mixin validateEntityPolicy!Policy;
