@@ -60,7 +60,7 @@ template validateEntityPolicy(Policy)
 }
 
 /// The maximum possible number of component types when using specified entity 
-/// policy, , including builtins, defaults and user defined.
+/// policy, including builtins, defaults and user defined.
 template maxComponentTypes(Policy)
 {
     enum maxComponentTypes = 
