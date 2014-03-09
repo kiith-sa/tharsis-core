@@ -153,8 +153,13 @@ public:
     /// Add a new entity, using components from specified prototype.
     ///
     /// The new entity will be added at the beginning of the next frame.
-    /// The prototype provided must exist and must not be changed until then.
-    /// It can be safely deleted during the next frame.
+    ///
+    /// Params:  prototype = Prototype of the entity to add.
+    ///                      Usually, the prototype will have to be casted to
+    ///                      immutable when passed here.
+    ///                      Must exist and must not be changed until the
+    ///                      beginning of the next frame. It can be safely
+    ///                      deleted during the next frame.
     ///
     /// Returns: ID of the new entity on success.
     ///          A null ID if we've added more than 
