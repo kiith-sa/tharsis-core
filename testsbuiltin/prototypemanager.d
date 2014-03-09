@@ -15,7 +15,7 @@ import std.algorithm;
 import tharsis.defaults.yamlsource;
 import tharsis.entity.componenttypeinfo;
 import tharsis.entity.componenttypemanager;
-import tharsis.entity.defaultentitypolicy;
+import tharsis.entity.entitypolicy;
 import tharsis.entity.entitymanager;
 import tharsis.entity.entityprototype;
 import tharsis.entity.prototypemanager;

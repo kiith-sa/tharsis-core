@@ -14,7 +14,7 @@ import std.typecons;
 import std.typetuple;
 
 import tharsis.entity.componenttypeinfo;
-import tharsis.entity.defaultentitypolicy;
+import tharsis.entity.entitypolicy;
 
 
 /// Base class for component type managers.
@@ -129,7 +129,7 @@ enum maxSourceBytes = 512;
 ///                  See below.
 ///         Policy = Specifies compile-time parameters such as the maximum 
 ///                  number of component types.
-///                  See tharsis.entity.defaultentitypolicy.d for the default 
+///                  See tharsis.entity.entitypolicy.d for the default 
 ///                  Policy type.
 /// 
 /// Example:

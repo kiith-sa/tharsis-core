@@ -84,7 +84,7 @@ public:
 }
 unittest
 {
-    import tharsis.entity.defaultentitypolicy;
+    import tharsis.entity.entitypolicy;
     import tharsis.entity.componenttypemanager;
     import tharsis.defaults.components;
     import tharsis.defaults.yamlsource;

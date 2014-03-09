@@ -19,7 +19,7 @@ import core.sync.mutex;
 import tharsis.entity.componentbuffer;
 import tharsis.entity.componenttypeinfo;
 import tharsis.entity.componenttypemanager;
-import tharsis.entity.defaultentitypolicy;
+import tharsis.entity.entitypolicy;
 import tharsis.entity.entity;
 import tharsis.entity.entityid;
 import tharsis.entity.entityprototype;

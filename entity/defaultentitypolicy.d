@@ -5,7 +5,7 @@
 
 
 /// Default policy controlling compile-time parameters to the entity system.
-module tharsis.entity.defaultentitypolicy;
+module tharsis.entity.entitypolicy;
 
 
 import std.traits;
