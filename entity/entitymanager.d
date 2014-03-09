@@ -289,6 +289,17 @@ public:
         /// indices of entities in entity storage).
         MallocArray!ComponentCount counts;
 
+        /// Offsets of the first component for every entity (offsets[i] is the
+        /// index of the first component for entity at entities[i] in entity
+        /// storage).
+        ///
+        /// For entities that have zero components of this type, the offset is
+        /// uint.max (absurd value to detect bugs).
+        ///
+        /// Allows fast access to components of any past entity (if we know its
+        /// index) - this enables direct component access through EntityAccess.
+        MallocArray!uint offsets;
+
         /// Destroy the ComponentTypeState.
         ~this()
         {
@@ -330,9 +341,12 @@ public:
         {
             assert(enabled_, "This ComponentTypeState is not enabled");
             counts.reserve(count);
+            offsets.reserve(count);
             const oldSize = counts.length;
             counts.growUninitialized(count);
-            counts[oldSize .. $] = cast(ComponentCount)0;
+            offsets.growUninitialized(count);
+            counts[oldSize .. $]  = cast(ComponentCount)0;
+            offsets[oldSize .. $] = uint.max;
         }
 
         /// Reset the buffers, clearing them.
@@ -343,6 +357,7 @@ public:
             assert(enabled_, "This ComponentTypeState is not enabled");
             buffer.reset();
             counts.clear();
+            offsets.clear();
         }
     }
 
@@ -1140,12 +1155,16 @@ private:
             const EntityID entityID = pair[1];
             targetPast[index] = targetFuture[index] = Entity(entityID);
 
-            // Set the component counts for this entity.
+            // Set the component counts/offsets for this entity.
             foreach(typeID, count; componentCounts) 
             {
                 if(!target[typeID].enabled) { continue; }
                 const globalIndex = baseEntityCount + index;
-                target[typeID].counts[globalIndex] = count;
+                const offset = globalIndex == 0 
+                             ? 0
+                             : target[typeID].counts[globalIndex - 1] + count;
+                target[typeID].counts[globalIndex]  = count;
+                target[typeID].offsets[globalIndex] = offset;
             }
         }
 
