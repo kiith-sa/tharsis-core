@@ -47,7 +47,20 @@ class EntityManager(Policy)
 {
     mixin validateEntityPolicy!Policy;
 
+    /// Allows EntityAccess to access the policy.
+    alias EntityPolicy = Policy;
+
     alias Policy.ComponentCount ComponentCount;
+
+package:
+    /// Game state from the previous frame. Stores entities and their 
+    /// components, including dead entities and entities that were added during 
+    /// the last frame.
+    immutable(GameState)* past_;
+
+    /// Game state in the current frame. Stores entities and their components,
+    /// including entities hat were added during the last frame.
+    GameState* future_;
 
 private:
     /// If writtenComponentTypes_[i] is true, there is a process that writes 
@@ -62,15 +75,6 @@ private:
     /// The past_ and future_ pointers are exchanged every frame, replacing past 
     /// with future and vice versa to reuse memory,
     GameState[2] stateStorage_;
-
-    /// Game state from the previous frame. Stores entities and their 
-    /// components, including dead entities and entities that were added during 
-    /// the last frame.
-    immutable(GameState)* past_;
-
-    /// Game state in the current frame. Stores entities and their components,
-    /// including entities hat were added during the last frame.
-    GameState* future_;
 
     /// Wrappers that execute registered processes.
     AbstractProcessWrapper!Policy[] processes_;
