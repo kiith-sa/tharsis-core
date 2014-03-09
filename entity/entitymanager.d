@@ -399,6 +399,28 @@ public:
     /// EntityManager has two instances of GameState; past and future.
     struct GameState 
     {
+        /*
+         * TODO: An alternative implementation of GameState storage to try:
+         *
+         * For every component type, there is a buffer of 
+         * entityID-componentIdx pairs.
+         *
+         * Each pair says 'this entity has this component'. If the entity has
+         * more than 1 component, simply have multiple pairs. (Or, for
+         * MultiComponents, use triplets instead of pairs, with the last member
+         * of the triplet being component count)
+         *
+         * When running a process, we run only through buffers of the relevant
+         * component types. Meaning we don't run over _all_ entities.
+         * Especially relevant for systems processing unusual components.
+         *
+         *
+         * We could implement this and compare speed.
+         * Perhaps even have 2 switchable implementations 
+         * (within the entity manager) - depending on performance either 
+         * a class member with derived implementations or a struct template
+         * parameter.
+         */
         /// Stores components of all entities.
         ComponentState components;
 
