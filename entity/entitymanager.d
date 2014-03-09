@@ -285,8 +285,8 @@ public:
         /// Stores components as raw bytes.
         ComponentBuffer!Policy buffer;
 
-        /// Stores component counts for every entity (at indices matching 
-        /// indices of entities in entity storage).
+        /// Component counts for every entity (counts[i] is the number of 
+        /// components for entity at entities[i] in entity storage).
         MallocArray!ComponentCount counts;
 
         /// Offsets of the first component for every entity (offsets[i] is the
@@ -425,6 +425,9 @@ public:
         ComponentState components;
 
         /// All existing entities (either past or future).
+        ///
+        /// Ordered by entity ID. This is necessary to enable direct component
+        /// access through EntityAccess.
         /// 
         /// The entire length of this array is used; it doesn't have a unused 
         /// part at the end.
@@ -793,6 +796,19 @@ public:
             return writefln("Component counts (typeid: count):\n%s",
                             parts.join(","));
         }
+        /*
+         * TODO:
+         *
+         * We may add a structure to access entities by entity IDs. That would
+         * speed up direct component access through EntityAccess (which 
+         * currently uses binary search). We could use a hash map of some kind,
+         * or a multi-level bucket-sorted structure (?)
+         * (E.g. with 65536 buckets for the first 16 bytes of the entity ID,
+         * and arrays/slices within those buckets)
+         *
+         * Would have to be updated with the entity array between frames.
+         * frames that would store the 
+         */
     }
 
 
