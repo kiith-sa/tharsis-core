@@ -874,7 +874,7 @@ private:
                 const globalIndex = baseEntityCount + index;
                 const offset = globalIndex == 0 
                              ? 0
-                             : target[typeID].counts[globalIndex - 1] + count;
+                             : target[typeID].offsets[globalIndex - 1] + count;
                 target[typeID].counts[globalIndex]  = count;
                 target[typeID].offsets[globalIndex] = offset;
             }
