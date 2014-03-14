@@ -48,7 +48,7 @@ class EntityManager(Policy)
 {
     mixin validateEntityPolicy!Policy;
 
-    /// Allows EntityAccess to access the policy.
+    /// Allows EntityRange to access the policy.
     alias EntityPolicy = Policy;
 
     alias Policy.ComponentCount ComponentCount;
@@ -267,26 +267,11 @@ public:
         foreach(process; processes_) { process.run(this); }
     }
 
-    /// Provides direct access to the handle of the current entity and past
-    /// components of any entity (through its handle).
+    /// When used as an argument for a process() method of a Process, provides
+    /// access to the current entity handle and components of all past entities.
     ///
-    /// Also used internally by EntityManager to iterate over entities.
-    ///
-    /// See_Also: EntityRange, EntityRange.currentEntity,
-    ///           EntityRange.pastComponent
-    struct EntityAccess(Process)
-    {
-        /// Implemented by EntityRange. This struct serves only to decrease
-        /// template param count.
-        EntityRange!(EntityManager!Policy, Process) self_;
-
-        alias self_ this;
-
-        this(EntityManager entityManager)
-        {
-            self_ = EntityRange!(EntityManager!Policy, Process)(entityManager);
-        }
-    }
+    /// See_Also: tharsis.entity.entityrange.EntityAccess
+    alias Context = EntityAccess!(typeof(this));
 
 package:
     /// Get a resource handle without compile-time type information.
@@ -555,8 +540,8 @@ private:
 
             // Using a for instead of foreach because DMD insists on copying the
             // range in foreach for some reason, breaking the code.
-            for(auto entityRange = EntityAccess!P(self); !entityRange.empty();
-                entityRange.popFront())
+            for(auto entityRange = EntityRange!(typeof(this), P)(self); 
+                !entityRange.empty(); entityRange.popFront())
             {
                 static if(!noFuture)
                 {
@@ -629,7 +614,7 @@ private:
             {
                 static if(Param.isEntityAccess)
                 {
-                    parts ~= "entityRange";
+                    parts ~= "entityRange.entityAccess";
                 }
                 else static if(Param.isComponent)
                 {

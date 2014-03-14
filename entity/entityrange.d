@@ -8,6 +8,7 @@ module tharsis.entity.entityrange;
 
 
 import std.algorithm;
+import std.array;
 import std.stdio;
 import std.string;
 import std.typetuple;
@@ -20,6 +21,104 @@ import tharsis.entity.lifecomponent;
 import tharsis.entity.processtypeinfo;
 import tharsis.util.mallocarray;
 
+
+/// Provides direct access to entity components. May be passed to process()
+/// methods.
+///
+//  Always used as a part of EntityRange.
+struct EntityAccess(EntityManager)
+{
+package:
+    /// Index of the past entity we're currently reading.
+    ///
+    /// Updated by EntityRange.
+    size_t pastEntityIndex_ = 0;
+
+    // Hack to allow process type info to easily figure out that an EntityAccess
+    // argument is not a component argument.
+    enum isEntityAccess_ = true;
+
+private:
+    /// Past entities in the entity manager.
+    ///
+    /// Past entities that are not alive are ignored.
+    immutable(Entity[]) pastEntities_;
+
+    /// Stores past components of all entities.
+    immutable(EntityManager.ComponentState)* pastComponents_;
+
+    /// No default construction or copying.
+    @disable this();
+    @disable this(this);
+
+public:
+    /// Access a past (non-multi) component in _any_ past entity.
+    ///
+    /// This is a relatively slow way to access components, but allows to access
+    /// components of any entity. Should only be used when necessary.
+    ///
+    /// Params: Component = Type of component to access.
+    ///         Entity    = ID of the entity to access. Must be an ID of an
+    ///                     existing past entity.
+    ///
+    /// Returns: Pointer to the past component, if the entity contains such a
+    ///          component; NULL otherwise.
+    immutable(Component)* pastComponent(Component)(const EntityID entity)
+        nothrow const
+        if(!isMultiComponent!Component)
+    {
+        enum typeID = Component.ComponentTypeID;
+        auto componentOfEntity(size_t index) nothrow const
+        {
+            auto pastComponents = &((*pastComponents_)[typeID]);
+            const componentCount = pastComponents.counts[index];
+            if(0 == componentCount) { return null; }
+
+            const offset = pastComponents.offsets[index];
+            assert(offset != size_t.max, "Offset not set");
+
+            auto raw = pastComponents.buffer.committedComponentSpace;
+            auto components = cast(immutable(Component[]))raw;
+            return &components[offset];
+        }
+
+        // Fast path when accessing a component in the current past entity.
+        if(currentEntity().id == entity)
+        {
+            return componentOfEntity(pastEntityIndex_);
+        }
+
+        // When accessing a component in another past entity, we binary search
+        // to find the entity with matching ID (entities are sorted by ID).
+        auto slice = pastEntities_[];
+        while(!slice.empty)
+        {
+            const size_t index = slice.length / 2;
+            const EntityID mid = slice[index].id;
+            if(mid > entity)       { slice = slice[0 .. index]; }
+            else if (mid < entity) { slice = slice[index + 1 .. $]; }
+            else                   { return componentOfEntity(index); }
+        }
+
+        // If this happens, we either have a bug or the user passed an
+        // invalid entity ID.
+        assert(false, "Couldn't find an entity with specified ID");
+    }
+
+    /// Get the entity ID of the entity currently being processed.
+    Entity currentEntity() @safe pure nothrow const
+    {
+        return pastEntities_[pastEntityIndex_];
+    }
+
+package:
+    /// Construct an EntityAccess for entities of specified entity manager.
+    this(EntityManager entityManager) @safe pure nothrow
+    {
+        pastEntities_   = entityManager.past_.entities;
+        pastComponents_ = &entityManager.past_.components;
+    }
+}
 
 package:
 
@@ -38,11 +137,14 @@ package:
     /// Past component types read by _all_ process() methods of Process.
     alias InComponents   = AllPastComponentTypes!Process;
 
-    // Hack to allow process type info to easily figure out that an EntityAccess
-    // argument is not a component argument.
-    enum isEntityAccess_ = true;
-
 private:
+    /// Stores the slice and index for past entities.
+    ///
+    /// Separate from EntityRange - EntityAccess is passed to some process()
+    /// methods to provide direct access to the past entity and its components.
+    /// Still, EntityRange directly updates the past entity index inside.
+    EntityAccess!EntityManager entityAccess_;
+
     /// True if the Process does not write to any future component. Usually such
     /// processes only read past components and produce some kind of output.
     enum noFuture = !hasFutureComponent!Process;
@@ -51,17 +153,8 @@ private:
     /// the indices of iterated component types are used.
     size_t[maxComponentTypes!Policy] componentOffsets_;
 
-    // Index of the past entity we're currently reading.
-    size_t pastEntityIndex_ = 0;
-
     /// Index of the future entity we're currently writing to.
     size_t futureEntityIndex_ = 0;
-
-    // Stores past components of all entities.
-    //
-    // Direct pointers to component buffers of component types processed by the
-    // process are also stored as an optimization.
-    immutable(EntityManager.ComponentState)* pastComponents_;
 
     static if(!noFuture)
     {
@@ -87,11 +180,6 @@ private:
     EntityManager.ComponentTypeState* futureComponents_;
 
     }
-
-    /// Past entities in the entity manager.
-    ///
-    /// Past entities that are not alive are ignored.
-    immutable(Entity[]) pastEntities_;
 
     /// Future entities in the entity manager.
     ///
@@ -136,76 +224,37 @@ private:
     /// Mixin slices to access past components, and pointers to component count
     /// buffers to read the number of components of a type per entity.
     ///
-    /// These are typed slices of the untyped buffers in the ComponentBuffer 
-    /// struct of each component type.
+    /// These are typed slices to the untyped buffers in the ComponentBuffer
+    /// struct of each component type. Past components can also be accessed
+    /// through EntityAccess.pastComponents_; these slices are a performance
+    /// optimization.
     mixin(pastComponentBuffers());
 
     /// No default construction or copying.
     @disable this();
     @disable this(this);
 
-public:
-    /// Access a past (non-multi) component in _any_ past entity.
-    ///
-    /// This is a relatively 'slow' way to access components, but it allows to
-    /// access components of any entity.
-    ///
-    /// Params: Component = Type of component to access.
-    ///         Entity    = ID of the entity to access.
-    ///
-    /// Returns: An immutable reference to the past component.
-    ref immutable(Component) pastComponent(Component)(const EntityID entity)
-        @safe nothrow const
-        if(!isMultiComponent!Component)
-    {
-        enum typeID = Component.ComponentTypeID;
-        // Fast path; if we're accessing a component in the current past
-        // entity.
-        if(currentEntity() == entity)
-        {
-            return pastComponents_[typeID][pastEntityIndex_];
-        }
-
-        // If we're accessing a component in some other past entity, we need
-        // to binary search to find the entity with matching ID (entities
-        // are sorted by entity ID).
-        auto slice = pastEntities_[];
-        while(!slice.empty)
-        {
-            const size_t idx = slice.length / 2;
-            const EntityID mid = slice[idx].id;
-            if(mid > entity)       { slice = slice[0 .. idx]; }
-            else if (mid < entity) { slice = slice[idx + 1 .. $]; }
-            else                   { return pastComponents_[typeID][idx]; }
-        }
-
-        // If this happens, we either have a bug or the user passed an
-        // invalid entity ID.
-        assert(false, "Couldn't find the entity with specified ID");
-    }
-
-    /// Get the entity ID of the entity currently being processed.
-    Entity currentEntity() @safe pure nothrow const { return front(); }
-
 package:
-    /// Construct an EntityAccess to iterate over past entities of specified 
+    /// Construct an EntityRange to iterate over past entities of specified
     /// entity manager.
     this(EntityManager entityManager)
     {
-        pastEntities_   = entityManager.past_.entities;
+        entityAccess_ = EntityAccess!EntityManager(entityManager);
         futureEntities_ = entityManager.future_.entities;
-        pastComponents_ = &entityManager.past_.components;
+
+        immutable(EntityManager.ComponentState)* pastComponents
+            = &entityManager.past_.components;
         // Initialize component and component count buffers for processed past
         // component types.
         foreach(index, Component; ProcessedComponents)
         {
             enum id  = Component.ComponentTypeID;
             // Untyped component buffer to cast to a typed slice.
-            auto raw = (*pastComponents_)[id].buffer.committedComponentSpace;
+            auto raw = (*pastComponents)[id].buffer.committedComponentSpace;
 
             mixin(q{
             %s = cast(immutable(ProcessedComponents[%s][]))raw;
-            %s = &(*pastComponents_)[id].counts;
+            %s = &(*pastComponents)[id].counts;
             }.format(bufferName!Component, index, countsName!id));
         }
 
@@ -223,7 +272,13 @@ package:
     /// Get the current past entity.
     Entity front() @safe pure nothrow const
     {
-        return pastEntities_[pastEntityIndex_];
+        return entityAccess_.currentEntity;
+    }
+
+    /// Get the EntityAccess data member to pass it to a process() method.
+    ref EntityAccess!EntityManager entityAccess() @safe pure nothrow
+    {
+        return entityAccess_;
     }
 
     /// True if we've processed all alive past entities.
@@ -242,7 +297,7 @@ package:
     void popFront() @trusted
     {
         assert(!empty, "Trying to advance an empty entity range");
-        const past   = pastEntities_[pastEntityIndex_].id;
+        const past   = front().id;
         const future = futureEntities_[futureEntityIndex_].id;
         assert(past == future,
                "The past (%s) and future (%s) entity is not the same. Maybe we "
@@ -283,9 +338,11 @@ package:
         enum id = Component.ComponentTypeID;
         const offset = componentOffsets_[id];
 
-        mixin(q{ 
-        const length = (*%s)[pastEntityIndex_];
-        return %s[offset .. offset + length]; 
+        mixin(q{
+        // Get the number of components in the current past entity.
+        const componentCount = (*%s)[entityAccess_.pastEntityIndex_];
+        // The first component in the current entity is at 'offset'.
+        return %s[offset .. offset + componentCount];
         }.format(countsName!id, bufferName!Component));
     }
 
@@ -353,7 +410,7 @@ package:
         enum sortedIDs    = std.algorithm.sort([ComponentTypeIDs]);
         static assert(sortedIDs.setDifference(processedIDs).empty,
                       "One or more matched component types are not processed "
-                      "by this EntityAccess.");
+                      "by this EntityRange.");
 
         static string matchCode()
         {
@@ -363,7 +420,10 @@ package:
             string[] parts;
             foreach(id; ComponentTypeIDs)
             {
-                parts ~= q{(*%s)[pastEntityIndex_]}.format(countsName!id);
+                // Component count for this component type will be a member
+                // of the product.
+                parts ~= q{(*%s)[entityAccess_.pastEntityIndex_]}
+                         .format(countsName!id);
             }
             return parts.join(" * ");
         }
@@ -391,10 +451,12 @@ private:
         {
             enum id = C.ComponentTypeID;
             mixin(q{
-            componentOffsets_[id] += (*%s)[pastEntityIndex_];
+            // Increase offset for this component type by the number of
+            // components in the current past entity.
+            componentOffsets_[id] += (*%s)[entityAccess_.pastEntityIndex_];
             }.format(countsName!id));
         }
-        ++pastEntityIndex_;
+        ++entityAccess_.pastEntityIndex_;
     }
 
     /// Move to the next future entity.
@@ -427,7 +489,7 @@ private:
         {
             enum id = C.ComponentTypeID;
             mixin(q{
-            const count = (*%s)[pastEntityIndex_];
+            const count = (*%s)[entityAccess_.pastEntityIndex_];
             }.format(countsName!id));
             parts ~= "%s: %s".format(id, count);
         }
