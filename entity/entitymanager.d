@@ -23,6 +23,7 @@ import tharsis.entity.entitypolicy;
 import tharsis.entity.entity;
 import tharsis.entity.entityid;
 import tharsis.entity.entityprototype;
+import tharsis.entity.entityrange;
 import tharsis.entity.lifecomponent;
 import tharsis.entity.processtypeinfo;
 import tharsis.entity.processwrapper;
