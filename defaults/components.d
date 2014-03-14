@@ -18,12 +18,12 @@ import tharsis.entity.resourcemanager;
 /// The condition which triggers the spawn is represented by a
 /// TimedSpawnConditionMultiComponent, and may be represented by other
 /// spawn condition component types in future.
-@("defaultsComponent") 
-struct SpawnerMultiComponent 
+@("defaultsComponent")
+struct SpawnerMultiComponent
 {
     enum ComponentTypeID = maxBuiltinComponentTypes + 1;
 
-    /// It's unlikely that one entity would spawn more than 1024 different 
+    /// It's unlikely that one entity would spawn more than 1024 different
     /// entities.
     enum maxComponentsPerEntity = 1024;
 
@@ -36,23 +36,23 @@ struct SpawnerMultiComponent
     /// Resource handle to the prototype of the entity to spawn.
     ResourceHandle!EntityPrototypeResource spawn;
 
-    /// Resource handle to a prototype storing all components to apply on top 
+    /// Resource handle to a prototype storing all components to apply on top
     /// of spawn, overriding components of spawn.
     ///
     /// Used to modify entities directly in the spawner component source.
-    @(FieldName("override")) 
+    @(FieldName("override"))
     ResourceHandle!InlineEntityPrototypeResource overrideComponents;
 
-    /// Spawn conditions match this to specify which SpawnerMultiComponent they 
+    /// Spawn conditions match this to specify which SpawnerMultiComponent they
     /// affect.
     ushort spawnerID;
 }
-unittest 
+unittest
 {
 
     import tharsis.defaults.yamlsource;
     import tharsis.entity.componenttypemanager;
-    auto compTypeMgr = 
+    auto compTypeMgr =
         new ComponentTypeManager!YAMLSource(YAMLSource.Loader());
     compTypeMgr.registerComponentTypes!SpawnerMultiComponent();
 }
@@ -60,7 +60,7 @@ unittest
 /// Triggers a spawn after specified time.
 ///
 /// Also supports periodic spawns.
-@("defaultsComponent") 
+@("defaultsComponent")
 struct TimedSpawnConditionMultiComponent
 {
     enum ComponentTypeID = maxBuiltinComponentTypes + 2;
@@ -81,7 +81,7 @@ struct TimedSpawnConditionMultiComponent
     float time;
     /// The time left until the condition is triggered.
     ///
-    /// Can be set from the start to a different value to force the condition to 
+    /// Can be set from the start to a different value to force the condition to
     /// be triggered earlier.
     float timeLeft;
     /// If true, spawns periodically, not just once.
