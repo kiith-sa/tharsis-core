@@ -51,7 +51,7 @@ unittest
     scope(exit) { deleteTempTestFiles(); }
     assert(testFile1 !is null && testFile2 !is null, 
            "Couldn't create data files (or directory) for testing");
-    
+
 
     auto compTypeMgr = new ComponentTypeManager!YAMLSource(YAMLSource.Loader());
 
