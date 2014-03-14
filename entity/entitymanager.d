@@ -242,10 +242,9 @@ public:
         auto addedFutureEntities = newFuture.entities[futureEntityCount .. $];
 
         // Create space for the newly added entities in past.
-        const pastEntityCount  = newPast.entities.length;
+        const pastEntityCount   = newPast.entities.length;
         newPast.entities.length = pastEntityCount + addedEntityCount;
-        auto addedPastEntities = 
-            cast(Entity[])newPast.entities[pastEntityCount .. $];
+        auto addedPastEntities  = newPast.entities[pastEntityCount .. $];
 
         // Preallocate future component buffer if needed.
         preallocateComponents(newFuture);
