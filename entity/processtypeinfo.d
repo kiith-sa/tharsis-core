@@ -249,8 +249,8 @@ template validateProcessMethod(alias Function)
             // state.
             assert(Info.isSlice || 
                    (Info.isPtr && Info.isRef) || (!Info.isPtr && Info.isOut),
-                   "Future non-multi component of a process() method must be "
-                   "'out' or a 'ref' pointer");
+                   "Future non-multi component of a process() method must "
+                   "be 'out' or a 'ref' pointer (" ~ Info.ParamTypeName ~ ")");
         }
 
         void testPastComponent(alias Info)()
