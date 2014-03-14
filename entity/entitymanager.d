@@ -36,13 +36,13 @@ import tharsis.util.mallocarray;
 /// The central, "World" object of Tharsis.
 ///
 /// EntityManager fullfills multiple roles:
-/// 
+///
 /// * Registers processes and resource managers.
 /// * Creates entities from entity prototypes.
 /// * Executes processes.
 /// * Manages past and future entities and components.
 ///
-/// Params: Policy = A struct with enum members specifying various compile-time 
+/// Params: Policy = A struct with enum members specifying various compile-time
 ///                  parameters and hints. See entitypolicy.d for an example.
 class EntityManager(Policy)
 {
@@ -54,8 +54,8 @@ class EntityManager(Policy)
     alias Policy.ComponentCount ComponentCount;
 
 package:
-    /// Game state from the previous frame. Stores entities and their 
-    /// components, including dead entities and entities that were added during 
+    /// Game state from the previous frame. Stores entities and their
+    /// components, including dead entities and entities that were added during
     /// the last frame.
     immutable(GameState)* past_;
 
@@ -64,7 +64,7 @@ package:
     GameState* future_;
 
 private:
-    /// If writtenComponentTypes_[i] is true, there is a process that writes 
+    /// If writtenComponentTypes_[i] is true, there is a process that writes
     /// components of type with ComponentTypeID equal to i.
     bool[maxComponentTypes!Policy] writtenComponentTypes_;
 
@@ -73,7 +73,7 @@ private:
 
     /// Stores both past and future game states.
     ///
-    /// The past_ and future_ pointers are exchanged every frame, replacing past 
+    /// The past_ and future_ pointers are exchanged every frame, replacing past
     /// with future and vice versa to reuse memory,
     GameState[2] stateStorage_;
 
@@ -83,7 +83,7 @@ private:
     /// Registered resource managers.
     AbstractResourceManager[] resourceManagers_;
 
-    /// Component type manager, including type info about registered component 
+    /// Component type manager, including type info about registered component
     /// types.
     AbstractComponentTypeManager!Policy componentTypeManager_;
 
@@ -111,7 +111,7 @@ public:
     /// Construct an EntityManager using component types registered with passed
     /// ComponentTypeManager.
     ///
-    /// Params: componentTypeManager = Component type manager storing component 
+    /// Params: componentTypeManager = Component type manager storing component
     ///                                type information. Must be locked.
     this(AbstractComponentTypeManager!Policy componentTypeManager)
     {
@@ -163,7 +163,7 @@ public:
     ///                      deleted during the next frame.
     ///
     /// Returns: ID of the new entity on success.
-    ///          A null ID if we've added more than 
+    ///          A null ID if we've added more than
     ///          Policy.maxNewEntitiesPerFrame new entities during one frame.
     EntityID addEntity(ref immutable(EntityPrototype) prototype) @trusted
     {
@@ -186,12 +186,12 @@ public:
     }
 
     /// Can be set to force more or less preallocation.
-    /// 
+    ///
     /// Useful e.g. before loading a big map.
     ///
     /// Params:  mult = Multiplier for size of preallocations.
     ///                 Must be greater than 0.
-    @property void allocMult(const double mult) @safe pure nothrow 
+    @property void allocMult(const double mult) @safe pure nothrow
     {
         assert(mult > 0.0, "allocMult parameter set to 0 or less");
         allocMult_ = mult;
@@ -199,10 +199,10 @@ public:
 
     /// Execute a single frame/tick/time step of the game/simulation.
     ///
-    /// Does all management needed between frames, and runs all registered 
+    /// Does all management needed between frames, and runs all registered
     /// processes on matching entities once.
     ///
-    /// This includes updating the resource managers, swapping past and future 
+    /// This includes updating the resource managers, swapping past and future
     /// state, forgetting dead entities, creating entities added by addEntity,
     /// preallocation, etc.
     void executeFrame()
@@ -210,11 +210,11 @@ public:
         frameDebug();
         updateResourceManagers();
 
-        // Past entities from the previous frame may be longer or equal, but 
+        // Past entities from the previous frame may be longer or equal, but
         // never shorter than the future entities from the previous frame.
-        // The reason is that any dead entities from past were not copied to 
+        // The reason is that any dead entities from past were not copied to
         // future (any new entities were copied to both).
-        assert(past_.entities.length >= future_.entities.length, 
+        assert(past_.entities.length >= future_.entities.length,
                "Past entities from the previous frame shorter than future "
                "entities from the previous frame. Past entities may be longer "
                "or equal, never shorter than the future entities. The reason "
@@ -226,7 +226,7 @@ public:
         GameState* newFuture = cast(GameState*)past_;
         GameState* newPast   = future_;
 
-        newFuture.entities = 
+        newFuture.entities =
             cast(Entity[])newFuture.entities[0 .. newPast.entities.length];
         // Clear the future (former past) entities to help detect bugs.
         newFuture.entities[] = Entity.init;
@@ -235,7 +235,7 @@ public:
         auto entitiesToAdd     = cast(const(EntitiesToAdd))&entitiesToAdd_;
         const addedEntityCount = entitiesToAdd.prototypes.length;
 
-        // Copy alive past entities to future and create space for the newly 
+        // Copy alive past entities to future and create space for the newly
         // added entities in future.
         const futureEntityCount = copyLiveEntitiesToFuture(newPast, newFuture);
         newFuture.entities.length = futureEntityCount + addedEntityCount;
@@ -276,10 +276,10 @@ public:
 package:
     /// Get a resource handle without compile-time type information.
     ///
-    /// Params: type       = Type of the resource. There must be a resource 
+    /// Params: type       = Type of the resource. There must be a resource
     ///                      manager managing resources of this type.
     ///         descriptor = A void pointer to the descriptor of the resource.
-    ///                      The actual type of the descriptor must be the 
+    ///                      The actual type of the descriptor must be the
     ///                      Descriptor type of the resource type.
     ///
     /// Returns: A raw handle to the resource.
@@ -301,12 +301,12 @@ private:
     ///
     /// Stores the components and component counts for each entity.
     ///
-    /// Future versions of both the components and component counts are cleared 
+    /// Future versions of both the components and component counts are cleared
     /// when the frame begins, then added over the course of a frame.
     struct ComponentTypeState
     {
     private:
-        /// True if this ComponentTypeState is used by an existing component 
+        /// True if this ComponentTypeState is used by an existing component
         /// type.
         bool enabled_;
 
@@ -314,7 +314,7 @@ private:
         /// Stores components as raw bytes.
         ComponentBuffer!Policy buffer;
 
-        /// Component counts for every entity (counts[i] is the number of 
+        /// Component counts for every entity (counts[i] is the number of
         /// components for entity at entities[i] in entity storage).
         MallocArray!ComponentCount counts;
 
@@ -338,14 +338,14 @@ private:
 
         /// Enable the ComponentTypeState.
         ///
-        /// Called when an existing component type will use this 
+        /// Called when an existing component type will use this
         /// ComponentTypeState.
         ///
-        /// Params: typeInfo = Type information about the type of components 
+        /// Params: typeInfo = Type information about the type of components
         ///                    stored in this ComponentTypeState.
         void enable(ref const(ComponentTypeInfo) typeInfo) @safe pure nothrow
         {
-            assert(!enabled_, "Trying to enable ComponentTypeState that's " 
+            assert(!enabled_, "Trying to enable ComponentTypeState that's "
                               "already enabled. Maybe two component types have "
                               "the same ComponentTypeID?");
 
@@ -360,11 +360,11 @@ private:
         ///
         /// Can only be used to _increase_ the number of entities. Component
         /// counts for the new entities are set to zero. Used by EntityManager
-        /// e.g. after determining the number of future entities and before 
+        /// e.g. after determining the number of future entities and before
         /// adding newly created entities.
         ///
-        /// Params: count = The new entity count. Must be greater than the 
-        ///                 current entity count (set by a previous call to 
+        /// Params: count = The new entity count. Must be greater than the
+        ///                 current entity count (set by a previous call to
         ///                 reset or growEntityCount).
         void growEntityCount(const size_t count)
         {
@@ -379,7 +379,7 @@ private:
         }
 
         /// Reset the buffers, clearing them.
-        /// 
+        ///
         /// Sets the entity count to 0.
         void reset() @safe pure nothrow
         {
@@ -391,11 +391,11 @@ private:
     }
 
     /// Stores components of all entities (either past or future).
-    /// 
+    ///
     /// Also stores component counts of every component type for every entity.
     struct ComponentState
     {
-        /// Stores component/component count buffers for all component types at 
+        /// Stores component/component count buffers for all component types at
         /// indices set by the ComponentTypeID members of the component types.
         ComponentTypeState[maxComponentTypes!Policy] self_;
 
@@ -410,13 +410,13 @@ private:
             foreach(ref data; this) if(data.enabled) { data.reset(); }
         }
 
-        /// Inform the component counts buffers about increased (or equal) 
+        /// Inform the component counts buffers about increased (or equal)
         /// entity count.
-        /// 
+        ///
         /// Called between frames when entities are added.
         void growEntityCount(const size_t count)
         {
-            foreach(ref data; this) if(data.enabled) 
+            foreach(ref data; this) if(data.enabled)
             {
                 data.growEntityCount(count);
             }
@@ -426,12 +426,12 @@ private:
     /// Stores all game state (entities and components).
     ///
     /// EntityManager has two instances of GameState; past and future.
-    struct GameState 
+    struct GameState
     {
         /*
          * TODO: An alternative implementation of GameState storage to try:
          *
-         * For every component type, there is a buffer of 
+         * For every component type, there is a buffer of
          * entityID-componentIdx pairs.
          *
          * Each pair says 'this entity has this component'. If the entity has
@@ -445,8 +445,8 @@ private:
          *
          *
          * We could implement this and compare speed.
-         * Perhaps even have 2 switchable implementations 
-         * (within the entity manager) - depending on performance either 
+         * Perhaps even have 2 switchable implementations
+         * (within the entity manager) - depending on performance either
          * a class member with derived implementations or a struct template
          * parameter.
          */
@@ -457,8 +457,8 @@ private:
         ///
         /// Ordered by entity ID. This is necessary to enable direct component
         /// access through EntityAccess.
-        /// 
-        /// The entire length of this array is used; it doesn't have a unused 
+        ///
+        /// The entire length of this array is used; it doesn't have a unused
         /// part at the end.
         Entity[] entities;
 
@@ -466,26 +466,27 @@ private:
          * TODO:
          *
          * We may add a structure to access entities by entity IDs. That would
-         * speed up direct component access through EntityAccess (which 
+         * speed up direct component access through EntityAccess (which
          * currently uses binary search). We could use a hash map of some kind,
          * or a multi-level bucket-sorted structure (?)
          * (E.g. with 65536 buckets for the first 16 bytes of the entity ID,
          * and arrays/slices within those buckets)
          *
          * Would have to be updated with the entity array between frames.
-         * frames that would store the 
+         * frames that would store the
          */
     }
 
 
     /// Register a Process.
     ///
-    /// Params: process = Process to register. For every component type there 
+    /// Params: process = Process to register. For every component type there
     ///                   may be at most 1 process writing it (specifying it as
-    ///                   it's OutComponentType). The OutComponentType of the 
-    ///                   process must be registered with the 
-    ///                   ComponentTypeManager passed to the EntityManager's 
+    ///                   it's OutComponentType). The OutComponentType of the
+    ///                   process must be registered with the
+    ///                   ComponentTypeManager passed to the EntityManager's
     ///                   constructor.
+    /// concept, process() signature and overloads, etc.
     void registerProcess(P)(P process) @trusted
     {
         mixin validateProcess!P;
@@ -498,11 +499,11 @@ private:
         alias overloads     = processOverloads!P;
 
         writef("Registering process %s: %s overloads reading past components "
-               "%s ", P.stringof, 
+               "%s ", P.stringof,
                overloads.length, componentIDs!(AllPastComponentTypes!P));
         static if(!noFuture)
         {
-            assert(!writtenComponentTypes_[P.FutureComponent.ComponentTypeID], 
+            assert(!writtenComponentTypes_[P.FutureComponent.ComponentTypeID],
                    "Can't register 2 processes with one future component type");
             assert(componentTypeManager_.areTypesRegistered!(P.FutureComponent),
                    "Registering a process with unregistered future component "
@@ -510,28 +511,28 @@ private:
 
             // This future component is now taken; no other process can write to it.
             writtenComponentTypes_[P.FutureComponent.ComponentTypeID] = true;
-            writefln(" and writing future component %s", 
+            writefln(" and writing future component %s",
                      componentIDs!(P.FutureComponent));
         }
-        else 
+        else
         {
             writefln("");
         }
 
         // A function executing the process during one frame.
-        // 
-        // Iterates over past entities. If an entity has all past components in 
+        //
+        // Iterates over past entities. If an entity has all past components in
         // a signature of one of P.process() overloads, calls that overload,
         // passing refs to those components and a ref/ptr to a future component
         // of type P.FutureComponent.
         //
-        // More specific overloads have precedence over more general. For 
+        // More specific overloads have precedence over more general. For
         // example, if there are overloads process(A) and process(A, B), and an
         // entity has components A and B, the latter overload is called.
         static void runProcess(EntityManager self, P process)
         {
             //XXX DOC in some description of the Process concept
-            // If the process has a 'preProcess' method, call it before 
+            // If the process has a 'preProcess' method, call it before
             // processing any entities.
             static if(hasMember!(P, "preProcess")) { process.preProcess(); }
 
@@ -540,17 +541,17 @@ private:
 
             // Using a for instead of foreach because DMD insists on copying the
             // range in foreach for some reason, breaking the code.
-            for(auto entityRange = EntityRange!(typeof(this), P)(self); 
+            for(auto entityRange = EntityRange!(typeof(this), P)(self);
                 !entityRange.empty(); entityRange.popFront())
             {
                 static if(!noFuture)
                 {
-                    entityRange.setFutureComponentCount(0); 
+                    entityRange.setFutureComponentCount(0);
                 }
 
-                // Generates an if-else chain checking each overload, starting 
-                // with the most specific one. 
-                mixin(prioritizeProcessOverloads!P.map!(p => q{ 
+                // Generates an if-else chain checking each overload, starting
+                // with the most specific one.
+                mixin(prioritizeProcessOverloads!P.map!(p => q{
                     if(entityRange.matchComponents!(%s))
                     {
                         self.callProcessMethod!(overloads[%s])
@@ -559,7 +560,7 @@ private:
                 }.format(p[0], p[1])).join("else ").outdent);
             }
 
-            // If the process has a 'postProcess' method, call it after 
+            // If the process has a 'postProcess' method, call it after
             // processing all entities.
             static if(hasMember!(P, "postProcess")) { process.postProcess(); }
         }
@@ -585,7 +586,7 @@ private:
     /// Params: F           = The process() method to call.
     ///         process     = Process with the process() method.
     ///         entityRange = Entity range to get the components to pass from.
-    static void callProcessMethod 
+    static void callProcessMethod
         (alias F, P, ERange)(P process, ref ERange entityRange)
     {
         // True if the Process does not write to any future component.
@@ -596,11 +597,11 @@ private:
 
         /// Generate a string with arguments to pass to a process() method.
         ///
-        /// Mixed into the process() call at compile time. Should correctly 
-        /// handle past component, future component and EntityAccess arguments 
+        /// Mixed into the process() call at compile time. Should correctly
+        /// handle past component, future component and EntityAccess arguments
         /// regardless of their order.
         ///
-        /// Params: futureString = String to mix in to pass the future 
+        /// Params: futureString = String to mix in to pass the future
         ///                        component/s (should be the name of a variable
         ///                        defined where the result is mixed in).
         ///                        Should be null if process() writes no future
@@ -620,7 +621,7 @@ private:
                 {
                     static if(isMutable!(Param.Component))
                     {
-                        assert(futureString !is null, 
+                        assert(futureString !is null,
                                "future component not specified");
                         parts ~= futureString;
                     }
@@ -700,14 +701,14 @@ private:
     /// and check frame invariants.
     void frameDebug() @trusted nothrow
     {
-        static void implementation(EntityManager self) 
+        static void implementation(EntityManager self)
         {with(self){
             foreach(id; 0 .. maxBuiltinComponentTypes)
             {
                 const(ComponentTypeInfo)* info = &componentTypeInfo[id];
                 // If no such builtin component type exists, ignore.
                 if(info.isNull) { continue; }
-                assert(writtenComponentTypes_[id], 
+                assert(writtenComponentTypes_[id],
                        "No process writing to builtin component type %s: "
                        "please register a process writing this component type "
                        "(see tharsis.defaults.copyprocess for a "
@@ -741,20 +742,20 @@ private:
     /// Part of the code executed between frames in executeFrame().
     ///
     /// Params: past   = The new past, former future state.
-    ///         future = The new future, former past state. future.entities must 
+    ///         future = The new future, former past state. future.entities must
     ///                  be exactly as long as past.entities. Surviivng entities
     ///                  will be copied here.
     ///
     /// Returns: The number of surviving entities written to futureEntities.
-    static size_t copyLiveEntitiesToFuture 
+    static size_t copyLiveEntitiesToFuture
         (const(GameState)* past, GameState* future) @trusted pure nothrow
     {
-        assert(past.entities.length == future.entities.length, 
+        assert(past.entities.length == future.entities.length,
                "Past/future entity counts do not match");
 
         // Get the past LifeComponents.
         enum lifeID = LifeComponent.ComponentTypeID;
-        auto rawLifeComponents = 
+        auto rawLifeComponents =
             past.components[lifeID].buffer.committedComponentSpace;
         auto lifeComponents = cast(immutable(LifeComponent)[])rawLifeComponents;
 
@@ -790,7 +791,7 @@ private:
         {
             // Component type specific minimums.
             const size_t minPrealloc = max(baseMinPrealloc, info.minPrealloc);
-            const size_t specificPreallocPerEntity = 
+            const size_t specificPreallocPerEntity =
                 cast(size_t)(info.minPreallocPerEntity * state.entities.length);
             const size_t preallocPerEntity =
                 max(basePreallocPerEntity, specificPreallocPerEntity);
@@ -806,20 +807,20 @@ private:
     ///
     /// Params:  target          = Past component buffers to add components of
     ///                            the added entities to. We're adding entities
-    ///                            created during the previous frame, so the 
-    ///                            next frame will see them as past state. 
-    ///                            Whether the components will also exist in the 
-    ///                            future is up to the processes that will 
+    ///                            created during the previous frame, so the
+    ///                            next frame will see them as past state.
+    ///                            Whether the components will also exist in the
+    ///                            future is up to the processes that will
     ///                            process them.
-    ///          baseEntityCount = The number of past entities (before these 
+    ///          baseEntityCount = The number of past entities (before these
     ///                            entities are added).
-    ///          targetPast      = Past entities to add the newly created 
+    ///          targetPast      = Past entities to add the newly created
     ///                            entities to. Must have enough space to add
     ///                            all new entities from entitiesToAdd_.
-    ///          targetFuture    = Future entities to add the newly created 
-    ///                            entities to. (They need to be added for 
+    ///          targetFuture    = Future entities to add the newly created
+    ///                            entities to. (They need to be added for
     ///                            processes to run - processes running during
-    ///                            the next frame will then decide whether or 
+    ///                            the next frame will then decide whether or
     ///                            not they will continue to live). Must have
     ///                            enough space to add all new entities from
     ///                            entitiesToAdd_.
@@ -856,11 +857,11 @@ private:
             targetPast[index] = targetFuture[index] = Entity(entityID);
 
             // Set the component counts/offsets for this entity.
-            foreach(typeID, count; componentCounts) 
+            foreach(typeID, count; componentCounts)
             {
                 if(!target[typeID].enabled) { continue; }
                 const globalIndex = baseEntityCount + index;
-                const offset = globalIndex == 0 
+                const offset = globalIndex == 0
                              ? 0
                              : target[typeID].offsets[globalIndex - 1] + count;
                 target[typeID].counts[globalIndex]  = count;
@@ -877,15 +878,15 @@ private:
     //////////////////////////////////////////
 }
 
-unittest 
+unittest
 {
     /// Not a 'real' Source, just for testing.
-    struct TestSource 
+    struct TestSource
     {
     public:
         struct Loader
         {
-            TestSource loadSource(string name) @safe nothrow 
+            TestSource loadSource(string name) @safe nothrow
             {
                 assert(false);
             }
@@ -906,7 +907,7 @@ unittest
             assert(false);
         }
 
-        bool getMappingValue(string key, out TestSource target) @safe nothrow 
+        bool getMappingValue(string key, out TestSource target) @safe nothrow
         {
             assert(false);
         }
@@ -936,7 +937,7 @@ unittest
 
 
     import tharsis.defaults.copyprocess;
-    auto compTypeMgr = 
+    auto compTypeMgr =
         new ComponentTypeManager!TestSource(TestSource.Loader());
     compTypeMgr.registerComponentTypes!TimeoutComponent();
     compTypeMgr.registerComponentTypes!PhysicsComponent();
