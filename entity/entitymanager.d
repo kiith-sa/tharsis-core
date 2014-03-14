@@ -829,12 +829,15 @@ private:
     ///          baseEntityCount = The number of past entities (before these 
     ///                            entities are added).
     ///          targetPast      = Past entities to add the newly created 
-    ///                            entities to.
+    ///                            entities to. Must have enough space to add
+    ///                            all new entities from entitiesToAdd_.
     ///          targetFuture    = Future entities to add the newly created 
     ///                            entities to. (They need to be added for 
-    ///                            processes to run - only the processes running
-    ///                            during the next frame will decide whether or 
-    ///                            not they will continue to live).
+    ///                            processes to run - processes running during
+    ///                            the next frame will then decide whether or 
+    ///                            not they will continue to live). Must have
+    ///                            enough space to add all new entities from
+    ///                            entitiesToAdd_.
     void addNewEntities(ref ComponentState target,
                         const size_t baseEntityCount,
                         Entity[] targetPast,
