@@ -8,12 +8,12 @@ module tharsis.entity.lifecomponent;
 
 
 /// Builtin component that specifies if an entity is 'alive' or not.
-/// 
+///
 /// Entities that are not alive will not be carried over to the future.
 struct LifeComponent
 {
-    /// Bit specifying this component type. 
-    /// 
+    /// Bit specifying this component type.
+    ///
     /// The last 4 bits are reserved for builtins.
     enum ushort ComponentTypeID = 1;
 

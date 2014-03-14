@@ -11,15 +11,15 @@ import std.algorithm;
 
 import tharsis.entity.entitymanager;
 
-// TODO: Allow processes to specify the maximum number of skipped updates 
-//       (default 0), as well as CPU overhead hints 
+// TODO: Allow processes to specify the maximum number of skipped updates
+//       (default 0), as well as CPU overhead hints
 //       (using an enum (trivial, cheap, medium, expensive, bottleneck))
 
 /// Abstract parent class to allow storing all process wrappers in a single array.
 class AbstractProcessWrapper(Policy)
 {
     /// Runs the process on all matching entities from specified entity manager.
-    void run(EntityManager!Policy entities) 
+    void run(EntityManager!Policy entities)
     {
         assert(false, "DMD bug workaround - should never happen");
     }
@@ -38,19 +38,19 @@ private:
 public:
     /// A generated function that runs the process on all matching entities.
     ///
-    /// The EntityManager parameter provides the entities to process; the 
-    /// Process parameter is the process whose process() method/s will be 
+    /// The EntityManager parameter provides the entities to process; the
+    /// Process parameter is the process whose process() method/s will be
     /// called.
     ///
     /// Can be changed into delegate if needed, but try to keep it a function.
     alias void function(EntityManager!Policy, Process) ProcessFunction;
 
     /// Construct a ProcessWrapper.
-    /// 
+    ///
     /// Params: process    = The process to wrap.
     ///         runProcess = Function that, passed the an entity manager and the
     ///                      process, will run the process on all entities with
-    ///                      components matching the process() method/s of the 
+    ///                      components matching the process() method/s of the
     ///                      process.
     this(Process process, ProcessFunction runProcess)
     {

@@ -9,11 +9,11 @@ module tharsis.entity.entityid;
 import std.conv;
 
 /// Unique identifier of an Entity.
-struct EntityID 
+struct EntityID
 {
 package:
     /// The identifier value.
-    uint id_ = uint.max; 
+    uint id_ = uint.max;
 
 public:
     /// Equality comparison with another ID.
@@ -23,7 +23,7 @@ public:
     }
 
     /// Is the ID null? (E.g. unititialized, or returned by a failed operation)
-    @property bool isNull() const pure nothrow @safe 
+    @property bool isNull() const pure nothrow @safe
     {
         return id_ == uint.max;
     }

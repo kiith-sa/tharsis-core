@@ -1,4 +1,4 @@
-//          Copyright Ferdinand Majerech 2013.
+//          Copyright Ferdinand Majerech 2013-2014.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -21,18 +21,18 @@ import tharsis.util.stackbuffer;
 
 
 /// Stores data to create an entity from.
-/// 
-/// An EntityPrototoype stores components that can be copied to create an 
-/// entity. Components can be loaded from a file once, and then used many times 
+///
+/// An EntityPrototoype stores components that can be copied to create an
+/// entity. Components can be loaded from a file once, and then used many times
 /// to create entities without loading again.
 ///
-/// An EntityPrototype is usually used through PrototypeManager. The code 
-/// that creates an EntityPrototype must provide it with memory as well as the 
+/// An EntityPrototype is usually used through PrototypeManager. The code
+/// that creates an EntityPrototype must provide it with memory as well as the
 /// components it should store
-/// 
+///
 /// An EntityPrototype can't contain builtin components at the moment.
 /// This restriction may be relaxed in future if needed.
-struct EntityPrototype 
+struct EntityPrototype
 {
 private:
     /// Storage provided to the EntityPrototype by its owner.
@@ -48,30 +48,30 @@ private:
     /// Part of storage_ used to store type IDs.
     ///
     /// Before lockAndTrimMemory() is called, this is at the end of storage_
-    /// and in reverse order. When the memory is trimmed, this is reordered 
-    /// to match the order of the (now sorted) components_ 
+    /// and in reverse order. When the memory is trimmed, this is reordered
+    /// to match the order of the (now sorted) components_
     /// (not in reverse order), and moved to the end of storage_, while it may
     /// start right after components_ or after an alignment gap.
     ushort[] componentTypeIDs_;
 
     /// Part of storage_ used to store components. Starts at the beginning of
-    /// storage_. After a call to loacAndTrimMemory, the components are sorted 
+    /// storage_. After a call to loacAndTrimMemory, the components are sorted
     /// by component type ID.
     ubyte[] components_;
 
-    /// Set to true by lockAndTrimMemory(), after which no more components can 
+    /// Set to true by lockAndTrimMemory(), after which no more components can
     /// be added.
     bool locked_ = false;
 
 public:
-    /// Provide memory for the prototype to use. 
+    /// Provide memory for the prototype to use.
     ///
     /// Must be called before adding any components.
     /// Can only be called once.
     ///
     /// The size of passed memory must be enough for all components that will
     /// be added to this prototype, plus ushort.sizeof per component for
-    /// component type IDs. The size of passed memory should be aligned upwards 
+    /// component type IDs. The size of passed memory should be aligned upwards
     /// to a multiple of 16.
     ///
     /// Params: memory = Memory for the prototype to use. Must be at least
@@ -79,10 +79,10 @@ public:
     void useMemory(ubyte[] memory) @safe pure nothrow
     {
         assert(!locked_, "Providing memory to a locked EntityPrototype");
-        assert(storage_ == null, 
+        assert(storage_ == null,
                "Trying to provide memory to an EntityPrototype that already "
                "has memory");
-        assert(memory.length % 16 == 0, 
+        assert(memory.length % 16 == 0,
                "EntityPrototype memory must be divisible by 16");
 
         storage_ = memory;
@@ -92,9 +92,9 @@ public:
 
     /// Get the maximum number of bytes any entity prototype might need.
     ///
-    /// Used to determine the minimum size of memory to pass to 
+    /// Used to determine the minimum size of memory to pass to
     /// EntityPrototype.useMemory(). Most prototypes are likely to be very
-    /// small; this is the size of memory needed to avoid *any* prototype 
+    /// small; this is the size of memory needed to avoid *any* prototype
     /// running out of memory.
     ///
     /// TParams: Policy = The entity policy used with the current EntityManager.
@@ -110,40 +110,40 @@ public:
     }
 
     /// Get the stored components as raw bytes.
-    @property inout(ubyte)[] rawComponentBytes() @safe inout pure nothrow 
+    @property inout(ubyte)[] rawComponentBytes() @safe inout pure nothrow
     {
         assert(locked_, "Trying to access raw components stored in an unlocked "
                         "EntityPrototype");
         return components_;
     }
 
-    /// Allocate space for a component in the prototype. 
+    /// Allocate space for a component in the prototype.
     ///
     /// Can only be called between calls to useMemory() and lockAndTrimMemory().
     ///
     /// Params: info = Type information about the component. Except for
     ///                MultiComponents, multiple components of the same type
     ///                can not be added.
-    /// 
+    ///
     /// Returns: A slice to write the component to. The component $(B must) be
     ///          written to this slice or the prototype must be thrown away.
-    ubyte[] allocateComponent 
+    ubyte[] allocateComponent
         (ref const(ComponentTypeInfo) info) @trusted nothrow
     {
         assert(!locked_, "Adding a component to a locked EntityPrototype");
-        assert(info.id >= maxBuiltinComponentTypes, 
+        assert(info.id >= maxBuiltinComponentTypes,
                "Trying to add a builtin component type to an EntityPrototype");
-        assert(info.isMulti || !componentTypeIDs_.canFind(info.id), 
+        assert(info.isMulti || !componentTypeIDs_.canFind(info.id),
                "EntityPrototype with 2 non-multi components of the same type");
 
-        assert(components_.length + info.size + 
+        assert(components_.length + info.size +
                componentTypeIDs_.length * ushort.sizeof <= storage_.length,
                "Ran out of memory provided to an EntityPrototype");
 
         components_ = storage_[0 .. components_.length + info.size];
 
         // Position to write the component type ID at.
-        const componentIDIndex = (cast(ushort[])storage_).length - 
+        const componentIDIndex = (cast(ushort[])storage_).length -
                                  componentTypeIDs_.length - 1;
         componentTypeIDs_ = (cast(ushort[])storage_)[componentIDIndex .. $];
         componentTypeIDs_[0] = info.id;
@@ -157,8 +157,8 @@ public:
     /// Params: componentTypes = Type information about all registered component
     ///                          types.
     ///
-    /// Returns: The part of the memory passed by useMemory that is used by the 
-    ///          prototype. The rest is unused and can be used by the caller for 
+    /// Returns: The part of the memory passed by useMemory that is used by the
+    ///          prototype. The rest is unused and can be used by the caller for
     ///          something else.
     const(ubyte)[] lockAndTrimMemory(const(ComponentTypeInfo)[] componentTypes)
         @trusted nothrow
@@ -185,7 +185,7 @@ public:
         foreach(ref type; componentTypes.filter!(t => !t.isNull)
                                         .until!(t => sortedCount == compCount))
         {
-            assert(sortedCount <= compCount, 
+            assert(sortedCount <= compCount,
                    "Processed more components than present in the prototype");
 
             size_t offsetOld = 0;
@@ -205,7 +205,7 @@ public:
             }
         }
 
-        assert(storage_.length % 16 == 0, 
+        assert(storage_.length % 16 == 0,
                "EntityPrototype storage length not aligned to 16");
         storage_ = storage_[0 .. alignedBytes];
         // Copy the sorted result to storage_.
@@ -221,7 +221,7 @@ public:
     /// Can only be called on locked prototypes.
     const(ushort[]) componentTypeIDs() @safe pure nothrow const
     {
-        assert(locked_, 
+        assert(locked_,
                "Trying to get component type IDs of an unlocked entity "
                "prototype");
         return componentTypeIDs_;
@@ -229,27 +229,27 @@ public:
 }
 
 
-/// Merge two entity prototypes; components from over override components from 
+/// Merge two entity prototypes; components from over override components from
 /// base. The returned prototype is not locked/trimmed.
 ///
-/// The result is created by taking all components from base and adding 
+/// The result is created by taking all components from base and adding
 /// components of each type from over. If components of the same type are both
 /// in base and over, the component/s from over are used (overriding base).
 ///
 /// Params: base           = The base for the merged prototype.
-///         over           = Prototype with components added to/overriding 
+///         over           = Prototype with components added to/overriding
 ///                          components in base.
 ///         memory         = Memory to use for the new entity prototype.
-///                          Must be at least 
+///                          Must be at least
 ///                          EntityPrototype.maxPrototypeBytes() bytes long.
-///         componentTypes = Type information about all registered component 
+///         componentTypes = Type information about all registered component
 ///                          types.
 ///
 /// Returns: The merged prototype. The prototype is not locked, allowing more
 ///          components to be added. To be used it must be locked by calling
 ///          EntityPrototype.lockAndTrimMemory().
 EntityPrototype mergePrototypesOverride
-    (ref const(EntityPrototype) base, ref const(EntityPrototype) over, 
+    (ref const(EntityPrototype) base, ref const(EntityPrototype) over,
      ubyte[] memory, const(ComponentTypeInfo)[] componentTypes)
 {
     EntityPrototype result;
@@ -314,7 +314,7 @@ EntityPrototype mergePrototypesOverride
 
 
 /// A resource wrapping an EntityPrototype. Managed by PrototypeManager.
-struct EntityPrototypeResource 
+struct EntityPrototypeResource
 {
     /// Described by the prototype filename, which is a string.
     alias StringDescriptor!EntityPrototypeResource Descriptor;
@@ -322,7 +322,7 @@ struct EntityPrototypeResource
     /// No default construction.
     @disable this();
 
-    /// Construct a new (not loaded) EntityPrototypeResource with specified 
+    /// Construct a new (not loaded) EntityPrototypeResource with specified
     /// descriptor.
     this(ref Descriptor descriptor) @safe pure nothrow
     {
@@ -338,5 +338,5 @@ struct EntityPrototypeResource
     Descriptor descriptor;
 
     /// Current state of the resource,
-    ResourceState state = ResourceState.New; 
+    ResourceState state = ResourceState.New;
 }

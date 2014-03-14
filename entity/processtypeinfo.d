@@ -1,4 +1,4 @@
-//          Copyright Ferdinand Majerech 2013.
+//          Copyright Ferdinand Majerech 2013-2014.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -25,7 +25,7 @@ template processOverloads(Process)
 {
     alias processOverloads = MemberFunctionsTuple!(Process, "process");
 }
-unittest 
+unittest
 {
     class P
     {
@@ -56,7 +56,7 @@ unittest
 }
 
 /// Is the specified type an EntityAccess type?
-/// 
+///
 /// (Passed to some process() functions to access entity info.)
 template isEntityAccess(T)
 {
@@ -92,8 +92,8 @@ template pastComponentIDs(alias ProcessFunc)
     enum pastComponentIDs = componentIDs!(PastComponentTypes!ProcessFunc);
 }
 
-/// Get the raw (with any qualifiers, as a reference, pointer or slice, as 
-/// specified in the signature) future component type written by a process() 
+/// Get the raw (with any qualifiers, as a reference, pointer or slice, as
+/// specified in the signature) future component type written by a process()
 /// method
 template RawFutureComponentType(alias ProcessFunc)
 {
@@ -123,7 +123,7 @@ public:
     {
         alias FutureComponentType = typeof(*FutureParamType);
     }
-    else 
+    else
     {
         alias FutureComponentType = FutureParamType;
     }
@@ -139,7 +139,7 @@ template hasFutureComponent(alias ProcessFunc)
 /// Does a Process write to some future component?
 template hasFutureComponent(Process)
 {
-    enum hasFutureComponent = 
+    enum hasFutureComponent =
         __traits(compiles, Process.FutureComponent.sizeof);
 }
 
@@ -149,12 +149,12 @@ template hasFutureComponent(Process)
 /// the component into the future entity.
 template futureComponentByPointer(alias ProcessFunc)
 {
-    enum futureComponentByPointer = 
+    enum futureComponentByPointer =
         hasFutureComponent!ProcessFunc &&
         isPointer!(RawFutureComponentType!ProcessFunc);
 }
 
-/// If ProcessFunc writes to a future component, return its index in the 
+/// If ProcessFunc writes to a future component, return its index in the
 /// parameter list. Otherwise return size_t.max.
 size_t futureComponentIndex(alias ProcessFunc)()
 {
@@ -165,12 +165,12 @@ size_t futureComponentIndex(alias ProcessFunc)()
         // Future component is either passed by out, or by a ref pointer, or
         // (MultiComponent types) by a ref slice (array).
         if(paramStorage & ParameterStorageClass.out_ ||
-           (isPointer!(ParamTypes[idx]) && 
+           (isPointer!(ParamTypes[idx]) &&
             paramStorage & ParameterStorageClass.ref_) ||
            (isArray!(ParamTypes[idx]) &&
             paramStorage & ParameterStorageClass.ref_))
         {
-            assert(result == size_t.max, 
+            assert(result == size_t.max,
                    "process() method with multiple future components");
             result = idx;
         }
@@ -221,7 +221,7 @@ template processMethodParamInfo(alias Method)
         }
     }
 
-    alias processMethodParamInfo = 
+    alias processMethodParamInfo =
         staticMap!(ParamInfo, tupleIndices!ParamTypes);
 }
 
@@ -245,9 +245,9 @@ template validateProcessMethod(alias Function)
                    "must be 'ref'");
             // Slice is not used; the param is not a MultiComponent
             // out is used when the future component is always written, ref
-            // pointer also allows _not to write_ the component into future 
+            // pointer also allows _not to write_ the component into future
             // state.
-            assert(Info.isSlice || 
+            assert(Info.isSlice ||
                    (Info.isPtr && Info.isRef) || (!Info.isPtr && Info.isOut),
                    "Future non-multi component of a process() method must "
                    "be 'out' or a 'ref' pointer (" ~ Info.ParamTypeName ~ ")");
@@ -255,7 +255,7 @@ template validateProcessMethod(alias Function)
 
         void testPastComponent(alias Info)()
         {
-            assert(!Info.isPtr, 
+            assert(!Info.isPtr,
                    "Past components must not be passed by pointer");
             assert((Info.Component.ComponentTypeID in pastIDs) == null,
                    "Two past components of the same type (or of types with the "
@@ -280,17 +280,17 @@ template validateProcessMethod(alias Function)
             static if(Info.isEntityAccess)
             {
                 assert(!isMutable!(Info.Param),
-                       "EntityAccess parameter of process() must be const");
+                       "Context parameter of process() must be const");
             }
             else static if(Info.isComponent)
             {
                 alias Component = Info.Component;
-                assert((Unqual!Component).stringof.endsWith("Component"), 
-                       "A non-EntityAccess parameter type to a process() "
+                assert((Unqual!Component).stringof.endsWith("Component"),
+                       "A non-Context parameter type to a process() "
                        "method with name not ending by \"Component\": " ~
                        Info.ParamTypeName);
                 // MultiComponents must be passed by slices.
-                assert(!Info.isSlice || isMultiComponent!Component, 
+                assert(!Info.isSlice || isMultiComponent!Component,
                        "A non-MultiComponent passed by slice as a future "
                        "component of a process() method");
                 // Other component types may _not_ be passed by slices.
@@ -301,14 +301,14 @@ template validateProcessMethod(alias Function)
                 static if(isMutable!Component) { testFutureComponent!Info(); }
                 else                           { testPastComponent!Info(); }
             }
-            else 
+            else
             {
-                assert(false, "A process() method with a non-EntityAccess, "
+                assert(false, "A process() method with a non-Context, "
                               "non-Component parameter");
             }
         }
         assert(futureCount <= 1,
-               "A process() method with more than one future (non-const) " 
+               "A process() method with more than one future (non-const) "
                "component type");
         return null;
     }
@@ -321,7 +321,7 @@ template validateProcessMethod(alias Function)
 mixin template validateProcess(Process)
 {
     // For now processes must be classes.
-    static assert(is(Process == class), 
+    static assert(is(Process == class),
         "Processes must be classes (structs may be allowed in future)");
     alias overloads = processOverloads!Process;
     // A Process without a process() method is not a Process.
@@ -337,11 +337,11 @@ mixin template validateProcess(Process)
 
     static if(hasFutureComponent!Process)
     {
-        // Ensure all process() methods write the Process-specified 
+        // Ensure all process() methods write the Process-specified
         // FutureComponent.
         alias FutureComponent = Process.FutureComponent;
         enum dummyCheckFutureComponent = {
-            foreach(o; overloads) 
+            foreach(o; overloads)
             {
                 static assert(is(FutureComponentType!o == FutureComponent),
                     "Every process() method overload of a Process with a "
@@ -355,11 +355,11 @@ mixin template validateProcess(Process)
             }
             return true;}();
     }
-    else 
+    else
     {
         // Ensure no process() methods write any FutureComponent.
         enum dummyCheckFutureComponent = {
-            foreach(o; overloads) 
+            foreach(o; overloads)
             {
                 static assert(!hasFutureComponent!o,
                     "process() method overloads of a Process without a "
@@ -374,35 +374,35 @@ mixin template validateProcess(Process)
 
 
 /// Prioritize overloads of the process() method from process P.
-/// 
+///
 /// Returns: An array of 2-tuples sorted from the most specific process()
 ///          overload (i.e. the one that reads the most past components) to the
 ///          most general (reads the fewest past components).
-///          The first member of each 2-tuple is a string containing 
+///          The first member of each 2-tuple is a string containing
 ///          comma-separated IDs of past component types the overload reads; the
 ///          second member is the index of the overload in processOverloads!P.
 ///
-/// Note: 
-/// 
+/// Note:
+///
 /// All process overloads in a Process write to the same future component but
-/// may read different past components. 
-/// 
-/// Which overload to call is ambiguous if there are two overloads with 
-/// different past components but no overload handling the union of these 
-/// components, since there might be an entity with components matching both 
+/// may read different past components.
+///
+/// Which overload to call is ambiguous if there are two overloads with
+/// different past components but no overload handling the union of these
+/// components, since there might be an entity with components matching both
 /// overloads.
-/// 
-/// Example: if one process() method reads components A and B, another reads 
-/// B and C, and an entity has components A, B and C, we don't know which 
-/// overload to call. This will trigger an error, requiring the user to define 
-/// another process() overload reading A, B and C. This overload will take 
+///
+/// Example: if one process() method reads components A and B, another reads
+/// B and C, and an entity has components A, B and C, we don't know which
+/// overload to call. This will trigger an error, requiring the user to define
+/// another process() overload reading A, B and C. This overload will take
 /// precedence as it is unambiguosly more specific than both previous overloads.
 Tuple!(string, size_t)[] prioritizeProcessOverloads(P)()
 {
     // All overloads of the process() method in P.
     alias overloads = processOverloads!P;
 
-    // Keys are component combinations handled by process() overloads, values 
+    // Keys are component combinations handled by process() overloads, values
     // are the indices of process() overloads handling each combination.
     size_t[immutable(ushort)[]] cases;
 
@@ -416,8 +416,8 @@ Tuple!(string, size_t)[] prioritizeProcessOverloads(P)()
         // We've already found an overload for this combination.
         if((combined in cases) != null) { continue; }
 
-        // Find the overload handling the combined past components read by o1 
-        // and o2. (If o1 and o2 are the same, this will also find the same 
+        // Find the overload handling the combined past components read by o1
+        // and o2. (If o1 and o2 are the same, this will also find the same
         // overload).
         size_t handlerOverload = size_t.max;
         foreach(i, ids; staticMap!(pastComponentIDs, overloads))
@@ -439,14 +439,14 @@ Tuple!(string, size_t)[] prioritizeProcessOverloads(P)()
 
     // The result must be an ordered array.
     Tuple!(string, size_t)[] result;
-    foreach(ids, overload; cases) 
+    foreach(ids, overload; cases)
     {
         assert(!result.canFind!(pair => pair[1] == overload),
                "Same overload assigned to multiple component combinations\n"
                "result: %s\n ids: %s\n overload: %s\n"
                .format(result, ids, overload));
 
-        result ~= tuple(ids.map!(to!string).join(", "), overload); 
+        result ~= tuple(ids.map!(to!string).join(", "), overload);
     }
     // Sort from most specific (reading most past components) to least specific
     // process() functions.
