@@ -252,14 +252,6 @@ public:
                componentTypeManager.maxEntityComponents * ushort.sizeof;
     }
 
-    /// Get the stored components as raw bytes.
-    @property inout(ubyte)[] rawComponentBytes() @safe inout pure nothrow
-    {
-        assert(locked_, "Trying to access raw components stored in an unlocked "
-                        "EntityPrototype");
-        return components_;
-    }
-
     /// Allocate space for a component in the prototype.
     ///
     /// Can only be called between calls to useMemory() and lockAndTrimMemory().
@@ -357,17 +349,6 @@ public:
 
         locked_ = true;
         return storage_;
-    }
-
-    /// Get the component type IDs of stored components.
-    ///
-    /// Can only be called on locked prototypes.
-    const(ushort[]) componentTypeIDs() @safe pure nothrow const
-    {
-        assert(locked_,
-               "Trying to get component type IDs of an unlocked entity "
-               "prototype");
-        return componentTypeIDs_;
     }
 }
 
