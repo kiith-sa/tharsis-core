@@ -12,6 +12,7 @@ import std.algorithm;
 import std.conv;
 import std.stdio;
 
+import tharsis.entity.componenttypeinfo;
 import tharsis.util.mallocarray;
 
 
@@ -154,34 +155,24 @@ public:
         return (cast(nothrowFunc)&implementation)(this, minLength);
     }
 
-    /// A utility method to add a component by copying it from a byte buffer.
-    ///
-    /// Copies a single component from the beginning of sourceBytes and commits 
-    /// it.
+    /// Add a component to the buffer by copying a raw component.
     ///
     /// Usually, components should be added by getting uncommittedSpace(),
     /// directly writing to it and then committing the components. For cases
     /// where the component is added from an existing buffer (entity
     /// prototypes), a copy is unavoidable; this method is used in this case.
     ///
-    /// Params: sourceBytes = A buffer storing the component add as raw bytes.
-    ///                       The component is at the beginning of the buffer.
-    ///                       May be longer than the component (the remainder 
-    ///                       will be returned).
-    ///
-    /// Returns: The remaining part of sourceBytes, beginning after the added 
-    ///          component.
-    const(ubyte)[] addComponent(const(ubyte)[] sourceBytes)
+    /// Params: component = The component to add as a raw, untyped component.
+    void addComponent(ref const(RuntimeComponent) component)
     {
-        assert(sourceBytes.length >= componentSize_, 
-               "Buffer to add a component from is not large enough to store "
-               "a single component of this type");
+        assert(component.typeID == componentTypeID_ &&
+               component.componentData.length == componentSize_,
+               "Component to add has unexpected component type and/or size");
 
         // Ensure the (rare) case of running out of space is handled.
         ubyte[] uncommitted = forceUncommittedComponentSpace(1);
-        uncommitted[0 .. componentSize_] = sourceBytes[0 .. componentSize_];
+        uncommitted[0 .. componentSize_] = component.componentData[];
         commitComponents(1);
-        return sourceBytes[componentSize_ .. $];
     }
 
     /// Reserve space for more components.

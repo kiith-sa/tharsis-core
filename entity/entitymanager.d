@@ -830,25 +830,28 @@ private:
                         Entity[] targetFuture) @trusted nothrow
     {
         auto entitiesToAdd = cast(EntitiesToAdd)&entitiesToAdd_;
+        const(ComponentTypeInfo)[] compTypeInfo =
+            componentTypeManager_.componentTypeInfo;
         foreach(index, pair; entitiesToAdd.prototypes)
         {
             immutable(EntityPrototype)* prototype = pair[0];
-            const(ubyte)[] rawBytes = prototype.rawComponentBytes;
 
             // Component counts of each component type for this entity.
             ComponentCount[maxComponentTypes!Policy] componentCounts;
+
             // Copy components from the prototype to component buffers.
-            foreach(typeID; prototype.componentTypeIDs)
+            foreach(const rawComponent;
+                    prototype.constComponentRange(compTypeInfo))
             {
                 // Copies and commits the component.
-                rawBytes = target[typeID].buffer.addComponent(rawBytes);
-                ++componentCounts[typeID];
+                target[rawComponent.typeID].buffer.addComponent(rawComponent);
+                ++componentCounts[rawComponent.typeID];
             }
 
             // Add a (mandatory) LifeComponent.
             enum lifeID = LifeComponent.ComponentTypeID;
-            const life  = LifeComponent(true);
-            auto source = cast(const(ubyte)[])((&life)[0 .. 1]);
+            auto life   = LifeComponent(true);
+            auto source = RawComponent(lifeID, cast(ubyte[])((&life)[0 .. 1]));
             target[lifeID].buffer.addComponent(source);
             ++componentCounts[lifeID];
 
