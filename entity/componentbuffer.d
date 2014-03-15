@@ -16,13 +16,13 @@ import tharsis.util.mallocarray;
 
 
 
-/// A buffer storing all (either past or future) components of one component 
+/// A buffer storing all (either past or future) components of one component
 /// type.
 ///
-/// The components are stored as plain bytes. Components are written by 
-/// accessing unused memory with unusedSpace(), writing the components, and 
-/// "comitting" them with commitComponents(). If there's not enough space for 
-/// new components, the buffer must be reallocated with 
+/// The components are stored as plain bytes. Components are written by
+/// accessing unused memory with unusedSpace(), writing the components, and
+/// "comitting" them with commitComponents(). If there's not enough space for
+/// new components, the buffer must be reallocated with
 /// reserveComponentSpace().
 struct ComponentBuffer(Policy)
 {
@@ -60,13 +60,13 @@ public:
     }
 
     /// Enable the ComponentBuffer, meaning some component type uses it.
-    /// 
+    ///
     /// Params: componentTypeID = ID of the type of stored components.
     ///         componentSize   = Size of a single stored component.
-    void enable(const ushort componentTypeID, 
+    void enable(const ushort componentTypeID,
                 const size_t componentSize) @safe pure nothrow
     {
-        assert(!enabled_, "Trying to enable a component buffer that's " 
+        assert(!enabled_, "Trying to enable a component buffer that's "
                           "already enabled. Maybe two components with "
                           "the same ComponentTypeID?");
         componentTypeID_ = componentTypeID;
@@ -74,9 +74,9 @@ public:
         enabled_         = true;
     }
 
-    /// Get the memory that's not used yet. 
+    /// Get the memory that's not used yet.
     ///
-    /// Components can be written to this memory, and then committed using 
+    /// Components can be written to this memory, and then committed using
     /// commitComponents().
     ubyte[] uncommittedComponentSpace() pure nothrow @safe
     {
@@ -84,7 +84,7 @@ public:
         return storage_[componentSize_ * committedComponents_ .. $];
     }
 
-    /// Get the memory used for the _committed_ components, i.e. those that 
+    /// Get the memory used for the _committed_ components, i.e. those that
     /// have been written and exist as a part of one or another entity.
     const(ubyte)[] committedComponentSpace() const pure nothrow @safe
     {
@@ -101,13 +101,13 @@ public:
 
     /// Commit components written to space returned by uncommittedSpace.
     ///
-    /// After this is called, the components officially exist as a part of 
+    /// After this is called, the components officially exist as a part of
     /// some entity.
     ///
     /// Params:  count = Number of components to commit.
     void commitComponents(const size_t count) @safe nothrow
     {
-        assert(enabled_, 
+        assert(enabled_,
                "Can't commit components to a buffer that's not enabled");
         assert(committedComponents_ + count <= allocatedComponents_,
                "Trying to commit more components than can fit in allocated "
@@ -116,34 +116,34 @@ public:
         committedComponents_ += count;
     }
 
-    /// Same as uncommittedComponentSpace, but reallocates if there's less than 
+    /// Same as uncommittedComponentSpace, but reallocates if there's less than
     /// specified space.
     ///
     /// Params:  minLength = Minimum number of components we need space for.
-    ///                      If this is greater than the available uncommitted 
-    ///                      space, the buffer will be reallocated, invalidating 
+    ///                      If this is greater than the available uncommitted
+    ///                      space, the buffer will be reallocated, invalidating
     ///                      any slices returned by previous method calls,
-    ///                      and printing a warning to stdout; reallocations 
-    ///                      in this method should be uncommon and the user 
+    ///                      and printing a warning to stdout; reallocations
+    ///                      in this method should be uncommon and the user
     ///                      should be notified about a need to preallocate more
     ///                      memory.
     ///
     /// Returns: Uncommitted space, possibly after a reallocation.
-    ubyte[] forceUncommittedComponentSpace(const size_t minLength) 
+    ubyte[] forceUncommittedComponentSpace(const size_t minLength)
         @trusted nothrow
     {
         static ubyte[] implementation(ref ComponentBuffer self,
                                       const size_t minLength)
         {with(self){
-            if(uncommittedSize >= minLength) 
+            if(uncommittedSize >= minLength)
             {
-                return uncommittedComponentSpace; 
+                return uncommittedComponentSpace;
             }
 
             writefln("WARNING: Unexpected buffer reallocation for component "
                      "type %s: consider preallocating more space ",
                      componentTypeID_);
-            const components = 
+            const components =
                 max(minLength, to!size_t(allocatedSize * Policy.reallocMult));
             reserveComponentSpace(components);
             return uncommittedComponentSpace;
@@ -160,7 +160,7 @@ public:
     /// it.
     ///
     /// Usually, components should be added by getting uncommittedSpace(),
-    /// directly writing to it and then committing the components. For cases 
+    /// directly writing to it and then committing the components. For cases
     /// where the component is added from an existing buffer (entity
     /// prototypes), a copy is unavoidable; this method is used in this case.
     ///
@@ -186,15 +186,14 @@ public:
 
     /// Reserve space for more components.
     ///
-    /// Must be called if uncomittedComponentSpace() is not long enough to store 
-    /// components we need to add. Invalidates any slices returned by previous 
+    /// Must be called if uncomittedComponentSpace() is not long enough to store
+    /// components we need to add. Invalidates any slices returned by previous
     /// method calls.
     ///
     /// Params: componentCounts = Number of components to allocate space for.
-    void reserveComponentSpace(const size_t componentCount) 
-        @trusted nothrow
+    void reserveComponentSpace(const size_t componentCount) @trusted nothrow
     {
-        assert(enabled_, 
+        assert(enabled_,
                 "Calling reserveComponentSpace on a non-enabled buffer");
         if(allocatedComponents_ >= componentCount) { return; }
         const oldBytes = storage_.length;
@@ -206,24 +205,24 @@ public:
     }
 
     /// Get the size of uncommitted (free) space in components.
-    @property size_t uncommittedSize() @safe const pure nothrow 
+    @property size_t uncommittedSize() @safe const pure nothrow
     {
         // The length, not capacity, counts as allocated space for this API.
         return allocatedSize - committedComponents_;
     }
 
     /// Get the allocated space in components.
-    @property size_t allocatedSize() @safe const pure nothrow 
+    @property size_t allocatedSize() @safe const pure nothrow
     {
         // The length, not capacity, counts as allocated space for this API.
         return allocatedComponents_;
     }
 
-    /// Clear a ComponentBuffer before use as a future component buffer
-    /// to catch any bugs with reading no longer used data.
+    /// Clear a ComponentBuffer before use as a future component buffer to catch
+    /// any bugs with reading no longer used data.
     ///
-    /// This exists only to catch bugs, and can be removed if the overhead
-    /// is too high.
+    /// This exists only to catch bugs, and can be removed if the overhead is
+    /// too high.
     void reset() @safe pure nothrow
     {
         assert(enabled_, "Can't reset a non-enabled buffer");
