@@ -9,6 +9,8 @@ module tharsis.entity.entityprototype;
 
 import std.algorithm;
 import std.range;
+import std.traits;
+import std.typecons;
 
 import tharsis.entity.componenttypeinfo;
 import tharsis.entity.componenttypemanager;
