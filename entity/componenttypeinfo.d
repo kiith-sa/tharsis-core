@@ -128,6 +128,28 @@ struct FieldName
     string name;
 }
 
+/// Stores a component of any component type as raw data.
+struct RawComponent
+{
+private:
+    /// Type ID of the component.
+    ushort typeID_ = nullComponentTypeID;
+    /// Slice containing untyped raw data.
+    ///
+    /// The slice should point to memory owned externally, e.g. to memory of an
+    /// EntityPrototype.
+    ubyte[] componentData_;
+
+public:
+    /// Get an ID specifying type of the component
+    ushort typeID() @safe const pure nothrow {return typeID_;}
+
+    /// Get the component as raw data.
+    inout(ubyte)[] componentData() @safe pure nothrow inout
+    {
+        return componentData_;
+    }
+}
 
 /// Type information about a component type.
 struct ComponentTypeInfo
