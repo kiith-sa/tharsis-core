@@ -26,12 +26,12 @@ import tharsis.util.stackbuffer;
 /// entity. Components can be loaded from a file once, and then used many times
 /// to create entities without loading again.
 ///
-/// An EntityPrototype is usually used through PrototypeManager. The code
-/// that creates an EntityPrototype must provide it with memory as well as the
+/// An EntityPrototype is usually used through PrototypeManager. The code that
+/// creates an EntityPrototype must provide it with memory as well as the
 /// components it should store
 ///
-/// An EntityPrototype can't contain builtin components at the moment.
-/// This restriction may be relaxed in future if needed.
+/// An EntityPrototype can't contain builtin components at the moment. This
+/// restriction may be relaxed in future if needed.
 struct EntityPrototype
 {
 private:
