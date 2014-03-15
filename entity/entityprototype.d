@@ -397,59 +397,54 @@ EntityPrototype mergePrototypesOverride
 {
     EntityPrototype result;
     result.useMemory(memory);
-    const(ushort)[] baseIDs        = base.componentTypeIDs;
-    const(ushort)[] overIDs        = over.componentTypeIDs;
-    const(ubyte)[]  baseComponents = base.rawComponentBytes;
-    const(ubyte)[]  overComponents = over.rawComponentBytes;
+    auto baseRange = base.constComponentRange(componentTypes);
+    auto overRange = over.constComponentRange(componentTypes);
 
-    while(!baseIDs.empty || !overIDs.empty)
+    while(!baseRange.empty || !overRange.empty)
     {
-        // Both baseIDs and overIDs are sorted. If baseIDs.front is less,
-        // there's no component with that ID in overIDs so use component/s from
-        // base. If overIDs.front is less, only overIDs contains that ID so we
-        // use component/s from over. If baseIDs.front and overIDs.front are
-        // equal, both base and over have this component and over overrides
+        // baseRange, overRange are sorted by component type. If
+        // baseRange.front.typeID is less, there's no component with that ID in
+        // overRange so use component/s from baseRange. Same for
+        // overRange.front.typeID and overRange. If the type IDs are equal,
+        // both baseRange and overRange have this component and over overrides
         // base. If either is empty, we use the other one.
 
-        const bool useBase = overIDs.empty ? true  // only baseIDs has items
-                           : baseIDs.empty ? false // only overIDs has items
-                           : baseIDs.front < overIDs.front;
-        const typeID = useBase ? baseIDs.front : overIDs.front;
+        const bool useBase = overRange.empty ? true  // only baseRange has items
+                           : baseRange.empty ? false // only overRange has items
+                           : baseRange.front.typeID < overRange.front.typeID;
+        const typeID = useBase ? baseRange.front.typeID 
+                               : overRange.front.typeID;
 
-        // Copies components to the result while they match the current type.
-        // Skips the corresponding components in the ignored buffer.
-        // (Which one is used and ignored depends on whether there's a component
-        // with this type in base and over - over overrides base.)
+        // Copies components matching the current type to the result. Skips
+        // components of the same type in the ignored buffer. (Which one is used
+        // and which ignored depends on whether there's a component with this
+        // type in base and over - over overrides base.)
         static void copyComponents
-            (ref EntityPrototype result,     ref const ComponentTypeInfo type,
-             ref const(ushort)[] usedIDs,    ref const(ubyte)[] usedComponents,
-             ref const(ushort)[] ignoredIDs, ref const(ubyte)[] ignoredComponents)
+            (ref EntityPrototype result,
+             ref const ComponentTypeInfo type,
+             ref EntityPrototype.ConstComponentRange usedRange,
+             ref EntityPrototype.ConstComponentRange ignoredRange)
         {
-            const typeID = usedIDs.front;
-            const size = type.size;
+            const typeID = usedRange.front.typeID;
+            const size   = type.size;
             // Copy all components until we reach components of a different type
             // or until usedIDs is empty.
-            while(usedIDs.frontOrIfEmpty(ushort.max) == typeID)
+            while(!usedRange.empty && usedRange.front.typeID == typeID)
             {
-                ubyte[] target        = result.allocateComponent(type);
-                const(ubyte)[] source = usedComponents[0 .. size];
-                usedComponents        = usedComponents[size .. $];
-                target[] = source[];
-                usedIDs.popFront();
+                ubyte[] target = result.allocateComponent(type);
+                target[]       = usedRange.front.componentData[0 .. size];
+                usedRange.popFront();
             }
             // Ignore all overridden components from base.
-            while(ignoredIDs.frontOrIfEmpty(ushort.max) == typeID)
+            while(!ignoredRange.empty && ignoredRange.front.typeID == typeID)
             {
-                ignoredComponents = ignoredComponents[size .. $];
-                ignoredIDs.popFront();
+                ignoredRange.popFront();
             }
         }
 
         copyComponents(result, componentTypes[typeID],
-                       useBase ? baseIDs        : overIDs,
-                       useBase ? baseComponents : overComponents,
-                       useBase ? overIDs        : baseIDs,
-                       useBase ? overComponents : baseComponents);
+                       useBase ? baseRange : overRange,
+                       useBase ? overRange : baseRange);
     }
 
     return result;
