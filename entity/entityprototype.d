@@ -172,6 +172,39 @@ public:
     /// See_Also: GenericComponentRange
     alias ConstComponentRange = GenericComponentRange!(Yes.isConst);
 
+    
+    /// Get a component range to iterate over components in the prototype
+    /// (as RawComponents).
+    ///
+    /// Params:  componentTypeManager = Manager with type information about all 
+    ///                                 component types.
+    ComponentRange componentRange(Policy)
+        (ComponentTypeManager!Policy componentTypeManager)
+        pure nothrow
+    {
+        return ComponentRange(this, componentTypeManager.componentTypeInfo);
+    }
+
+    /// Get a component range to iterate over components in the prototype
+    /// (as RawComponents).
+    ///
+    /// Params:  componentTypeInfo = Slice with type information about all
+    ///                                 component types.
+    ComponentRange componentRange(const(ComponentTypeInfo)[] componentTypeInfo)
+        pure nothrow
+    {
+        return ComponentRange(this, componentTypeInfo);
+    }
+
+    /// Ditto.
+    ConstComponentRange
+        constComponentRange(const(ComponentTypeInfo)[] componentTypeInfo)
+        pure nothrow const
+    {
+        return ConstComponentRange(this, componentTypeInfo);
+    }
+
+
     /// Provide memory for the prototype to use.
     ///
     /// Must be called before adding any components.
