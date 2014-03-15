@@ -167,6 +167,11 @@ public:
         }
     }
 
+    /// See_Also: GenericComponentRange
+    alias ComponentRange      = GenericComponentRange!(No.isConst);
+    /// See_Also: GenericComponentRange
+    alias ConstComponentRange = GenericComponentRange!(Yes.isConst);
+
     /// Provide memory for the prototype to use.
     ///
     /// Must be called before adding any components.
