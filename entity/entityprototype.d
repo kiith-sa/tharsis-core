@@ -64,6 +64,109 @@ private:
     bool locked_ = false;
 
 public:
+    /// A range to iterate over components in an EntityPrototype.
+    ///
+    /// If the isConst parameter is true, the range can only read components.
+    /// Otherwise the components can be modified.
+    ///
+    /// The components are iterated as RawComponents, i.e. raw byte data with
+    /// type ID. Usually they will need to be cast to an actual component type
+    /// to be useful.
+    struct GenericComponentRange(Flag!"isConst" isConst)
+    {
+    private:
+        /// Work with a const or non-const EntityPrototype depending on isConst.
+        alias Prototype =
+            Select!(isConst, const(EntityPrototype), EntityPrototype);
+
+        /// The entity prototype we're iterating over.
+        Prototype* prototype_;
+
+        /// Type information about all component types.
+        ///
+        /// (This is a slice to ComponentTypeManager data).
+        const(ComponentTypeInfo)[] componentTypeInfo_;
+
+        /// Index of the current component in the prototype.
+        ///
+        /// Used with Prototype.componentTypeIDs_ to get type of the current
+        /// component.
+        size_t componentIndex_ = 0;
+
+        /// Offset, in bytes, where the current component in 
+        /// Prototype.components_ starts.
+        size_t componentOffset_ = 0;
+
+        /// Current element of the range (type ID + slice with component data).
+        ///
+        /// Storing front_ allows access through a const (inout) reference.
+        RawComponent front_;
+
+        /// No copying.
+        @disable this(this);
+        @disable this();
+
+        /// Construct a component range.
+        ///
+        /// Params:  prototype         = Entity prototype to iterate over.
+        ///          componentTypeInfo = Type information about all registered
+        ///                              component types.
+        this(ref Prototype prototype,
+             const(ComponentTypeInfo)[] componentTypeInfo)
+            pure nothrow
+        {
+            assert(prototype.locked_,
+                   "ComponentRange requires a locked EntityPrototype");
+            prototype_         = &prototype;
+            componentTypeInfo_ = componentTypeInfo;
+            updateFront();
+        }
+
+    public:
+        /// Get the current component.
+        ///
+        /// Must not be called if the range is empty.
+        ref inout(RawComponent) front() @safe pure nothrow inout
+        {
+            assert(!empty, "Can't get front of an empty range");
+            return front_;
+        }
+
+        /// Go to the next component.
+        ///
+        /// Must not be called if the range is empty.
+        void popFront() @safe pure nothrow
+        {
+            assert(!empty, "Can't pop front of an empty range");
+            const type = prototype_.componentTypeIDs_[componentIndex_];
+            componentOffset_ += componentTypeInfo_[type].size;
+            ++componentIndex_;
+            updateFront();
+        }
+
+        /// Is the range empty (no more components) ?
+        bool empty() @safe pure nothrow const
+        {
+            return componentIndex_ >= prototype_.componentTypeIDs_.length;
+        }
+
+    private:
+        /// Update the front_ data member.
+        void updateFront() @trusted pure nothrow
+        {
+            // front_ is invalid when the range is empty.
+            if(empty) { return; }
+            const type = prototype_.componentTypeIDs_[componentIndex_];
+            const size = componentTypeInfo_[type].size;
+            auto  data = prototype_.components_[componentOffset_ ..
+                                                componentOffset_ + size];
+
+            // The cast is OK if isConst == true; front() will still only allow
+            // const access.
+            front_ = RawComponent(type, cast(ubyte[])data);
+        }
+    }
+
     /// Provide memory for the prototype to use.
     ///
     /// Must be called before adding any components.
