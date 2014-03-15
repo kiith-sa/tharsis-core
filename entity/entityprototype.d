@@ -47,11 +47,11 @@ private:
 
     /// Part of storage_ used to store type IDs.
     ///
-    /// Before lockAndTrimMemory() is called, this is at the end of storage_
-    /// and in reverse order. When the memory is trimmed, this is reordered
-    /// to match the order of the (now sorted) components_
-    /// (not in reverse order), and moved to the end of storage_, while it may
-    /// start right after components_ or after an alignment gap.
+    /// Before lockAndTrimMemory() is called, this is at the end of storage_ and
+    /// in reverse order. When the memory is trimmed, this is reordered to match
+    /// the order of the (now sorted) components_ (not in reverse order), and
+    /// moved to the end of storage_. It may start right after components_ or
+    /// after an alignment gap.
     ushort[] componentTypeIDs_;
 
     /// Part of storage_ used to store components. Starts at the beginning of
