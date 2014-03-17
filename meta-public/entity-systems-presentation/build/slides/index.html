@@ -1,0 +1,601 @@
+
+<!DOCTYPE html>
+
+
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Entity Systems &mdash; Entity Systems 2014.02.22 documentation</title>
+    
+    <link rel="stylesheet" href="_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/styles.css" type="text/css" />
+    <link rel="stylesheet" href="_static/slides.css" type="text/css" />
+    
+    <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+    
+
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="top" title="Entity Systems 2014.02.22 documentation" href="#" /> 
+  </head>
+  <body>
+
+<section
+   id="slide_container"
+   class='slides layout-regular'>
+
+
+  <article class="slide level-1" id="entity-systems">
+<h1>Entity Systems</h1>
+
+</article>
+<article class="slide level-2" id="game-entity">
+<h2>Game entity</h2>
+<ul class="simple">
+<li><em>Something</em> that exists in the game world<ul>
+<li>Rock</li>
+<li>Vehicle</li>
+<li>Trigger</li>
+<li>Sound source</li>
+<li>...</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="id1">
+<h2>Game entity</h2>
+<ul class="simple">
+<li>An entity may<ul>
+<li>Play a sound</li>
+<li>Move around</li>
+<li>Trigger a script</li>
+<li>Be used by the player</li>
+<li>Explode</li>
+<li>...</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="id2">
+<h2>Game entity</h2>
+<ul class="simple">
+<li>There is a <em>lot</em> of different entities in a game</li>
+<li>Must be easy to create/maintain/modify<ul>
+<li>Preferably without recompiling/repackaging</li>
+</ul>
+</li>
+<li>Must be efficient</li>
+<li>Game designers shouldn't have to be programmers</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="oop-entities">
+<h2>OOP entities</h2>
+<ul class="simple">
+<li>Entities implemented as a class hierarchy</li>
+</ul>
+<div class="figure align-center">
+<img alt="_images/oop0.png" src="_images/oop0.png" style="height: 480px;" />
+<p class="caption"><a class="reference external" href="https://www.orxonox.net/ticket/229">https://www.orxonox.net/ticket/229</a></p>
+</div>
+
+</article>
+<article class="slide level-2" id="oop-entities-advantages">
+<h2>OOP entities - advantages</h2>
+<ul class="simple">
+<li>Obvious</li>
+<li>Bad performance</li>
+<li>Hard to maintain</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="oop-entities-the-blob">
+<h2>OOP entities - the Blob</h2>
+<ul class="simple">
+<li>Kitchen-sink general-purpose classes</li>
+<li>High per-entity overhead</li>
+<li>May be necessary for moddability</li>
+<li>E.g. 'Vehicle', 'Building' in an RTS<ul>
+<li>What about vehicle-buildings?</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="oop-entities-heavy-leaves">
+<h2>OOP entities - heavy leaves</h2>
+<ul class="simple">
+<li>Bad reusability</li>
+<li>Code duplication</li>
+<li>LOTS of classes</li>
+<li>Multiple inheritance or composition with interface<ul>
+<li>Boilerplate</li>
+<li>Need code to handle each interface</li>
+<li>Need dynamic casting/RTTI</li>
+</ul>
+</li>
+<li>Constant refactoring/recompiling<ul>
+<li>Game designers must be programmers</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="oop-entities-example">
+<h2>OOP entities - example</h2>
+<div class="figure align-center">
+<img alt="_images/oop1.png" src="_images/oop1.png" style="height: 480px;" />
+<p class="caption"><a class="reference external" href="http://www.gdcvault.com/play/1911/Theory-and-Practice-of-the">http://www.gdcvault.com/play/1911/Theory-and-Practice-of-the</a></p>
+</div>
+
+</article>
+<article class="slide level-2" id="id3">
+<h2>OOP entities - example</h2>
+<div class="figure align-center">
+<img alt="_images/oop2.png" src="_images/oop2.png" style="height: 480px;" />
+<p class="caption"><a class="reference external" href="http://www.gdcvault.com/play/1911/Theory-and-Practice-of-the">http://www.gdcvault.com/play/1911/Theory-and-Practice-of-the</a></p>
+</div>
+
+</article>
+<article class="slide level-2" id="id4">
+<h2>OOP entities - example</h2>
+<div class="figure align-center">
+<img alt="_images/oop3.png" src="_images/oop3.png" style="height: 480px;" />
+<p class="caption"><a class="reference external" href="http://www.gdcvault.com/play/1911/Theory-and-Practice-of-the">http://www.gdcvault.com/play/1911/Theory-and-Practice-of-the</a></p>
+</div>
+
+</article>
+<article class="slide level-2" id="oop-entities-real-example">
+<h2>OOP entities - real example</h2>
+<ul class="simple">
+<li>Close up</li>
+</ul>
+<div class="figure align-center">
+<img alt="_images/oop_ut.png" src="_images/oop_ut.png" style="height: 480px;" />
+<p class="caption"><a class="reference external" href="http://www.codekisk.com/unreal/ut3/scriptref/classtree.html">http://www.codekisk.com/unreal/ut3/scriptref/classtree.html</a></p>
+</div>
+
+</article>
+<article class="slide level-2" id="id5">
+<h2>OOP entities - real example</h2>
+<ul class="simple">
+<li>Zoomed out</li>
+</ul>
+<div class="figure align-center">
+<img alt="_images/au_actor_tree.png" src="_images/au_actor_tree.png" style="height: 500px;" />
+<p class="caption"><a class="reference external" href="http://www.codekisk.com/unreal/ut3/scriptref/classtree.html">http://www.codekisk.com/unreal/ut3/scriptref/classtree.html</a></p>
+</div>
+
+</article>
+<article class="slide level-2" id="component-entities">
+<h2>Component entities</h2>
+<ul class="simple">
+<li>No monolithic <em>entity</em> classes</li>
+<li>Data and/or functionality separated into reusable, self-contained <em>components</em></li>
+<li>Components should be small, atomic, easy to write</li>
+<li>Arbitrary components <em>aggregated</em> into entities<ul>
+<li>Preferably at runtime</li>
+<li>Preferably from data (no recompilation)</li>
+<li>Easy to add/test/change entities</li>
+<li>Redeemer example</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="component-entities-cont">
+<h2>Component entities cont.</h2>
+<ul class="simple">
+<li>An entity has <em>only</em> the functionality it needs<ul>
+<li>And uses only the resources it needs</li>
+</ul>
+</li>
+<li>Each entity may have different components<ul>
+<li>In Java terms, every entity is a separate class</li>
+<li>Leads to an explosion of possible component combinations</li>
+</ul>
+</li>
+<li>Optionally, components in an entity may be changed at runtime<ul>
+<li>In Java terms, class of an entity may change</li>
+<li>Mobile trap example</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="component-entities-component-examples">
+<h2>Component entities - component examples</h2>
+<ul class="simple">
+<li>Position</li>
+<li>Collision volume</li>
+<li>Physical material</li>
+<li>Graphics</li>
+<li>Animation</li>
+<li>AI</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="component-entities-entity-example">
+<h2>Component entities - entity example</h2>
+<div class="code highlight-python"><pre>visual: visual/harpooner.yaml
+engine:
+  maxSpeed: 250
+  acceleration: 2500
+volume:
+  aabbox:
+    min: [-25, 0]
+    max: [25, 30]
+weapon:
+  0: weapons/harpoonLauncher.yaml
+collidable:
+health: 55
+warhead:
+  damage: 45
+  killsEntity: false
+dumbScript: dumbscripts/arrows.yaml
+score:
+  exp: 120</pre>
+</div>
+
+</article>
+<article class="slide level-2" id="component-entities-organized-blob">
+<h2>Component entities - organized blob</h2>
+<ul class="simple">
+<li>An entity class with NULLable pointers to components</li>
+<li>Quick &amp; dirty, easy to implement</li>
+<li>May be good enough if not many component types</li>
+<li>Quite a lot of memory overhead</li>
+<li>CPU overhead, allocation simple</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="id6">
+<h2>Component entities - organized blob</h2>
+<div class="code highlight-python"><pre>class Entity
+{
+    // These may be null
+    PhysicsComponent* physics;
+    GraphicsComponent* graphics;
+    AIComponent* ai;
+    CollisionVolumeComponent* volume;
+
+    ...
+    Lots of pointers (~10 - ~300)
+    ...
+};</pre>
+</div>
+
+</article>
+<article class="slide level-2" id="component-entities-container-of-components">
+<h2>Component entities - container of components</h2>
+<ul class="simple">
+<li>Component classes implementing a <em>Component</em> interface/class</li>
+<li>An entity owns a container of <em>Components</em></li>
+<li>There still is an <em>Entity</em> object which may have some extra baggage</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="component-entities-entity-component-system-ecs">
+<h2>Component entities - entity-component system (ECS)</h2>
+<ul class="simple">
+<li>No <em>Entity</em> object<ul>
+<li>&quot;Entity&quot; is just a unique ID</li>
+<li>Code works with individual components, not entities</li>
+</ul>
+</li>
+</ul>
+<div class="figure align-center">
+<img alt="_images/ecs.png" src="_images/ecs.png" style="height: 400px;" />
+<p class="caption"><a class="reference external" href="http://cowboyprogramming.com/2007/01/05/evolve-your-heirachy/">http://cowboyprogramming.com/2007/01/05/evolve-your-heirachy/</a></p>
+</div>
+
+</article>
+<article class="slide level-2" id="execution-in-a-naive-ecs-oop-components">
+<h2>Execution in a naive ECS (OOP components)</h2>
+<ul class="simple">
+<li>High-level concept. May not reflect reality.</li>
+</ul>
+<div class="code highlight-python"><pre>foreach(componentType)
+{
+    foreach(entity)
+    {
+        getComponent(componentType, entity).update();
+    }
+}</pre>
+</div>
+
+</article>
+<article class="slide level-2" id="oop-components-issues">
+<h2>OOP components - issues</h2>
+<ul class="simple">
+<li>Components must access each other<ul>
+<li>References between components<ul>
+<li>Init/deinit dependency issues</li>
+<li>Leads to dependency chains (even circular)</li>
+<li>Harder to remove/change components</li>
+</ul>
+</li>
+<li>Indirect communication (slow, nontrivial)</li>
+<li>Blob component</li>
+<li>Need virtual functions and/or RTTI</li>
+<li>Order of updates matters<ul>
+<li>Refactoring may break the game</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="rdbms-style-ecs">
+<h2>RDBMS style ECS</h2>
+<ul class="simple">
+<li>Idea: OOP is a bad model for game entities (or components)</li>
+<li>Logic separated from data</li>
+<li>May be implemented in an OOP language, but is not OOP</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="id7">
+<h2>RDBMS style ECS</h2>
+<ul class="simple">
+<li>Entity:<ul>
+<li>Like a object (1 entity - 1 instance)</li>
+<li>Like a class (each entity defines its own behavior)</li>
+<li>Is neither</li>
+<li>Implementation - unique ID, no data, no methods</li>
+</ul>
+</li>
+<li>Component<ul>
+<li>Plain data, no logic</li>
+<li>Implementation e.g. a C struct</li>
+<li>&quot;A Component is the chunk of stuff that provides a particular aspect to an Entity&quot;</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="rdbms-style-ecs-system">
+<h2>RDBMS style ECS: System</h2>
+<ul class="simple">
+<li>System (or Process)<ul>
+<li>A reusable, self-contained, piece of logic; replaces methods</li>
+<li>Specifies component types it operates on</li>
+<li>Processes every entity containing (all of) those components<ul>
+<li>Similar to an SQL SELECT (not necessarily the same)</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>System examples (often match components):<ul>
+<li>Input</li>
+<li>Graphics</li>
+<li>Collision</li>
+<li>AI</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="rdbms-style-ecs-system-example">
+<h2>RDBMS style ECS: System - example</h2>
+<div class="code highlight-python"><pre>class PhysicsSystem : System
+{
+    private:
+        const GameTime gameTime_;
+
+    public:
+        void process(ref PositionComponent pos, ref VelocityComponent vel)
+        {
+            pos.position += gameTime_.timeStep * vel.velocity;
+        }
+}</pre>
+</div>
+
+</article>
+<article class="slide level-2" id="rdbms-style-ecs-system-execution">
+<h2>RDBMS style ECS: System - execution</h2>
+<ul class="simple">
+<li>High-level concept. <strong>Does not</strong> reflect reality.</li>
+</ul>
+<div class="code highlight-python"><pre>foreach(system; systems)
+{
+    foreach(entity; entities)
+    {
+        if(entity.hasComponents(system.processedComponents()))
+        {
+            system.process(entity.getComponents(system.processedComponents()));
+        }
+    }
+}</pre>
+</div>
+
+</article>
+<article class="slide level-2" id="rdbms-style-ecs-advantages">
+<h2>RDBMS style ECS: advantages</h2>
+<ul class="simple">
+<li><strong>No</strong> references to/dependencies on other components<ul>
+<li>Combine anything with anything</li>
+</ul>
+</li>
+<li>No inter-component communication</li>
+<li>Systems can be trivially added/removed</li>
+<li>No virtuals or dynamic casting (despite the previous slide)</li>
+<li>Can be exploited for performace</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="rdbms-style-ecs-implementation-example">
+<h2>RDBMS style ECS: implementation example</h2>
+<ul class="build simple">
+<li>Arrays (easy to implement)</li>
+<li><em>Arrays</em> (save memory)</li>
+<li><strong>Arrays</strong> (CPU cache)</li>
+<li>May not be trivial arrays. But they should be contiguous in memory.</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="id8">
+<h2>RDBMS style ECS: implementation example</h2>
+<ul class="simple">
+<li>Assign an index to every component type.<ul>
+<li>E.g. Position: 0, Graphics: 1, Volume: 2</li>
+</ul>
+</li>
+<li>An array of bits can specify which components an entity consists of.<ul>
+<li>101: Position, Volume</li>
+<li>001: Volume</li>
+</ul>
+</li>
+<li>A 64bit integer can be used as an array of bits.<ul>
+<li>Up to 64 component types. If not enough, use 2 or more integers.</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="id9">
+<h2>RDBMS style ECS: implementation example</h2>
+<div class="code highlight-python"><pre>uint[] entityIDs;
+
+ulong[] componentFlags;</pre>
+</div>
+<ul class="simple">
+<li>entityIDs.length == componentFlags.length</li>
+<li>componentFlags[<em>i</em>] specifies components of entity entityIDs[<em>i</em>]</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="id10">
+<h2>RDBMS style ECS: implementation example</h2>
+<div class="code highlight-python"><pre>// One array for every component type (use templated code or pointers/casting
+// to support any number of component types)
+
+Position[] positionComponents;
+Graphics[] graphicsComponents;
+Volume[]   volumeComponents;</pre>
+</div>
+<ul class="simple">
+<li>Components match the order of entities<ul>
+<li>1 or 0 components per entity</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="id11">
+<h2>RDBMS style ECS: implementation example</h2>
+<div class="code highlight-python"><pre>foreach(system; systems)
+{
+    ulong flags = system.componentFlags();
+    uint[flags.length] componentIndices;
+    componentIndices[] = 0;
+
+    for(uint entityIndex = 0; entityIndex &lt; entityIDs.length; entityIndex++)
+    {
+        incrementComponentIndices(componentFlags[entityIndex], componentIndices);
+        if(componentFlags[entityIndex] &amp;&amp; flags)
+        {
+            system.process(getComponents(componentIndices));
+        }
+        // increment component indices corresponding to flags
+    }
+}</pre>
+</div>
+<ul class="simple">
+<li><em>Close</em> to reality</li>
+<li>Use templates/code generation to avoid virtuals, allow inlining</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="id12">
+<h2>RDBMS style ECS: implementation example</h2>
+<ul class="simple">
+<li>Very little pointer-chasing, iterates over linear data<ul>
+<li>Data we're about to read is often already in CPU cache</li>
+<li>Often predictable branching</li>
+</ul>
+</li>
+<li>Easy to keep track of memory usage (by component type)</li>
+<li>Easy to keep track of CPU usage (by system)</li>
+<li>Further optimizations possible<ul>
+<li>Alignment to cache line size</li>
+<li>Manual prefetch</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="the-machine-matters">
+<h2>The machine matters</h2>
+<ul class="simple">
+<li>Modern x86 CPU:<ul>
+<li>CPU cycle:            ~0.3 ns</li>
+<li>Branch misprediction: ~5 ns</li>
+<li>L1 cache miss:        ~7 ns</li>
+<li>Lmax miss:            ~100 ns</li>
+</ul>
+</li>
+<li>(Much) Worse on ARM, PowerPC (X360/PS3/WiiU).<ul>
+<li>Also - virtual call usually 1-2 Lmax misses</li>
+</ul>
+</li>
+<li>5k entities * 30 components (avg) * 100ns (Lmax miss) = 15 ms</li>
+<li>At 60FPS we have 16.66ms per frame</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="ecs-projects">
+<h2>ECS: projects</h2>
+<ul class="simple">
+<li>Artemis: <a class="reference external" href="http://gamadu.com/artemis/">http://gamadu.com/artemis/</a></li>
+<li>EntityX: <a class="reference external" href="https://github.com/alecthomas/entityx">https://github.com/alecthomas/entityx</a></li>
+<li>Unity3D: <a class="reference external" href="http://unity3d.com/">http://unity3d.com/</a></li>
+<li>Unreal Engine 4: <a class="reference external" href="http://www.unrealengine.com/unreal_engine_4/">http://www.unrealengine.com/unreal_engine_4/</a></li>
+</ul>
+
+</article>
+<article class="slide level-2" id="sources">
+<h2>Sources</h2>
+<ul class="simple">
+<li><a class="reference external" href="http://cowboyprogramming.com/2007/01/05/evolve-your-heirachy/">http://cowboyprogramming.com/2007/01/05/evolve-your-heirachy/</a></li>
+<li><a class="reference external" href="http://twvideo01.ubm-us.net/o1/vault/GD_Mag_Archives/GDM_November_2011.pdf">http://twvideo01.ubm-us.net/o1/vault/GD_Mag_Archives/GDM_November_2011.pdf</a></li>
+<li><a class="reference external" href="https://d3cw3dd2w32x2b.cloudfront.net/wp-content/uploads/2011/06/6-1-2010.pdf">https://d3cw3dd2w32x2b.cloudfront.net/wp-content/uploads/2011/06/6-1-2010.pdf</a></li>
+<li><a class="reference external" href="http://t-machine.org/index.php/2007/09/03/entity-systems-are-the-future-of-mmog-development-part-1/">http://t-machine.org/index.php/2007/09/03/entity-systems-are-the-future-of-mmog-development-part-1/</a></li>
+</ul>
+
+</article>
+<article class="slide level-2" id="thank-you">
+<h2>Thank you</h2>
+<ul class="simple">
+<li>And stuff</li>
+</ul>
+
+</article>
+
+
+</section>
+
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '2014.02.22',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/common.js"></script>
+    <script type="text/javascript" src="_static/slides.js"></script>
+    <script type="text/javascript" src="_static/sync.js"></script>
+    <script type="text/javascript" src="_static/controller.js"></script>
+    <script type="text/javascript" src="_static/init.js"></script>
+    
+  </body>
+</html>
