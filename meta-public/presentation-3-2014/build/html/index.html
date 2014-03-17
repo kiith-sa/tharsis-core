@@ -1,0 +1,404 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>A concurrent component-based entity architecture for game development &mdash; Entity Systems 2014.02.22 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '2014.02.22',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Entity Systems 2014.02.22 documentation" href="#" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li><a href="#">Entity Systems 2014.02.22 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="a-concurrent-component-based-entity-architecture-for-game-development">
+<h1>A concurrent component-based entity architecture for game development<a class="headerlink" href="#a-concurrent-component-based-entity-architecture-for-game-development" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="previously-on-sai">
+<h2>Previously on SAI<a class="headerlink" href="#previously-on-sai" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Entity systems<ul>
+<li>OOP</li>
+<li>OOP components w/ methods</li>
+<li>RDBMS-style<ul>
+<li>Components - data</li>
+<li>Systems - logic</li>
+<li>Arrays are awesome</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="issues-with-existing-ecs-s">
+<h2>Issues with existing ECS&#8217;s<a class="headerlink" href="#issues-with-existing-ecs-s" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Implicit, unexpected dependencies on system run order<ul>
+<li>CSystem runs after BSystem runs after ASystem</li>
+<li>ASystem may modify inputs of BSystem which affect inputs of CSystem<ul>
+<li>These chains get worse, even span across game updates</li>
+<li>Breakages when adding, removing systems, changing run order</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="id1">
+<h2>Issues with existing ECS&#8217;s<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Manual synchronization needed for threading<ul>
+<li>Often too much overhead (locking)</li>
+<li>Always difficult</li>
+<li>Often fixed to a single thread<ul>
+<li>Or a fixed number of threads (e.g. for specific hardware)</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="tharsis">
+<h2>Tharsis<a class="headerlink" href="#tharsis" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Entity system (framework)<ul>
+<li>Open source (Boost)</li>
+<li>Written in D</li>
+<li>Platform independent</li>
+<li><em>Automatic threading (</em> <strong>TBD</strong> <em>)</em></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="id2">
+<h2>Tharsis<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Should have all the good stuff<ul>
+<li>Easy to modify entities</li>
+<li>Lightweight components</li>
+<li>Data defined, no programmer needed</li>
+<li>Entity as a dumb ID</li>
+<li>Data in <em>Components</em>, logic in Systems (called <em>Processes</em>)</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="id3">
+<h2>Tharsis<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>New stuff we set out to achieve<ul>
+<li>Order in which the processes run should not matter<ul>
+<li>It may even change at runtime due to scheduling</li>
+</ul>
+</li>
+<li>Threading should be automatic (unless specified by the user)<ul>
+<li>Lock only when absolutely necessary</li>
+<li>Work with varying core counts (up to ... many)</li>
+<li>Scheduling to evenly spread the load, avoid spikes</li>
+</ul>
+</li>
+<li>No ugly voidpointery macroy stuff in the API<ul>
+<li>Type-safe</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="id4">
+<h2>Tharsis<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>More stuff turned out to be necessary<ul>
+<li>Compile-time constraints on what the user can do (e.g. in a Process)<ul>
+<li>Easier than hand-crafting a game for multiple cores</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="past-and-future">
+<h2>Past and future<a class="headerlink" href="#past-and-future" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><em>Past</em> : All game state (components) from the previous game update<ul>
+<li>Processes can read, but not write, past data</li>
+</ul>
+</li>
+<li><em>Future</em> : Game state created during the current game update<ul>
+<li>Written by processes</li>
+<li>A process can write only one component type<ul>
+<li>Massive constraint, but doesn&#8217;t seem to kill maintainability</li>
+</ul>
+</li>
+<li>&#8216;Removing&#8217; a component from an entity means not writing it to future</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="id5">
+<h2>Past and future<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Past components are immutable - no locking needed</li>
+<li>Future components are in per-type buffers<ul>
+<li>No sync issues <em>because</em> only one process can write one type</li>
+</ul>
+</li>
+<li>Process run order <em>doesn&#8217;t matter</em><ul>
+<li>All processes reading any single component read its <em>past</em> version</li>
+</ul>
+</li>
+<li>Component buffers are always tightly packed<ul>
+<li>Again, a removed component is simply not <em>added</em> to the future</li>
+<li>No need for garbage collection</li>
+</ul>
+</li>
+</ul>
+<ul class="simple">
+<li>Extra per-entity overhead<ul>
+<li>All game state is being rewritten, all the time</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="threading">
+<h2>Threading<a class="headerlink" href="#threading" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><strong>DISCLAIMER:</strong> This stuff doesn&#8217;t exist yet</li>
+<li>Processes can be assigned to separate threads automatically<ul>
+<li>Sometimes the user will need to override this (e.g. OpenGL)</li>
+</ul>
+</li>
+<li>(Long-term) entities can be separated into groups</li>
+<li>Need scheduling<ul>
+<li>Overhead between processes and over time may vary</li>
+<li>Some processes may be able to skip updates<ul>
+<li>E.g. rendering could dip to 30FPS, rest of the game at 60</li>
+</ul>
+</li>
+<li>TBD</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="threading-overhead">
+<h2>Threading - overhead<a class="headerlink" href="#threading-overhead" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Component masks per entity don&#8217;t work anymore<ul>
+<li>Need separate, per-component buffers of component bits<ul>
+<li>Or bytes, bits are slow<ul>
+<li>F it, use ints (of user-defined size)<ul>
+<li>MultiComponents</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>With past and future versions<ul>
+<li>Every process updates components <em>and component counts</em> of one type.</li>
+</ul>
+</li>
+<li>Extra overhead when matching entities</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="common-approach-to-multi-threading-in-games">
+<h2>Common approach to multi-threading in games<a class="headerlink" href="#common-approach-to-multi-threading-in-games" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Manage threads manually</li>
+<li>Spawning/starting/stopping too expensive<ul>
+<li>Workers usually don&#8217;t... work</li>
+</ul>
+</li>
+<li>Design for a fixed number of cores<ul>
+<li>X360 - 3</li>
+<li>PS4/Xbone - 6 (2 reserved)</li>
+<li>WiiU - 6 (3 2-thread cores)</li>
+<li>PS3 - complicated</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="id6">
+<h2>Common approach to multi-threading in games<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
+<div class="figure align-center">
+<img alt="_images/common_threading.png" src="_images/common_threading.png" style="width: 1280px;" />
+</div>
+</div>
+<div class="section" id="a-game-running-in-tharsis">
+<h2>A game running in Tharsis<a class="headerlink" href="#a-game-running-in-tharsis" title="Permalink to this headline">¶</a></h2>
+<div class="figure align-center">
+<img alt="_images/tharsis_threading.png" src="_images/tharsis_threading.png" style="width: 1280px;" />
+</div>
+</div>
+<div class="section" id="memory-layout">
+<h2>Memory layout<a class="headerlink" href="#memory-layout" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>XXX REUSE STUFF FROM BEFORE</li>
+<li>XXX DIAGRAM (LOOK AT OLD ONE, ALSO AT THE WHITEBOARD PHOTO)</li>
+</ul>
+</div>
+<div class="section" id="time-layout">
+<h2>Time &#8216;layout&#8217;<a class="headerlink" href="#time-layout" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>XXX LOOK AT OLD DIAGRAM, DRAW NEW ONE, ADD SOME NOTES</li>
+<li>(BETWEEN UPDATES, PER PROCESS, PER ENTITY, PER MATCHING ENTITY)</li>
+</ul>
+</div>
+<div class="section" id="multicomponents">
+<h2>MultiComponents<a class="headerlink" href="#multicomponents" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>XXX MADE POSSIBLE BY MEMORY LAYOUT</li>
+</ul>
+</div>
+<div class="section" id="scheduling">
+<h2>Scheduling<a class="headerlink" href="#scheduling" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="resources">
+<h2>Resources<a class="headerlink" href="#resources" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="possible-issues">
+<h2>Possible issues<a class="headerlink" href="#possible-issues" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Low-band communication between processes<ul>
+<li>Can be solved by components, but may be unwieldy</li>
+</ul>
+</li>
+<li>Spatial management<ul>
+<li>Most games have their own implementations<ul>
+<li>Need an example on how to do it with past/future</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="code-generation-api">
+<h2>Code generation, API<a class="headerlink" href="#code-generation-api" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="sources">
+<h2>Sources<a class="headerlink" href="#sources" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="todo">
+<h2>TODO<a class="headerlink" href="#todo" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="links">
+<h2>Links<a class="headerlink" href="#links" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="thank-you">
+<h2>Thank you<a class="headerlink" href="#thank-you" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><ul class="simple">
+<li>Can I go sleep now?</li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">A concurrent component-based entity architecture for game development</a><ul>
+<li><a class="reference internal" href="#previously-on-sai">Previously on SAI</a></li>
+<li><a class="reference internal" href="#issues-with-existing-ecs-s">Issues with existing ECS&#8217;s</a></li>
+<li><a class="reference internal" href="#id1">Issues with existing ECS&#8217;s</a></li>
+<li><a class="reference internal" href="#tharsis">Tharsis</a></li>
+<li><a class="reference internal" href="#id2">Tharsis</a></li>
+<li><a class="reference internal" href="#id3">Tharsis</a></li>
+<li><a class="reference internal" href="#id4">Tharsis</a></li>
+<li><a class="reference internal" href="#past-and-future">Past and future</a></li>
+<li><a class="reference internal" href="#id5">Past and future</a></li>
+<li><a class="reference internal" href="#threading">Threading</a></li>
+<li><a class="reference internal" href="#threading-overhead">Threading - overhead</a></li>
+<li><a class="reference internal" href="#common-approach-to-multi-threading-in-games">Common approach to multi-threading in games</a></li>
+<li><a class="reference internal" href="#id6">Common approach to multi-threading in games</a></li>
+<li><a class="reference internal" href="#a-game-running-in-tharsis">A game running in Tharsis</a></li>
+<li><a class="reference internal" href="#memory-layout">Memory layout</a></li>
+<li><a class="reference internal" href="#time-layout">Time &#8216;layout&#8217;</a></li>
+<li><a class="reference internal" href="#multicomponents">MultiComponents</a></li>
+<li><a class="reference internal" href="#scheduling">Scheduling</a></li>
+<li><a class="reference internal" href="#resources">Resources</a></li>
+<li><a class="reference internal" href="#possible-issues">Possible issues</a></li>
+<li><a class="reference internal" href="#code-generation-api">Code generation, API</a></li>
+<li><a class="reference internal" href="#sources">Sources</a></li>
+<li><a class="reference internal" href="#todo">TODO</a></li>
+<li><a class="reference internal" href="#links">Links</a></li>
+<li><a class="reference internal" href="#thank-you">Thank you</a></li>
+</ul>
+</li>
+</ul>
+
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/index.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li><a href="#">Entity Systems 2014.02.22 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Ferdinand Majerech.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

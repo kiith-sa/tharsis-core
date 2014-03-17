@@ -1,0 +1,691 @@
+
+<!DOCTYPE html>
+
+
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>A concurrent component-based entity architecture for game development &mdash; Entity Systems 2014.02.22 documentation</title>
+    
+    <link rel="stylesheet" href="_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/styles.css" type="text/css" />
+    <link rel="stylesheet" href="_static/slides.css" type="text/css" />
+    
+    <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+    
+
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="top" title="Entity Systems 2014.02.22 documentation" href="#" /> 
+  </head>
+  <body>
+
+<section
+   id="slide_container"
+   class='slides layout-regular'>
+
+
+  <article class="slide level-1" id="a-concurrent-component-based-entity-architecture-for-game-development">
+<h1>A concurrent component-based entity architecture for game development</h1>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Author:</th><td class="field-body">Ferdinand Majerech</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Supervisor:</th><td class="field-body">RNDr. Jozef Jirásek, PhD.</td>
+</tr>
+</tbody>
+</table>
+
+</article>
+<article class="slide level-2" id="previously-on-sai">
+<h2>Previously on SAI</h2>
+<ul class="simple">
+<li>Entity systems<ul>
+<li>OOP</li>
+<li>OOP components w/ methods</li>
+<li>RDBMS-style<ul>
+<li>Components - data</li>
+<li>Systems - logic</li>
+<li>Arrays</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="issues-with-existing-ecs-s">
+<h2>Issues with existing ECS's</h2>
+<ul class="simple">
+<li>Implicit, unexpected dependencies on system run order<ul>
+<li>Run order: ASystem, BSystem, CSystem</li>
+<li>ASystem may modify inputs of BSystem<ul>
+<li>Outputs of BSystem may further affect:<ul>
+<li>CSystem</li>
+<li>ASystem the on next game update</li>
+</ul>
+</li>
+<li>These chains get worse</li>
+<li>Breakages when adding/removing/reordering systems</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="id1">
+<h2>Issues with existing ECS's</h2>
+<ul class="simple">
+<li>Manual synchronization needed for threading<ul>
+<li>Often too much overhead (locking)</li>
+<li>Always difficult</li>
+<li>Often fixed to a single thread<ul>
+<li>Or a fixed number of threads (e.g. for specific hardware)</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="tharsis">
+<h2>Tharsis</h2>
+<ul class="simple">
+<li>Entity system (framework)<ul>
+<li>Open source (Boost)</li>
+<li>Written in D</li>
+<li>Platform independent</li>
+<li><em>Automatic threading (</em> <strong>TBD</strong> <em>)</em></li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="id2">
+<h2>Tharsis</h2>
+<div class="section level-3" id="should-have-all-the-good-stuff">
+<h3>Should have all the good stuff</h3>
+<ul class="simple">
+<li>Easy to modify entities</li>
+<li>Lightweight components</li>
+<li>Data defined, no programmer needed</li>
+<li>Entity as a dumb ID</li>
+<li>Data in <em>Components</em>, logic in Systems (called <em>Processes</em>)</li>
+</ul>
+</div>
+</article>
+<article class="slide level-2" id="id3">
+<h2>Tharsis</h2>
+<div class="section level-3" id="new-stuff-goals">
+<h3>New stuff (goals)</h3>
+<ul class="simple">
+<li>Process run order should not matter<ul>
+<li>It may even change at runtime due to scheduling</li>
+</ul>
+</li>
+<li>Threading should be automatic (unless specified by the user)<ul>
+<li>Lock only when absolutely necessary</li>
+<li>Work with varying core counts (up to ... many)</li>
+<li>Scheduling to evenly spread the load, avoid spikes</li>
+</ul>
+</li>
+<li>No ugly voidpointery macroy stuff in the API<ul>
+<li>Type-safe</li>
+</ul>
+</li>
+<li>Generated code to exploit Process specifics for optimization<ul>
+<li>Usually, this means 'don't do what you don't have to'</li>
+</ul>
+</li>
+</ul>
+</div>
+</article>
+<article class="slide level-2" id="id4">
+<h2>Tharsis</h2>
+<div class="section level-3" id="more-stuff-turned-out-to-be-necessary">
+<h3>More stuff turned out to be necessary</h3>
+<ul class="simple">
+<li>Compile-time constraints on what the user can do (e.g. in a Process)<ul>
+<li>Easier than hand-crafting a game for multiple cores</li>
+<li>Not as convenient as working with an ECS in a single thread</li>
+</ul>
+</li>
+<li>Resource management designed to minimize locking<ul>
+<li>Immutable resources</li>
+<li>Not really a big focus (yet), but necessary</li>
+</ul>
+</li>
+<li>MultiComponents<ul>
+<li>This is where the RDBMS analogy breaks down</li>
+<li>Surprisingly convenient</li>
+</ul>
+</li>
+</ul>
+</div>
+</article>
+<article class="slide level-2" id="past-and-future">
+<h2>Past and future</h2>
+<div class="section level-3" id="past">
+<h3>Past</h3>
+<ul class="simple">
+<li>Game state (components) from the previous game update</li>
+<li>Processes can read, but not write, past data<ul>
+<li>Past data is immutable during a game update</li>
+</ul>
+</li>
+</ul>
+</div>
+</article>
+<article class="slide level-2" id="id5">
+<h2>Past and future</h2>
+<div class="section level-3" id="future">
+<h3>Future</h3>
+<ul class="simple">
+<li>Game state created during the current game update</li>
+<li>Written by Processes</li>
+<li>A Process can write only one component type<ul>
+<li>Massive constraint, but doesn't seem to kill maintainability</li>
+</ul>
+</li>
+<li>Components can be removed by <em>not adding</em> them to future state</li>
+</ul>
+</div>
+</article>
+<article class="slide level-2" id="id6">
+<h2>Past and future</h2>
+<ul class="simple">
+<li>No need to lock past data (immutability)</li>
+<li>Future components are in per-type buffers<ul>
+<li>No sync needed since only one Process can write one type</li>
+</ul>
+</li>
+<li>Process run order <em>doesn't matter</em><ul>
+<li>All Processes read the <strong>same past version</strong> of any component</li>
+</ul>
+</li>
+<li>Component buffers are always tightly packed<ul>
+<li>Again, removing a component means not <em>adding</em> to future</li>
+<li>No need for garbage collection</li>
+</ul>
+</li>
+</ul>
+<ul class="simple">
+<li>Extra per-entity overhead<ul>
+<li>All game state is being rewritten, all the time</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="threading">
+<h2>Threading</h2>
+<ul class="simple">
+<li><strong>DISCLAIMER:</strong> This stuff doesn't exist yet</li>
+<li>Processes can be assigned to separate threads automatically<ul>
+<li>Sometimes the user will need to override this (e.g. OpenGL)</li>
+</ul>
+</li>
+<li>(Long-term) entities may be separated into groups<ul>
+<li>Each group could be processed in a separate thread</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="threading-scheduling">
+<h2>Threading - scheduling</h2>
+<ul class="simple">
+<li>Overhead between Processes and over time may vary<ul>
+<li>Need to move processes between threads to balance load</li>
+</ul>
+</li>
+<li>Some Processes may be able to skip updates<ul>
+<li>E.g. rendering could dip to 30FPS, rest of the game at 60</li>
+</ul>
+</li>
+<li>TBD</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="threading-overhead">
+<h2>Threading - overhead</h2>
+<ul class="build simple">
+<li>Component masks per entity would require locking</li>
+<li>Need buffers of component bits per component type</li>
+<li>Or bytes, bits are slow</li>
+<li>May as well use ints (of user-defined width)<ul>
+<li>MultiComponents</li>
+</ul>
+</li>
+<li>A process writes future components <em>and component counts</em></li>
+<li>More overhead when matching entities<ul>
+<li><cite>&amp;</cite> with bitmask replaced by multiple <cite>&amp;&amp;</cite><ul>
+<li>Accessing multiple memory locations</li>
+<li>Oh well, at least we get multiple threads</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="common-approach-to-multi-threading-in-games">
+<h2>Common approach to multi-threading in games</h2>
+<div class="figure align-center">
+<img alt="_images/common_threading.png" src="_images/common_threading.png" style="width: 85%;" />
+</div>
+
+</article>
+<article class="slide level-2" id="id7">
+<h2>Common approach to multi-threading in games</h2>
+<ul>
+<li><p class="first">Manage threads manually</p>
+</li>
+<li><p class="first">Spawning/starting/stopping too expensive</p>
+<ul class="simple">
+<li>Workers usually don't... work</li>
+</ul>
+</li>
+<li><p class="first">Design for a fixed number of cores</p>
+<ul class="simple">
+<li>Often the lowest common denominator for multiplatform</li>
+</ul>
+<table border="1" class="docutils">
+<colgroup>
+<col width="38%" />
+<col width="63%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>X360</td>
+<td>3</td>
+</tr>
+<tr class="row-even"><td>PS4/Xbone</td>
+<td>6 (2 reserved)</td>
+</tr>
+<tr class="row-odd"><td>WiiU</td>
+<td>6 (3x2 threads)</td>
+</tr>
+<tr class="row-even"><td>PS3</td>
+<td>complicated</td>
+</tr>
+<tr class="row-odd"><td>PSVita</td>
+<td>3 (1 reserved)</td>
+</tr>
+<tr class="row-even"><td>3DS</td>
+<td>2</td>
+</tr>
+</tbody>
+</table>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="a-game-running-in-tharsis">
+<h2>A game running in Tharsis</h2>
+<div class="figure align-center">
+<img alt="_images/tharsis_threading.png" src="_images/tharsis_threading.png" style="width: 86%;" />
+</div>
+
+</article>
+<article class="slide level-2" id="id8">
+<h2>A game running in Tharsis</h2>
+<ul class="simple">
+<li>A large number of Processes (10s - 100s)</li>
+<li>Guidelines:<ul>
+<li>Do one thing and do it well</li>
+<li>Prefer many simple processes to few complex ones</li>
+</ul>
+</li>
+<li>Multiple Processes running in each thread</li>
+<li>On single-core, all Processes run in one thread<ul>
+<li>Similar to traditional ECS</li>
+</ul>
+</li>
+<li>More cores =&gt; less Processes per core =&gt; better speed<ul>
+<li>Process granularity limits scaling (for now)</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="basic-memory-layout">
+<h2>Basic memory layout</h2>
+<div class="figure align-center">
+<img alt="_images/tharsis_memory.png" src="_images/tharsis_memory.png" style="width: 95%;" />
+</div>
+
+</article>
+<article class="slide level-2" id="id9">
+<h2>Basic memory layout</h2>
+<ul class="simple">
+<li>Past and future state (swapped between game updates)<ul>
+<li>Array of entity IDs</li>
+<li>Arrays of components (internally raw bytes)</li>
+<li>Arrays of auxiliary data (component counts)</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="high-level-time-slice">
+<h2>High-level time slice</h2>
+<div class="figure align-center">
+<img alt="_images/tharsis_time_1.png" src="_images/tharsis_time_1.png" style="width: 95%;" />
+</div>
+
+</article>
+<article class="slide level-2" id="id10">
+<h2>High-level time slice</h2>
+<ul class="simple">
+<li>During game update<ul>
+<li>Processes running in parallel threads</li>
+</ul>
+</li>
+<li>Between updates<ul>
+<li>Only one thread is doing useful work<ul>
+<li>Limits max useful core count</li>
+</ul>
+</li>
+<li>Past/future state switch</li>
+<li>Memory preallocation</li>
+<li>Adding entities created during last update</li>
+<li>Scheduling</li>
+<li>...</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="process-execution-time-slice">
+<h2>Process execution - time slice</h2>
+<div class="figure align-center">
+<img alt="_images/tharsis_time_2.png" src="_images/tharsis_time_2.png" style="width: 95%;" />
+</div>
+
+</article>
+<article class="slide level-2" id="id11">
+<h2>Process execution - time slice</h2>
+<ul class="simple">
+<li>Component counts of all entities must be checked (&amp;&amp;-ded)</li>
+<li>If an entity matches<ul>
+<li>Process is called<ul>
+<li>Past state is read</li>
+<li>Future state is written (even if unchanged)</li>
+</ul>
+</li>
+<li>Future component count (and maybe other data) is updated</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="process-execution-data-read-write">
+<h2>Process execution - data read-write</h2>
+<div class="figure align-center">
+<img alt="_images/tharsis_onthefly.png" src="_images/tharsis_onthefly.png" style="width: 85%;" />
+</div>
+
+</article>
+<article class="slide level-2" id="game-update-pseudocode-no-threads">
+<h2>Game update pseudocode - no threads</h2>
+<div class="section level-3" id="reminder">
+<h3>(Reminder)</h3>
+<div class="code highlight-python"><pre>foreach(system; systems):
+    ulong flags = system.componentFlags();
+    uint[flags.length] componentIndices;
+    componentIndices[] = 0;
+
+    for(uint entityIndex = 0; entityIndex &lt; entityIDs.length; entityIndex++):
+        incrementComponentIndices(componentFlags[entityIndex], componentIndices);
+
+        if(componentFlags[entityIndex] &amp;&amp; flags):
+            system.process(getComponents(componentIndices));
+
+        increment component indices corresponding to flags</pre>
+</div>
+</div>
+</article>
+<article class="slide level-2" id="game-update-pseudocode-tharsis">
+<h2>Game update pseudocode - Tharsis</h2>
+<div class="code highlight-python"><pre>parallel_foreach(thread; threads):
+
+    foreach(process; thread):
+        uint[process.PastComponents.length] pastComponentIndices;
+        componentIndices[] = 0;
+        uint futureIndex = 0;
+
+        foreach(entityIndex; 0 .. entityIDs.length):
+            updatePastComponentIndices(entityIndex, pastComponentIndices);
+
+            if(matchComponentCounts(entityIndex)):
+                futureComponent = &amp;futureComponents(process)[futureIndex];
+                system.process(getPastComponents(componentIndices),
+                               futureComponent);
+
+                if(futureComponent != NULL):
+                    futureComponentCounts(process)[entityIndex] = 1;
+                    ++futureIndex;</pre>
+</div>
+
+</article>
+<article class="slide level-2" id="resources">
+<h2>Resources</h2>
+<ul>
+<li><p class="first">Not a focus at this point, but necessary</p>
+</li>
+<li><p class="first">Loaded from descriptors</p>
+</li>
+<li><p class="first">Accessed through handles</p>
+</li>
+<li><p class="first">States</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="23%" />
+<col width="23%" />
+<col width="55%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">State</th>
+<th class="head">Mutable</th>
+<th class="head">Note</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>New</td>
+<td>Yes</td>
+<td>requestLoad() =&gt; Loading</td>
+</tr>
+<tr class="row-odd"><td>Loading</td>
+<td>Yes</td>
+<td>=&gt; Loaded|LoadFailed</td>
+</tr>
+<tr class="row-even"><td>Loaded</td>
+<td>No</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-odd"><td>LoadFailed</td>
+<td>Don't care</td>
+<td>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="resourcemanagers">
+<h2>ResourceManagers</h2>
+<ul>
+<li><p class="first">Manage resources (duh)</p>
+</li>
+<li><p class="first">User can't avoid manuall synchronization here</p>
+</li>
+<li><p class="first">Operations:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="44%" />
+<col width="56%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Op</th>
+<th class="head">Frequency (approx)</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>handle(descriptor)</td>
+<td>&lt;1 per update</td>
+</tr>
+<tr class="row-odd"><td>state(handle)</td>
+<td>&gt;1 per entity per update</td>
+</tr>
+<tr class="row-even"><td>requestLoad(handle)</td>
+<td>1 per entity</td>
+</tr>
+<tr class="row-odd"><td>resource(handle)</td>
+<td>&gt;1 per entity per update</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li><p class="first">Badly designed resource managers can kill performance</p>
+</li>
+<li><p class="first">Need example thread-safe resource managers</p>
+<ul class="simple">
+<li>Find common code, move to library</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="resources-note-about-disposal">
+<h2>Resources - note about disposal</h2>
+<ul class="simple">
+<li>There's no such thing as (single) resource deletion</li>
+<li>Destroy everything at once</li>
+<li>Resource stacks may be used later</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="probably-not-enough-time-for">
+<h2>Probably not enough time for</h2>
+<ul class="simple">
+<li>MultiComponents</li>
+<li>Compile-time constraints</li>
+<li>Code generation and API comparison with alternatives</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="potential-issues">
+<h2>Potential issues</h2>
+<ul class="simple">
+<li>Low frequency communication between processes<ul>
+<li>Can be solved by components, but unwieldy</li>
+<li>Need to avoid causing overhead between frames</li>
+</ul>
+</li>
+<li>Spatial management<ul>
+<li>Most games have their own implementations<ul>
+<li>Need an example on how to do it with past/future</li>
+</ul>
+</li>
+<li>Need a usable (compile-time) API (more than just 3D space?)</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="sources">
+<h2>Sources</h2>
+<ul class="simple">
+<li>Adam Martin.
+<em>Entity Systems are the future of MMOG development</em>
+(2007)</li>
+<li>Chris Stoy.
+<em>Game Object Component System</em>
+Game Programming Gems 6 (2006)</li>
+<li>Terrance Cohen.
+<em>A Dynamic Component Architecture for High Performance Gameplay</em>
+GDC Canada (2010)</li>
+<li>Tony Albrecht.
+<em>Pitfalls of Object Oriented Programming</em>
+Game Connect: Asia Pacific 2009</li>
+<li>Also, see the previous presentation (link below)</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="todo">
+<h2>TODO</h2>
+<ul class="simple">
+<li>BLOG</li>
+<li>Get threads to work<ul>
+<li>Fix bugs</li>
+</ul>
+</li>
+<li>Scheduling</li>
+<li>Paper</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="links">
+<h2>Links</h2>
+<ul>
+<li><p class="first">Entity Systems presentation:</p>
+<p><a class="reference external" href="https://github.com/kiith-sa/Tharsis/blob/master/meta-public/entity-systems-presentation/source/index.rst">https://github.com/kiith-sa/Tharsis/blob/master/meta-public/entity-systems-presentation/source/index.rst</a></p>
+</li>
+<li><p class="first">Code: <a class="reference external" href="https://github.com/kiith-sa/Tharsis">https://github.com/kiith-sa/Tharsis</a></p>
+</li>
+<li><p class="first">Design: <a class="reference external" href="https://github.com/kiith-sa/Tharsis/blob/master/tharsis.rst">https://github.com/kiith-sa/Tharsis/blob/master/tharsis.rst</a></p>
+</li>
+<li><p class="first">Blog (last update forever ago): <a class="reference external" href="http://defenestrate.eu">http://defenestrate.eu</a></p>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="thank-you">
+<h2>Thank you</h2>
+<ul class="simple">
+<li>Pasta is best with the combination of<ul>
+<li>tuna</li>
+<li>cashew nuts</li>
+<li>Parmesan<ul>
+<li>w/ a bit of Gorgonzola or Niva if available</li>
+</ul>
+</li>
+<li>olives with anchovy filling</li>
+</ul>
+</li>
+<li>But if the pasta is low quality, the result will suck, too<ul>
+<li>Lidl has some cheap-ish that's edible</li>
+</ul>
+</li>
+</ul>
+
+</article>
+
+
+</section>
+
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '2014.02.22',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/common.js"></script>
+    <script type="text/javascript" src="_static/slides.js"></script>
+    <script type="text/javascript" src="_static/sync.js"></script>
+    <script type="text/javascript" src="_static/controller.js"></script>
+    <script type="text/javascript" src="_static/init.js"></script>
+    
+  </body>
+</html>

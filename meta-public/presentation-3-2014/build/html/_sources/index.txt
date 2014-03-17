@@ -1,0 +1,560 @@
+=====================================================================
+A concurrent component-based entity architecture for game development
+=====================================================================
+
+.. XXX TRY TO PUT MORE STUFF LIKE Author, Supervisor HERE
+
+Previously on SAI
+-----------------
+
+* Entity systems
+
+  - OOP
+  - OOP components w/ methods
+  - RDBMS-style
+
+    * Components - data 
+    * Systems - logic
+    * Arrays are awesome
+
+Issues with existing ECS's
+--------------------------
+
+* Implicit, unexpected dependencies on system run order
+
+  - CSystem runs after BSystem runs after ASystem
+  - ASystem may modify inputs of BSystem which affect inputs of CSystem
+
+    * These chains get worse, even span across game updates
+    * Breakages when adding, removing systems, changing run order
+
+.. XXX MENTION THE INSOMNIAC THING WITH RUN ORDER
+.. XXX TRY TO DRAW SOMETHING
+
+
+Issues with existing ECS's
+--------------------------
+
+* Manual synchronization needed for threading
+
+  - Often too much overhead (locking)
+  - Always difficult
+  - Often fixed to a single thread
+
+    * Or a fixed number of threads (e.g. for specific hardware)
+
+
+Tharsis
+-------
+
+* Entity system (framework)
+
+  - Open source (Boost)
+  - Written in D
+  - Platform independent
+  - *Automatic threading (* **TBD** *)*
+
+Tharsis
+-------
+
+* Should have all the good stuff 
+
+  - Easy to modify entities
+  - Lightweight components
+  - Data defined, no programmer needed
+  - Entity as a dumb ID
+  - Data in *Components*, logic in Systems (called *Processes*)
+
+
+Tharsis
+-------
+
+* New stuff we set out to achieve
+
+  - Order in which the processes run should not matter
+
+    * It may even change at runtime due to scheduling
+
+  - Threading should be automatic (unless specified by the user)
+
+    * Lock only when absolutely necessary
+    * Work with varying core counts (up to ... many)
+    * Scheduling to evenly spread the load, avoid spikes
+
+  - No ugly voidpointery macroy stuff in the API
+
+    * Type-safe
+
+.. XXX MAYBE SHOW SCREEN FROM THE INSOMNIAC AND PROTOTYPE APIS
+..     (XXX XXX MAYBE DO THAT BELOW IN SOME SLIDES)
+..     (XXX MAYBE ALSO SHOW ARTEMIS OR SOMETHING)
+
+  - Generated code to exploit Process specifics for optimization
+
+    * Usually, this means 'don't do what you don't have to'
+
+Tharsis
+-------
+
+* More stuff turned out to be necessary
+
+  - Compile-time constraints on what the user can do (e.g. in a Process)
+
+    * Easier than hand-crafting a game for multiple cores 
+
+.. XXX MINUS
+
+    * Not as convenient as working with an ECS in a single thread
+
+  - Resource management designed to minimize locking
+
+    * Immutable resources 
+    * Not really a big focus (yet), but necessary
+
+  - Multicomponents
+
+    * This is where the RDBMS analogy breaks down
+    * Surprisingly convenient
+
+Past and future
+---------------
+
+* *Past* : All game state (components) from the previous game update 
+
+  - Processes can read, but not write, past data
+
+* *Future* : Game state created during the current game update 
+
+  - Written by processes
+  - A process can write only one component type 
+
+    * Massive constraint, but doesn't seem to kill maintainability
+
+  - 'Removing' a component from an entity means not writing it to future
+
+
+
+Past and future
+---------------
+
+* Past components are immutable - no locking needed
+
+* Future components are in per-type buffers 
+
+  - No sync issues *because* only one process can write one type
+
+* Process run order *doesn't matter*
+
+  - All processes reading any single component read its *past* version
+
+* Component buffers are always tightly packed
+
+  - Again, a removed component is simply not *added* to the future
+  - No need for garbage collection
+
+.. XXX MINUS
+
+* Extra per-entity overhead
+
+  - All game state is being rewritten, all the time
+
+
+
+
+Threading
+---------
+
+* **DISCLAIMER:** This stuff doesn't exist yet
+
+* Processes can be assigned to separate threads automatically
+
+  - Sometimes the user will need to override this (e.g. OpenGL)
+
+* (Long-term) entities can be separated into groups 
+
+* Need scheduling 
+
+  - Overhead between processes and over time may vary
+  - Some processes may be able to skip updates 
+
+    * E.g. rendering could dip to 30FPS, rest of the game at 60
+
+  - TBD
+
+Threading - overhead
+--------------------
+
+.. XXX SHOW THESE LINES ONE BY ONE
+
+* Component masks per entity don't work anymore
+
+  - Need separate, per-component buffers of component bits 
+    
+    * Or bytes, bits are slow 
+
+      - F it, use ints (of user-defined size)
+
+        * MultiComponents
+
+    * With past and future versions 
+      
+      - Every process updates components *and component counts* of one type.
+    
+    * Extra overhead when matching entities
+
+.. XXX MINUS
+
+      - One & (with bitmask) replaced by many &&'s, accessing multiple buffers
+
+        * Oh well, at least we get multiple threads
+
+
+Common approach to multi-threading in games
+-------------------------------------------
+
+* Manage threads manually
+* Spawning/starting/stopping too expensive
+
+  - Workers usually don't... work
+
+* Design for a fixed number of cores 
+  
+  - X360 - 3
+  - PS4/Xbone - 6 (2 reserved)
+  - WiiU - 6 (3 2-thread cores)
+  - PS3 - complicated
+
+
+Common approach to multi-threading in games
+-------------------------------------------
+
+.. figure:: /_static/common_threading.png
+  :width: 1280px
+  :align: center
+
+
+
+A game running in Tharsis
+-------------------------
+
+.. figure:: /_static/tharsis_threading.png
+  :width: 1280px
+  :align: center
+
+
+Memory layout
+-------------
+
+* XXX REUSE STUFF FROM BEFORE
+* XXX DIAGRAM (LOOK AT OLD ONE, ALSO AT THE WHITEBOARD PHOTO)
+
+
+
+
+Time 'layout'
+-------------
+
+* XXX LOOK AT OLD DIAGRAM, DRAW NEW ONE, ADD SOME NOTES 
+* (BETWEEN UPDATES, PER PROCESS, PER ENTITY, PER MATCHING ENTITY)
+
+
+MultiComponents
+---------------
+
+* XXX MADE POSSIBLE BY MEMORY LAYOUT
+
+Scheduling
+----------
+
+
+
+Resources
+---------
+
+.. XXX one ugly place where synchronization must be manual
+
+.. XXX XXX WHOLE LOT OF SLIDES ON RESOURCE MANAGERS
+
+
+
+
+.. XXX MAYBE SOME SLIDES ON THE CONSTRAINTS (OR MAYBE NOT?)
+
+
+Possible issues
+---------------
+
+.. XXX GOOGLE IF CORRECT WORD (low-band)
+
+* Low-band communication between processes
+
+  - Can be solved by components, but may be unwieldy 
+
+* Spatial management 
+
+  - Most games have their own implementations
+
+    * Need an example on how to do it with past/future
+
+Code generation, API
+--------------------
+
+
+.. XXX XXX CONSIDER SOME IMPLEMENTATION EXAMPLES
+..         (OR MAYBE - IMPLEMENTATION 'DELTAS', ESPECIALLY NEAR 'past & future'
+.. XXX ESPECIALLY HOW THE FRAME LOOKS NOW VS BEFORE (EVEN KEEP THE 'BEFORE' VERSION)
+
+Sources
+-------
+
+
+
+TODO
+----
+
+
+
+Links
+-----
+
+.. XXX ALSO LINK TO OLD PRESENTATION (UPLOAD IT TO GITHUB)
+
+
+
+Thank you
+---------
+
+ * Can I go sleep now?
+
+
+
+
+
+
+
+
+
+
+.. RDBMS style ECS
+.. ---------------
+.. 
+.. * Entity: 
+.. 
+..   - Like a object (1 entity - 1 instance)
+..   - Like a class (each entity defines its own behavior)
+..   - Is neither
+..   - Implementation - unique ID, no data, no methods
+.. 
+.. * Component
+.. 
+..   - Plain data, no logic 
+..   - Implementation e.g. a C struct
+..   - "A Component is the chunk of stuff that provides a particular aspect to an Entity"
+.. 
+.. RDBMS style ECS: System
+.. -----------------------
+.. 
+.. * System (or Process)
+.. 
+..   - A reusable, self-contained, piece of logic; replaces methods
+..   - Specifies component types it operates on 
+..   - Processes every entity containing (all of) those components
+.. 
+..     * Similar to an SQL SELECT (not necessarily the same)
+.. 
+.. * System examples (often match components):
+.. 
+..   - Input
+..   - Graphics 
+..   - Collision 
+..   - AI 
+.. 
+.. 
+.. RDBMS style ECS: System - example
+.. ---------------------------------
+.. 
+.. .. code::
+.. 
+..     class PhysicsSystem : System 
+..     {
+..         private:
+..             const GameTime gameTime_;
+.. 
+..         public:
+..             void process(ref PositionComponent pos, ref VelocityComponent vel) 
+..             {
+..                 pos.position += gameTime_.timeStep * vel.velocity;
+..             }
+..     }
+.. 
+.. RDBMS style ECS: System - execution
+.. -----------------------------------
+.. 
+.. * High-level concept. **Does not** reflect reality.
+.. 
+.. 
+.. .. code::
+.. 
+..    foreach(system; systems)
+..    {
+..        foreach(entity; entities)
+..        {
+..            if(entity.hasComponents(system.processedComponents()))
+..            {
+..                system.process(entity.getComponents(system.processedComponents()));
+..            }
+..        }
+..    }
+.. 
+.. 
+.. RDBMS style ECS: advantages
+.. ---------------------------
+.. 
+.. * **No** references to/dependencies on other components
+.. 
+..   - Combine anything with anything
+.. 
+.. * No inter-component communication 
+.. 
+.. * Systems can be trivially added/removed
+.. 
+.. * No virtuals or dynamic casting (despite the previous slide)
+.. 
+.. * Can be exploited for performace
+.. 
+.. 
+.. RDBMS style ECS: implementation example
+.. ---------------------------------------
+.. .. rst-class:: build
+.. 
+.. * Arrays (easy to implement)
+.. 
+.. * *Arrays* (save memory)
+.. 
+.. * **Arrays** (CPU cache)
+.. 
+.. * May not be trivial arrays. But they should be contiguous in memory.
+..   
+.. 
+.. 
+.. RDBMS style ECS: implementation example
+.. ---------------------------------------
+.. 
+.. * Assign an index to every component type.
+.. 
+..   - E.g. Position: 0, Graphics: 1, Volume: 2
+.. 
+.. * An array of bits can specify which components an entity consists of.
+.. 
+..   - 101: Position, Volume
+..   - 001: Volume
+.. 
+.. * A 64bit integer can be used as an array of bits.
+.. 
+..   - Up to 64 component types. If not enough, use 2 or more integers.
+.. 
+.. 
+.. RDBMS style ECS: implementation example
+.. ---------------------------------------
+.. 
+.. 
+.. .. code::
+.. 
+..   uint[] entityIDs;
+.. 
+..   ulong[] componentFlags;
+.. 
+.. * entityIDs.length == componentFlags.length
+.. 
+.. * componentFlags[*i*] specifies components of entity entityIDs[*i*]
+.. 
+.. 
+.. RDBMS style ECS: implementation example
+.. ---------------------------------------
+.. 
+.. .. code::
+.. 
+..   // One array for every component type (use templated code or pointers/casting
+..   // to support any number of component types)
+.. 
+..   Position[] positionComponents;
+..   Graphics[] graphicsComponents;
+..   Volume[]   volumeComponents;
+.. 
+.. * Components match the order of entities 
+.. 
+..   - 1 or 0 components per entity
+.. 
+.. 
+.. RDBMS style ECS: implementation example
+.. ---------------------------------------
+.. 
+.. .. code::
+.. 
+..   foreach(system; systems)
+..   {
+..       ulong flags = system.componentFlags();
+..       uint[flags.length] componentIndices;
+..       componentIndices[] = 0;
+.. 
+..       for(uint entityIndex = 0; entityIndex < entityIDs.length; entityIndex++)
+..       {
+..           incrementComponentIndices(componentFlags[entityIndex], componentIndices);
+..           if(componentFlags[entityIndex] && flags)
+..           {
+..               system.process(getComponents(componentIndices));
+..           }
+..           // increment component indices corresponding to flags
+..       }
+..   }
+.. 
+.. * *Close* to reality
+.. * Use templates/code generation to avoid virtuals, allow inlining
+.. 
+.. RDBMS style ECS: implementation example
+.. ---------------------------------------
+.. 
+.. * Very little pointer-chasing, iterates over linear data 
+.. 
+..   - Data we're about to read is often already in CPU cache
+..   - Often predictable branching
+.. 
+.. * Easy to keep track of memory usage (by component type)
+.. 
+.. * Easy to keep track of CPU usage (by system)
+.. 
+.. * Further optimizations possible 
+.. 
+..   - Alignment to cache line size
+..   - Manual prefetch
+.. 
+.. The machine matters
+.. -------------------
+.. 
+.. * Modern x86 CPU:
+.. 
+..   -  CPU cycle:            ~0.3 ns
+..   -  Branch misprediction: ~5 ns
+..   -  L1 cache miss:        ~7 ns
+..   -  Lmax miss:            ~100 ns
+.. 
+.. * (Much) Worse on ARM, PowerPC (X360/PS3/WiiU).
+.. 
+..   - Also - virtual call usually 1-2 Lmax misses
+..  
+.. * 5k entities * 30 components (avg) * 100ns (Lmax miss) = 15 ms 
+.. 
+.. * At 60FPS we have 16.66ms per frame
+.. 
+.. 
+.. 
+.. Sources
+.. -------
+.. 
+.. * http://cowboyprogramming.com/2007/01/05/evolve-your-heirachy/
+.. 
+.. * http://twvideo01.ubm-us.net/o1/vault/GD_Mag_Archives/GDM_November_2011.pdf
+.. 
+.. * https://d3cw3dd2w32x2b.cloudfront.net/wp-content/uploads/2011/06/6-1-2010.pdf
+.. 
+.. * http://t-machine.org/index.php/2007/09/03/entity-systems-are-the-future-of-mmog-development-part-1/

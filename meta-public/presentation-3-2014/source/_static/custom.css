@@ -1,0 +1,82 @@
+
+h2 {
+  font-size: 1.4em;
+  line-height: 1em;
+
+  position: absolute;
+  bottom: 30px;
+
+  padding: 0;
+  margin: 0;
+  padding-right: 20px;
+
+  font-weight: 600;
+
+  letter-spacing: -2px;
+
+  color: rgb(24, 24, 24);
+}
+
+a.reference {
+  font-size: 0.75em;
+}
+
+.slides > article {
+    /*
+  display: block;
+
+  position: absolute;
+  overflow: hidden;
+
+  width: 900px;
+  height: 700px;
+
+  left: 50%;
+  top: 50%;
+
+  margin-left: -450px;
+  margin-top: -350px;
+
+  */
+  padding: 20px 30px;
+  color: rgb(48, 48, 48);
+
+  /*
+  box-sizing: border-box;
+  -o-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+
+  border-radius: 10px;
+  -o-border-radius: 10px;
+  -moz-border-radius: 10px;
+  -webkit-border-radius: 10px;
+
+  background-color: white;
+
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .1);
+  border: 1px solid rgba(0, 0, 0, .3);
+
+  transition: transform .3s ease-out;
+  -o-transition: -o-transform .3s ease-out;
+  -moz-transition: -moz-transform .3s ease-out;
+  -webkit-transition: -webkit-transform .3s ease-out;
+  */
+}
+
+pre {
+  font-size: 63%;
+  font-family: 'Droid Sans Mono', 'Consolas', 'Courier New', monospace;
+
+  color: black;
+}
+
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  margin-top: 20px;
+
+  margin-left: .75em;
+}
