@@ -163,7 +163,7 @@ public:
     /// prototypes), a copy is unavoidable; this method is used in this case.
     ///
     /// Params: component = The component to add as a raw, untyped component.
-    void addComponent(ref const(RuntimeComponent) component)
+    void addComponent(ref const(RawComponent) component)
     {
         assert(component.typeID == componentTypeID_ &&
                component.componentData.length == componentSize_,
