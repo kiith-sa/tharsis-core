@@ -28,7 +28,7 @@ Issues with existing ECS's
   - Run order: ASystem, BSystem, CSystem
   - ASystem may modify inputs of BSystem
 
-    * Outputs of BSystem may further affect:
+    * BSystem writes may further affect:
 
       - CSystem
       - ASystem the on next game update
@@ -42,10 +42,10 @@ Issues with existing ECS's
 
 * Manual synchronization needed for threading
 
-  - Often too much overhead (locking)
   - Always difficult
-  - Often fixed to a single thread
+  - Often not worth it due to locking overhead
 
+    * Often fixed to a single thread
     * Or a fixed number of threads (e.g. for specific hardware)
 
 Tharsis
@@ -56,7 +56,10 @@ Tharsis
   - Open source (Boost)
   - Written in D
   - Platform independent
-  - *Automatic threading (* **TBD** *)*
+
+    * As long as the platform has a D compiler
+
+      - ARM support since today
 
 Tharsis
 -------
@@ -64,9 +67,9 @@ Tharsis
 Should have all the good stuff
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* Easy to modify entities
+* Data defined entities with no programming
+* Easy to modify entities at runtime
 * Lightweight components
-* Data defined, no programmer needed
 * Entity as a dumb ID
 * Data in *Components*, logic in Systems (called *Processes*)
 
@@ -76,41 +79,41 @@ Tharsis
 
 New stuff (goals)
 ^^^^^^^^^^^^^^^^^
+.. rst-class:: build
 
-* Process run order should not matter
+* Process run order must not matter
 
-  - It may even change at runtime due to scheduling
+  - May even change at runtime due to scheduling
 
-* Threading should be automatic (unless specified by the user)
+* Automatic treading unless specified by the user
 
   - Lock only when absolutely necessary
   - Work with varying core counts (up to ... many)
-  - Scheduling to evenly spread the load, avoid spikes
+  - Schedule to evenly spread the load, avoid spikes
 
-* No ugly voidpointery macroy stuff in the API
+* No voidpointery macroy stuff in the API
 
   - Type-safe
 
 * Generated code to exploit Process specifics for optimization
 
-  - Usually, this means 'don't do what you don't have to'
+  - Aka 'don't do what you don't have to'
 
 Tharsis
 -------
 
 More stuff turned out to be necessary
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. rst-class:: build
 
-* Compile-time constraints on what the user can do (e.g. in a Process)
+* Compile-time constraints on Processes, Components, etc.
 
-  - Easier than hand-crafting a game for multiple cores
-
+  - Easier than hard-wiring a game for multiple cores
   - Not as convenient as working with an ECS in a single thread
 
 * Resource management designed to minimize locking
 
   - Immutable resources
-  - Not really a big focus (yet), but necessary
 
 * MultiComponents
 
@@ -137,11 +140,11 @@ Future
 
 * Game state created during the current game update
 * Written by Processes
-* A Process can write only one component type
+* A Process can only write one component type
 
   - Massive constraint, but doesn't seem to kill maintainability
 
-* Components can be removed by *not adding* them to future state 
+* Components are be removed by *not adding* them to future state 
 
 
 
@@ -158,12 +161,9 @@ Past and future
 
   - All Processes read the **same past version** of any component
 
-* Component buffers are always tightly packed
+* Component buffers always tightly packed
 
-  - Again, removing a component means not *adding* to future
   - No need for garbage collection
-
-.. XXX MINUS
 
 * Extra per-entity overhead
 
@@ -171,12 +171,11 @@ Past and future
 
 
 
-
 Threading
 ---------
 
-* **DISCLAIMER:** This stuff doesn't exist yet
-
+* **This doesn't exist yet**, and may change
+  
 * Processes can be assigned to separate threads automatically
 
   - Sometimes the user will need to override this (e.g. OpenGL)
@@ -430,8 +429,6 @@ ResourceManagers
 
 * Manage resources (duh)
 
-* User can't avoid manuall synchronization here
-
 * Operations: 
 
   =================== ========================
@@ -442,6 +439,13 @@ ResourceManagers
   requestLoad(handle) 1 per entity
   resource(handle)    >1 per entity per update
   =================== ========================
+
+ResourceManagers
+----------------
+
+* Can't avoid  manual synchronization here
+
+  - Relatively self-contained, though
 
 * Badly designed resource managers can kill performance
 
@@ -517,6 +521,13 @@ TODO
 * Scheduling
 * Paper
 
+Future possibilities (not planned yet)
+--------------------------------------
+
+* C components/processes
+* Lua support
+* Entity groups for more parallelism
+* GPU support (HSA)
 
 Links
 -----

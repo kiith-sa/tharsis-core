@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 
 
@@ -62,7 +61,7 @@
 <li>Implicit, unexpected dependencies on system run order<ul>
 <li>Run order: ASystem, BSystem, CSystem</li>
 <li>ASystem may modify inputs of BSystem<ul>
-<li>Outputs of BSystem may further affect:<ul>
+<li>BSystem writes may further affect:<ul>
 <li>CSystem</li>
 <li>ASystem the on next game update</li>
 </ul>
@@ -80,9 +79,9 @@
 <h2>Issues with existing ECS's</h2>
 <ul class="simple">
 <li>Manual synchronization needed for threading<ul>
-<li>Often too much overhead (locking)</li>
 <li>Always difficult</li>
-<li>Often fixed to a single thread<ul>
+<li>Often not worth it due to locking overhead<ul>
+<li>Often fixed to a single thread</li>
 <li>Or a fixed number of threads (e.g. for specific hardware)</li>
 </ul>
 </li>
@@ -97,8 +96,13 @@
 <li>Entity system (framework)<ul>
 <li>Open source (Boost)</li>
 <li>Written in D</li>
-<li>Platform independent</li>
-<li><em>Automatic threading (</em> <strong>TBD</strong> <em>)</em></li>
+<li>Platform independent<ul>
+<li>As long as the platform has a D compiler<ul>
+<li>ARM support since today</li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -109,9 +113,9 @@
 <div class="section level-3" id="should-have-all-the-good-stuff">
 <h3>Should have all the good stuff</h3>
 <ul class="simple">
-<li>Easy to modify entities</li>
+<li>Data defined entities with no programming</li>
+<li>Easy to modify entities at runtime</li>
 <li>Lightweight components</li>
-<li>Data defined, no programmer needed</li>
 <li>Entity as a dumb ID</li>
 <li>Data in <em>Components</em>, logic in Systems (called <em>Processes</em>)</li>
 </ul>
@@ -121,23 +125,23 @@
 <h2>Tharsis</h2>
 <div class="section level-3" id="new-stuff-goals">
 <h3>New stuff (goals)</h3>
-<ul class="simple">
-<li>Process run order should not matter<ul>
-<li>It may even change at runtime due to scheduling</li>
+<ul class="build simple">
+<li>Process run order must not matter<ul>
+<li>May even change at runtime due to scheduling</li>
 </ul>
 </li>
-<li>Threading should be automatic (unless specified by the user)<ul>
+<li>Automatic treading unless specified by the user<ul>
 <li>Lock only when absolutely necessary</li>
 <li>Work with varying core counts (up to ... many)</li>
-<li>Scheduling to evenly spread the load, avoid spikes</li>
+<li>Schedule to evenly spread the load, avoid spikes</li>
 </ul>
 </li>
-<li>No ugly voidpointery macroy stuff in the API<ul>
+<li>No voidpointery macroy stuff in the API<ul>
 <li>Type-safe</li>
 </ul>
 </li>
 <li>Generated code to exploit Process specifics for optimization<ul>
-<li>Usually, this means 'don't do what you don't have to'</li>
+<li>Aka 'don't do what you don't have to'</li>
 </ul>
 </li>
 </ul>
@@ -147,15 +151,14 @@
 <h2>Tharsis</h2>
 <div class="section level-3" id="more-stuff-turned-out-to-be-necessary">
 <h3>More stuff turned out to be necessary</h3>
-<ul class="simple">
-<li>Compile-time constraints on what the user can do (e.g. in a Process)<ul>
-<li>Easier than hand-crafting a game for multiple cores</li>
+<ul class="build simple">
+<li>Compile-time constraints on Processes, Components, etc.<ul>
+<li>Easier than hard-wiring a game for multiple cores</li>
 <li>Not as convenient as working with an ECS in a single thread</li>
 </ul>
 </li>
 <li>Resource management designed to minimize locking<ul>
 <li>Immutable resources</li>
-<li>Not really a big focus (yet), but necessary</li>
 </ul>
 </li>
 <li>MultiComponents<ul>
@@ -186,11 +189,11 @@
 <ul class="simple">
 <li>Game state created during the current game update</li>
 <li>Written by Processes</li>
-<li>A Process can write only one component type<ul>
+<li>A Process can only write one component type<ul>
 <li>Massive constraint, but doesn't seem to kill maintainability</li>
 </ul>
 </li>
-<li>Components can be removed by <em>not adding</em> them to future state</li>
+<li>Components are be removed by <em>not adding</em> them to future state</li>
 </ul>
 </div>
 </article>
@@ -206,13 +209,10 @@
 <li>All Processes read the <strong>same past version</strong> of any component</li>
 </ul>
 </li>
-<li>Component buffers are always tightly packed<ul>
-<li>Again, removing a component means not <em>adding</em> to future</li>
+<li>Component buffers always tightly packed<ul>
 <li>No need for garbage collection</li>
 </ul>
 </li>
-</ul>
-<ul class="simple">
 <li>Extra per-entity overhead<ul>
 <li>All game state is being rewritten, all the time</li>
 </ul>
@@ -223,7 +223,7 @@
 <article class="slide level-2" id="threading">
 <h2>Threading</h2>
 <ul class="simple">
-<li><strong>DISCLAIMER:</strong> This stuff doesn't exist yet</li>
+<li><strong>This doesn't exist yet</strong>, and may change</li>
 <li>Processes can be assigned to separate threads automatically<ul>
 <li>Sometimes the user will need to override this (e.g. OpenGL)</li>
 </ul>
@@ -275,7 +275,7 @@
 <article class="slide level-2" id="common-approach-to-multi-threading-in-games">
 <h2>Common approach to multi-threading in games</h2>
 <div class="figure align-center">
-<img alt="_images/common_threading.png" src="_images/common_threading.png" style="width: 85%;" />
+<a class="reference internal image-reference" href="_images/common_threading.png"><img alt="_images/common_threading.png" src="_images/common_threading.png" style="width: 85%;" /></a>
 </div>
 
 </article>
@@ -326,7 +326,7 @@
 <article class="slide level-2" id="a-game-running-in-tharsis">
 <h2>A game running in Tharsis</h2>
 <div class="figure align-center">
-<img alt="_images/tharsis_threading.png" src="_images/tharsis_threading.png" style="width: 86%;" />
+<a class="reference internal image-reference" href="_images/tharsis_threading.png"><img alt="_images/tharsis_threading.png" src="_images/tharsis_threading.png" style="width: 86%;" /></a>
 </div>
 
 </article>
@@ -354,7 +354,7 @@
 <article class="slide level-2" id="basic-memory-layout">
 <h2>Basic memory layout</h2>
 <div class="figure align-center">
-<img alt="_images/tharsis_memory.png" src="_images/tharsis_memory.png" style="width: 95%;" />
+<a class="reference internal image-reference" href="_images/tharsis_memory.png"><img alt="_images/tharsis_memory.png" src="_images/tharsis_memory.png" style="width: 95%;" /></a>
 </div>
 
 </article>
@@ -373,7 +373,7 @@
 <article class="slide level-2" id="high-level-time-slice">
 <h2>High-level time slice</h2>
 <div class="figure align-center">
-<img alt="_images/tharsis_time_1.png" src="_images/tharsis_time_1.png" style="width: 95%;" />
+<a class="reference internal image-reference" href="_images/tharsis_time_1.png"><img alt="_images/tharsis_time_1.png" src="_images/tharsis_time_1.png" style="width: 95%;" /></a>
 </div>
 
 </article>
@@ -402,7 +402,7 @@
 <article class="slide level-2" id="process-execution-time-slice">
 <h2>Process execution - time slice</h2>
 <div class="figure align-center">
-<img alt="_images/tharsis_time_2.png" src="_images/tharsis_time_2.png" style="width: 95%;" />
+<a class="reference internal image-reference" href="_images/tharsis_time_2.png"><img alt="_images/tharsis_time_2.png" src="_images/tharsis_time_2.png" style="width: 95%;" /></a>
 </div>
 
 </article>
@@ -425,7 +425,7 @@
 <article class="slide level-2" id="process-execution-data-read-write">
 <h2>Process execution - data read-write</h2>
 <div class="figure align-center">
-<img alt="_images/tharsis_onthefly.png" src="_images/tharsis_onthefly.png" style="width: 85%;" />
+<a class="reference internal image-reference" href="_images/tharsis_onthefly.png"><img alt="_images/tharsis_onthefly.png" src="_images/tharsis_onthefly.png" style="width: 85%;" /></a>
 </div>
 
 </article>
@@ -433,7 +433,7 @@
 <h2>Game update pseudocode - no threads</h2>
 <div class="section level-3" id="reminder">
 <h3>(Reminder)</h3>
-<div class="code highlight-python"><pre>foreach(system; systems):
+<div class="code highlight-python"><div class="highlight"><pre>foreach(system; systems):
     ulong flags = system.componentFlags();
     uint[flags.length] componentIndices;
     componentIndices[] = 0;
@@ -444,13 +444,14 @@
         if(componentFlags[entityIndex] &amp;&amp; flags):
             system.process(getComponents(componentIndices));
 
-        increment component indices corresponding to flags</pre>
+        increment component indices corresponding to flags
+</pre></div>
 </div>
 </div>
 </article>
 <article class="slide level-2" id="game-update-pseudocode-tharsis">
 <h2>Game update pseudocode - Tharsis</h2>
-<div class="code highlight-python"><pre>parallel_foreach(thread; threads):
+<div class="code highlight-python"><div class="highlight"><pre>parallel_foreach(thread; threads):
 
     foreach(process; thread):
         uint[process.PastComponents.length] pastComponentIndices;
@@ -467,7 +468,8 @@
 
                 if(futureComponent != NULL):
                     futureComponentCounts(process)[entityIndex] = 1;
-                    ++futureIndex;</pre>
+                    ++futureIndex;
+</pre></div>
 </div>
 
 </article>
@@ -521,8 +523,6 @@
 <ul>
 <li><p class="first">Manage resources (duh)</p>
 </li>
-<li><p class="first">User can't avoid manuall synchronization here</p>
-</li>
 <li><p class="first">Operations:</p>
 <table border="1" class="docutils">
 <colgroup>
@@ -550,10 +550,18 @@
 </tbody>
 </table>
 </li>
-<li><p class="first">Badly designed resource managers can kill performance</p>
-</li>
-<li><p class="first">Need example thread-safe resource managers</p>
+</ul>
+
+</article>
+<article class="slide level-2" id="id12">
+<h2>ResourceManagers</h2>
 <ul class="simple">
+<li>Can't avoid  manual synchronization here<ul>
+<li>Relatively self-contained, though</li>
+</ul>
+</li>
+<li>Badly designed resource managers can kill performance</li>
+<li>Need example thread-safe resource managers<ul>
 <li>Find common code, move to library</li>
 </ul>
 </li>
@@ -629,6 +637,16 @@ Game Connect: Asia Pacific 2009</li>
 </ul>
 
 </article>
+<article class="slide level-2" id="future-possibilities-not-planned-yet">
+<h2>Future possibilities (not planned yet)</h2>
+<ul class="simple">
+<li>C components/processes</li>
+<li>Lua support</li>
+<li>Entity groups for more parallelism</li>
+<li>GPU support (HSA)</li>
+</ul>
+
+</article>
 <article class="slide level-2" id="links">
 <h2>Links</h2>
 <ul>
@@ -671,7 +689,7 @@ Game Connect: Asia Pacific 2009</li>
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
+        URL_ROOT:    './',
         VERSION:     '2014.02.22',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
