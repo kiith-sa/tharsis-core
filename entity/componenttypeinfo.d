@@ -149,6 +149,16 @@ public:
     {
         return componentData_;
     }
+
+    /// Is this a null component?
+    ///
+    /// Some functions may return a null component on error or if no component
+    /// was found.
+    bool isNull() @safe const pure nothrow
+    {
+        return typeID_ == nullComponentTypeID;
+    }
+}
 }
 
 /// Type information about a component type.
