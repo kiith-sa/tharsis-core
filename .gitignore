@@ -4,3 +4,4 @@ meta/*
 *.bkp
 *.bkp?
 /unittest
+/cdc.o
