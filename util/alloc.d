@@ -14,14 +14,25 @@ import core.stdc.stdlib;
 /// The default allocation function (just a nothrow malloc wrapper).
 void[] nothrowMalloc(const size_t bytes, TypeInfo type) nothrow
 {
-    return (cast(void* function(const size_t) nothrow)
-            &core.stdc.stdlib.malloc)(bytes)[0 .. bytes];
+    static void* malloc(size_t bytes)
+    {
+        return core.stdc.stdlib.malloc(bytes);
+    }
+
+    void* resultPtr = (cast(void* function(size_t) nothrow)&malloc)(bytes);
+    void[] result = resultPtr[0 .. bytes];
+    return result;
 }
 
 /// The default deallocation function (just a nothrow free wrapper).
 void nothrowFree(void[] data) nothrow 
 {
-    (cast(void function(void*) nothrow)&core.stdc.stdlib.free)(data.ptr);
+    static void free(void* ptr)
+    {
+        core.stdc.stdlib.free(ptr);
+    }
+    assert(data !is null, "Trying to free null data");
+    (cast(void function(void*) nothrow)&free)(data.ptr);
 }
 
 /// The allocation function used to allocate most memory used by Tharsis.
@@ -44,5 +55,5 @@ __gshared void[] function (const size_t bytes, TypeInfo) nothrow allocateMemory
 /// startup before Tharsis allocates anything. In that case, freeMemory must be 
 /// overridden as well.
 ///
-/// Params: data = The data to deallocate.
+/// Params: data = The data to deallocate. Must not be null.
 __gshared void function (void[] data) nothrow freeMemory = &nothrowFree;

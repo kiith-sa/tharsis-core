@@ -102,7 +102,10 @@ public:
         {
             GC.removeRange(cast(void*)oldUsedData.ptr); 
         }
-        freeMemory(cast(void[])oldUsedData);
+        if(oldUsedData !is null)
+        {
+            freeMemory(cast(void[])oldUsedData);
+        }
     }
 
     /// Grow up to currently allocated capacity without initializing data,

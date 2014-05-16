@@ -439,7 +439,7 @@ private:
     alias ubyte[PageSize] Page;
 
     /// An array of pointers to allocated pages.
-    Page*[] pages_;
+    Page*[] pages_ = null;
 
     /// No direct copying of; we don't want the indirection of a reference type
     /// and we almost certainly never want to copy by value.
@@ -449,6 +449,8 @@ private:
     /// Destroy the array, freeing all pages.
     @trusted nothrow ~this()
     {
+        if(pages_ is null) { return; }
+        // [0 .. 1] means delete one page
         foreach(ref p; pages_) { freeMemory(cast(void[])p[0 .. 1]); }
         pages_[] = null;
         freeMemory(cast(void[])pages_);
@@ -475,6 +477,7 @@ private:
         {
             p = cast(Page*)allocateMemory(PageSize, typeInfo).ptr;
         }
+        if(oldPages is null) { return; }
         freeMemory(cast(void[])oldPages);
     }
 }
