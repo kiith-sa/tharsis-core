@@ -17,5 +17,3 @@ class Class(Struct)
     /// Make the class behave as if it was Struct.
     alias self_ this;
 }
-
-
