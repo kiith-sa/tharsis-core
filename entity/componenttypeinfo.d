@@ -680,18 +680,18 @@ private:
 
 private:
 
-/// Is Component.field a resource handle?
+/// Is Component.property a resource handle?
 ///
 /// Params: Component = A Component type.
-///         field     = Name of a data member of Component.
+///         property  = Name of a property (data member) of Component.
 ///
-/// Returns: true if the field data member of Component is a resource handle,
+/// Returns: true if the property of Component with specified name is a resource handle,
 ///          false otherwise.
-bool isResourceHandle(Component, string field)()
+bool isResourceHandle(Component, string property)()
 {
     mixin(q{
     alias fieldType = Unqual!(typeof(Component.%s));
-    }.format(field));
+    }.format(property));
 
     enum fieldTypeString = fieldType.stringof;
     return fieldTypeString.startsWith("ResourceHandle!");
