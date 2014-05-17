@@ -15,7 +15,9 @@ import std.string;
 import std.traits;
 import std.typetuple;
 
+import tharsis.util.noncopyable;
 import tharsis.util.traits;
+import tharsis.util.typetuple;
 import tharsis.entity.lifecomponent;
 import tharsis.entity.resourcemanager;
 
@@ -118,7 +120,7 @@ mixin template validateComponent(Component)
 
 /// Used as an user-defined attribute for component properties to override the
 /// name of the property in the Source it's loaded from (e.g. YAML).
-struct FieldName
+struct PropertyName
 {
     /// The name of the property in a Source such as YAML.
     string name;
@@ -155,16 +157,275 @@ public:
         return typeID_ == nullComponentTypeID;
     }
 }
+
+/// Type information about a component type property (data member).
+struct ComponentPropertyInfo
+{
+    /// No copying; copies in separate threads may unexpectedly access shared resources.
+    mixin(NonCopyable);
+
+private:
+    /// A function type to load the property from a source (e.g. YAML).
+    ///
+    /// Params: ubyte[]:          Component to load the property into, passed as a raw
+    ///                           byte array.
+    ///         void*:            Data source to load the property from, e.g. a YAML
+    ///                           node defining the component. Although we use a void
+    ///                           pointer, the source must match the type of the source
+    ///                           used with the construct() function that created this
+    ///                           ComponentPropertyInfo.
+    ///         GetResourceHandle A delegate that, given a resource type ID and
+    ///                           descriptor, returns a raw resource handle. Used to
+    ///                           initialize properties that are resource handles.
+    ///                           Always passed but not every property will use this.
+    ///         string            A string to write any loading errors to. If there are
+    ///                           no errors, this is not touched.
+    ///
+    /// Returns: true if the property was successfully loaded, false otherwise.
+    alias LoadProperty = 
+        bool function(ubyte[], void*, GetResourceHandle, ref string) nothrow;
+
+    /// A function type to add the value of this property in right to the value in left.
+    ///
+    /// See_Also: addRightToLeft
+    alias AddRightToLeft =
+        void function(ref RawComponent left, ref const(RawComponent) right)
+            @safe pure nothrow;
+
+
+    /// The function to load the property.
+    ///
+    /// See_Also: LoadProperty
+    LoadProperty loadProperty;
+
+    /// See_Also: customAttributes
+    string[8] customAttributes_;
+
+    /// A function that adds the value of this property in one component to the
+    /// value of this property in another component.
+    ///
+    /// See_Also: addRightToLeft
+    AddRightToLeft addRightToLeft_;
+
+public:
+    /// Custom attributes of the property.
+    ///
+    /// For example, @("relative") .
+    /// Processes can access propeties with a specific custom attribute using the
+    /// properties() method of ComponentTypeInfo. This is used e.g. in
+    /// tharsis.defaults.processes.SpawnerProcess to implement relative properties 
+    /// where a property of a spawned entity is affected by the same property of
+    /// the spawner.
+    const(string)[] customAttributes() @safe pure nothrow const
+    {
+        return customAttributes_[];
+    }
+
+    /// Add the value of this property in the right component to this property in
+    /// the left component.
+    ///
+    /// If "property" is the property (data member) represented by this
+    /// ComponentPropertyInfo, this is an equivalent of 
+    /// "left.property += right.property". Both components must be of the component
+    /// type that has this property.
+    ///
+    /// May only be called for properties where "left.property += right.property"
+    /// compiles. This can be used to implement relative properties to e.g. spawn
+    /// new entities at relative positions.
+    ///
+    /// Params: left  = The component to add to. Must be a component of the
+    ///                 component type that has this property.
+    /// Params: right = The component to get the value to add from. Must be a
+    ///                 component of the component type that has this property.
+    void addRightToLeft(ref RawComponent left, ref const(RawComponent) right)
+        @safe pure nothrow const
+    {
+        addRightToLeft_(left, right);
+    }
+
+private:
+    /// Construct ComponentPropertyInfo describing a property (field) of a
+    /// component type.
+    ///
+    /// Params:  Source    = Source type we're loading components from, e.g.
+    ///                      YAMLSource.
+    ///          Component = Component type the property belongs to.
+    ///          fieldName = Name of the field (property) in the component type.
+    ///                      E.g. for PhysicsComponent.position this would be 
+    ///                      "position".
+    this(Source, Component, string fieldName)() @safe nothrow
+    {
+        auto loadPropDg = &implementLoadProperty!(Source, Component, fieldName);
+        // The cast adds the nothrow attribute (implementLoadProperty does not throw
+        // even though we can't mark it nothrow as of DMD 2.065).
+
+        loadProperty    = loadPropDg;
+        addRightToLeft_ = &implementAddRightToLeft!(Component, fieldName);
+
+        // Get user defined attributes of the property.
+        mixin(q{
+        alias attribs = TypeTuple!(__traits(getAttributes, Component.%s));
+        }.format(fieldName));
+
+
+        // All string user defined attributes are stored in customAttributes_.
+        enum isString(alias attrib) = is(typeof(attrib) == string);
+        foreach(i, attrib; Filter!(isString, attribs))
+        {
+            enum maxAttribs = customAttributes_.length;
+            static assert(i < maxAttribs,
+                          "%s.%s has too many attributes; at most %s are supported"
+                          .format(Component.stringof, fieldName, maxAttribs));
+            customAttributes_[i] = attrib;
+        }
+    }
+
+    /// Get the name of a property used in a Source such as YAML.
+    ///
+    /// The property name in a Source is, by default, the name of the property in
+    /// the component struct, but it can be overridden by a PropertyName attribute.
+    /// This is useful e.g. if a property name would collide with a D keyword.
+    static string fieldNameSource(Component, string fieldNameInternal)()
+    {
+        string result;
+        mixin(q{
+        alias fieldAttribs = TypeTuple!(__traits(getAttributes, Component.%s));
+        }.format(fieldNameInternal));
+
+        // Find the PropertyName attribute, if any. More than one is illegal.
+        enum isPropertyName(alias attrib) = is(typeof(attrib) == PropertyName);
+        foreach(attrib; Filter!(isPropertyName, fieldAttribs))
+        {
+            assert(result is null,
+                   "More than one PropertyName attribute on a component property");
+            result = attrib.name;
+        }
+
+        return result is null ? fieldNameInternal : result;
+    }
+
+    /// This template generates an implementation of addRightToLeft for property
+    /// fieldNameInternal of component type Component.
+    ///
+    /// When a component type is registered, this template is instantiated for all
+    /// its properties to implement addRightToLeft for every one of them.
+    ///
+    /// Params: Component         = The component type to which the property belongs.
+    ///         fieldNameInternal = The name of the property (field) in the
+    ///                             component struct (as opposed to its name in a Source
+    ///                             such as YAML).
+    ///
+    /// See_Also: addRightToLeft
+    static void implementAddRightToLeft
+        (Component, string fieldNameInternal)
+        (ref RawComponent left, ref const(RawComponent) right) @trusted pure nothrow
+    {
+        assert(left.typeID == right.typeID && left.typeID == Component.ComponentTypeID,
+               "Components of different types passed to addRightToLeft");
+        // Cast the pointers to the component type.
+        auto leftTyped  = cast(Component*)left.componentData.ptr;
+        auto rightTyped = cast(const(Component)*)right.componentData.ptr;
+
+        mixin(q{
+        static if(!__traits(compiles, leftTyped.%1$s += rightTyped.%1$s))
+        {
+            assert(false, "%2$s.%1$s does not support addition");
+        }
+        else
+        {
+            leftTyped.%1$s += rightTyped.%1$s;
+        }
+        }.format(fieldNameInternal, Component.stringof));
+    }
+
+
+    // TODO if a property has an explicit default value, allow it to be unspecified
+    //      and set it to the default value here.
+    /// This template generates an implementation of loadProperty loading property
+    /// fieldNameInternal of component type Component from source type Source.
+    ///
+    /// When a component type is registered, this template is instantiated for all its
+    /// properties to implement loadProperty for every one of them.
+    ///
+    /// Params: Source            = The Source type to load from (e.g. YAMLSource).
+    ///         Component         = Component type we're loading.
+    ///         fieldNameInternal = Name of the property in the Component struct to load
+    ///                             (which may differ from the name of the same property
+    ///                             in component source).
+    ///
+    /// See_Also: LoadProperty
+    static bool implementLoadProperty
+        (Source, Component, string fieldNameInternal)
+        (ubyte[] componentBuffer, void* sourceVoid, GetResourceHandle getHandle,
+         ref string errorLog) nothrow
+    {
+        assert(componentBuffer.length == Component.sizeof,
+               "Size of component buffer doesn't match its type");
+
+        // The component is stored in a mapping; the property is stored in a
+        // Source that is one of the values in that mapping.
+        Source fieldSource;
+        Source* source = cast(Source*)sourceVoid;
+
+        enum string componentName = Component.stringof;
+        // The property name used when loading from the Source. May be different
+        // from the name of the Component's property.
+        enum string fieldName = fieldNameSource!(Component, fieldNameInternal);
+        if(!source.getMappingValue(fieldName, fieldSource))
+        {
+            errorLog ~= "'" ~ componentName ~ "' falied to load: Property '" ~
+                        fieldName ~ "' not found\n\n";
+            return false;
+        }
+
+        // Pointer to the field in the component.
+        mixin(q{
+        auto fieldPtr = &((cast(Component*)componentBuffer.ptr).%s);
+        }.format(fieldNameInternal));
+
+        alias typeof(*fieldPtr) FieldType;
+
+        // If a component property is a resource handle, the Source contains
+        // a resource descriptor. We need to load the descriptor and then get
+        // the handle by getHandle(), which will create a resource with the
+        // correct resource manager and return a handle to it.
+        static if(isResourceHandle!(Component, fieldNameInternal))
+        {
+            alias Resource   = FieldType.Resource;
+            alias Descriptor = Resource.Descriptor;
+            alias Handle     = ResourceHandle!Resource;
+
+            // Load the descriptor of the resource.
+            Descriptor desc;
+            if(!Descriptor.load(fieldSource, desc))
+            {
+                errorLog ~= "'" ~ componentName ~ "' failed to load: Property '" ~
+                            fieldName ~ "' does not have expected type '" ~
+                            Descriptor.stringof ~ "'\n\n";
+                return false;
+            }
+
+            // Initialize the property which is a handle to the resource.
+            *fieldPtr = Handle(getHandle(typeid(Resource), &desc));
+        }
+        // By default, properties are stored in the Source directly as values.
+        else if(!fieldSource.readTo(*fieldPtr))
+        {
+            errorLog ~= "'" ~ componentName ~ "' failed to load: Property '" ~
+                        fieldName ~ "' does not have expected type '" ~
+                        FieldType.stringof ~ "'\n\n";
+            return false;
+        }
+
+        return true;
+    }
 }
 
 /// Type information about a component type.
 struct ComponentTypeInfo
 {
-private:
-    /// Type information about the source type the components are loaded from.
-    ///
-    /// Ensures that a correct Source is passed to loadComponent.
-    TypeInfo sourceType_;
+    /// No copying; copies in separate threads may unexpectedly access shared resources.
+    mixin(NonCopyable);
 
 public:
     /// ID of the component type.
@@ -194,68 +455,154 @@ public:
     /// Minimum number of components to preallocate per entity.
     double minPreallocPerEntity = 0;
 
-    /// Type information about a component type field (data member).
-    struct Field
-    {
-        /// A function type to load the field.
-        ///
-        /// Params: ubyte[]:          Component to load the field into, passed
-        ///                           as a raw byte array.
-        ///         void*:            Data source to load the field from.
-        ///                           (e.g. a YAML node defining the component)
-        ///                           Although a void pointer is used, the
-        ///                           source must match the type of the source
-        ///                           used with the construct! function that
-        ///                           created this ComponentTypeInfo.
-        ///         GetResourceHandle A delegate that, given (at runtime) a
-        ///                           resource type and descriptor, returns a
-        ///                           raw resource handle. Used to initialize
-        ///                           fields that are resource handles.
-        ///
-        /// Returns: true if the field was successfully loaded, false otherwise.
-        alias bool function(ubyte[], void*, GetResourceHandle)
-            nothrow LoadField;
+private:
+    /// Type info of the Source (e.g. YAML) type the components are loaded from.
+    ///
+    /// Ensures that a correct Source is passed to loadComponent.
+    TypeInfo sourceType_;
 
-        /// The function to load the field.
-        LoadField loadField;
+    /// Information about all properties (data members) in the component type.
+    ComponentPropertyInfo[] properties_;
+
+public:
+    /// A range used to iterate over type information of properties (aka fields or
+    /// data members) of a Component type.
+    ///
+    /// The range element type is ComponentPropertyInfo.
+    //
+    // Currently this works as a filter that iterates only over entities with 
+    // a specified attribute.
+    struct ComponentPropertyRange
+    {
+        /// No copying; copies in separate threads may unexpectedly access shared resources.
+        mixin(NonCopyable);
+
+    private:
+        /// A slice of all properties of the component type.
+        const(ComponentPropertyInfo)[] properties_;
+
+        /// We only iterate over properties that have a this user-defined attribute.
+        ///
+        /// E.g. if filterAttribute_ is "relative", the range will iterate over
+        /// '@("relative") float x' but not over 'float x'
+        string filterAttribute_;
+
+    public:
+        /// Get the current element of the range.
+        ref const(ComponentPropertyInfo) front()  @safe pure nothrow const
+        {
+            assert(!empty, "Can't get front of an empty range");
+            return properties_.front;
+        }
+
+        /// Remove the current element of the range, moving to the next.
+        void popFront() @safe pure nothrow
+        {
+            assert(!empty, "Can't pop front of an empty range");
+            properties_.popFront();
+            skipToNextMatch();
+        }
+
+        /// Is the range empty? (No more elements)
+        bool empty() @safe pure nothrow const { return properties_.empty(); }
+
+    private:
+        /// Construct a ComponentProperty iterating over properties with specified
+        /// attribute.
+        ///
+        /// Params: properties = A slice of all properties of the component type.
+        ///         attribute  = Only the properties with this user-defined attribute
+        ///                      will be iterated by the range.
+        this(const(ComponentPropertyInfo)[] properties, string attribute)
+            @safe pure nothrow
+        {
+            properties_ = properties;
+            filterAttribute_ = attribute;
+            skipToNextMatch();
+        }
+
+        /// Skip to the next property with user-defined attribute filterAttribute_
+        /// or to the end of the range.
+        void skipToNextMatch() @safe pure nothrow
+        {
+            while(!properties_.empty &&
+                  !properties_.front.customAttributes.canFind(filterAttribute_))
+            {
+                properties_.popFront();
+            }
+        }
     }
 
-    /// Type information about all fields (data members) in the component type.
-    Field[] fields;
+    /// Get a range of all properties in the component type with specified user-defined
+    /// attribute.
+    ///
+    /// Example:
+    /// --------------------
+    /// struct PhysicsComponent
+    /// {
+    ///     enum ushort ComponentTypeID = userComponentTypeID!2;
+    /// 
+    ///     float mass;
+    ///     @("relative") float x;
+    ///     @("relative") float y;
+    ///     @("relative") float z;
+    /// }
+    ///
+    /// // ComponentTypeInfo info; // type info about PhysicsComponent
+    ///
+    /// foreach(ref propertyInfo; info.properties("relative"))
+    /// {
+    ///     // Will iterate over ComponentPropertyInfo for 'float x', 'float y' and
+    ///     // 'float z'
+    /// }
+    ///
+    /// --------------------
+    ComponentPropertyRange properties(string attribute)()
+        @safe pure nothrow const
+    {
+        //TODO we may build a range wrapping an array of properties with specified
+        //     attribute, and cache this range for reuse between calls. This would be
+        //     faster but more memory-intensive than the current ComponentPropertyRange
+        //     which filters on-the-fly. To avoid issues between threads we can use a
+        //     static buffer (static is per-thread and this is a template method so
+        //     there'd be a separate buffer per attribute - but we'd need separate
+        //     entries for every component type. We may evebuild all these arrays at 
+        //     startup since we know which attributes are being used at compile-time).
+        return ComponentPropertyRange(properties_, attribute);
+    }
 
     /// Is this ComponentTypeInfo null (i.e. doesn't describe any type)?
     bool isNull() @safe pure nothrow const { return id == nullComponentTypeID; }
 
-    /// Loads a component of this component type.
+    /// Load a component of this component type.
     ///
-    /// Params:  componentData = Component to load into, as a raw bytes buffer.
+    /// Params:  Source        = Type of the Source (e.g. YAML node) to load from. Must
+    ///                          be the same Source type that was used when the type
+    ///                          info was initialized (i.e. the Source parameter of
+    ///                          ComponentTypeManager).
+    ///          componentData = Component to load into, as a raw bytes buffer.
     ///          source        = Source to load the component from (e.g. a YAML
-    //.                          node defining the component).
-    ///          getHandle     = A delegate that, given (at runtime) a resource
-    ///                          type and descriptor, returns a raw resource
-    ///                          handle. Used to initialize fields that are
-    ///                          resource handles.
-    bool loadComponent(Source)
-                      (ubyte[] componentData,
-                       ref Source source,
-                       GetResourceHandle getHandle)
+    ///                          definition of the component).
+    ///          getHandle     = A delegate that, given a resource type ID and
+    ///                          descriptor, returns a raw resource handle. Used
+    ///                          to initialize properties that are resource handles.
+    ///          errorLog      = A string to write any loading errors to.
+    ///                          If there are no errors, this is not touched.
+    bool loadComponent(Source)(ubyte[] componentData, ref Source source,
+                               GetResourceHandle getHandle, ref string errorLog)
         @trusted nothrow const
     {
         assert(typeid(Source) is sourceType_,
-               "Source type used to construct a ComponentTypeInfo doesn't "
-               "match the source type passed to its loadComponent method");
+               "Source type used to construct a ComponentTypeInfo doesn't match the "
+               "source type passed to its loadComponent method");
 
-        // TODO we can implement modifying-entity-from-YAML easily;
-        //      call loadField only for those fields that are present.
-        //      The rest simply won't be overwritten.
-        //      (note; Field struct must include the name of the field for this)
         assert(componentData.length == size,
                "Size of component to load doesn't match its component type");
-        // Try to load all the fields. If we fail to load any single field,
+        // Try to load all the properties. If we fail to load any single property,
         // loading fails.
-        foreach(ref f; fields)
+        foreach(ref p; properties_)
         {
-            if(!f.loadField(componentData, cast(void*)&source, getHandle))
+            if(!p.loadProperty(componentData, cast(void*)&source, getHandle, errorLog))
             {
                 return false;
             }
@@ -264,140 +611,40 @@ public:
         return true;
     }
 
-    /// Construct a ComponentTypeInfo for specified component type.
-    static ComponentTypeInfo construct(Source, Component)() @trusted
+private:
+    /// Construct component type information for specified component type.
+    ///
+    /// Params:  Source    = Source the components will be loaded from (e.g. YAML).
+    ///          Component = Component type to generate info about.
+    this(Source, Component)() @safe
     {
         mixin validateComponent!Component;
         alias FieldNamesTuple!Component Fields;
 
         enum fullName = Component.stringof;
-        ComponentTypeInfo result;
-        result.sourceType_ = typeid(Source);
-        result.id          = Component.ComponentTypeID;
-        result.size        = Component.sizeof;
-        result.isMulti     = isMultiComponent!Component;
-        result.name        = fullName[0 .. $ - "Component".length];
-        result.sourceName  = result.name[0 .. 1].toLower ~ result.name[1 .. $];
-        result.fields.reserve(Fields.length);
+        sourceType_ = typeid(Source);
+        id          = Component.ComponentTypeID;
+        size        = Component.sizeof;
+        isMulti     = isMultiComponent!Component;
+        name        = fullName[0 .. $ - "Component".length];
+        sourceName  = name[0 .. 1].toLower ~ name[1 .. $];
 
         static if(hasMember!(Component, "minPrealloc"))
         {
-            result.minPrealloc = Component.minPrealloc;
+            minPrealloc = Component.minPrealloc;
         }
         static if(hasMember!(Component, "minPreallocPerEntity"))
         {
-            result.minPreallocPerEntity = Component.minPreallocPerEntity;
+            minPreallocPerEntity = Component.minPreallocPerEntity;
         }
-        result.maxPerEntity = maxComponentsPerEntity!Component();
+        maxPerEntity = maxComponentsPerEntity!Component();
 
+        properties_.length = Fields.length;
         // Compile-time foreach.
-        foreach(f; Fields)
+        foreach(i, fieldName; Fields)
         {
-            result.fields ~=
-                Field(cast(Field.LoadField)&loadField!(Source, Component, f));
+            properties_[i].__ctor!(Source, Component, fieldName)();
         }
-
-        return result;
-    }
-
-private:
-    /// Get the name of a field used to load it from a Source such as YAML.
-    ///
-    /// The field name is, by default, the same in a Source as in the component
-    /// type definition, but it can be overridden by a FieldName attribute.
-    /// This is useful e.g. if a field name would collide with a D keyword.
-    static string fieldNameSource(Component, string fieldNameInternal)()
-    {
-        string result;
-        mixin(q{
-        alias fieldAttribs = TypeTuple!(__traits(getAttributes, Component.%s));
-        }.format(fieldNameInternal));
-        foreach(attrib; fieldAttribs) if(is(typeof(attrib) == FieldName))
-        {
-            assert(result is null,
-                   "More than one FieldName attribute on a component field");
-            result = attrib.name;
-        }
-
-        return result is null ? fieldNameInternal : result;
-    }
-
-    /// Loads a field of a Component from a Source.
-    ///
-    /// Params: Source            = The Source type to load from
-    ///                             (e.g. YAMLSource).
-    ///         Component         = Component type we're loading.
-    ///         fieldNameInternal = Name of the data member of Component to
-    ///                             load.
-    ///         componentBuffer   = The component we're loading as raw bytes.
-    ///         sourceVoid        = A void pointer to the Source we're loading
-    ///                             from.
-    ///         getHandle         = A function that will get a raw handle to a
-    ///                             resource when passed resource type and
-    ///                             descriptor. Used to initialize component
-    ///                             fields that are resource handles.
-    static bool loadField(Source, Component, string fieldNameInternal)
-                         (ubyte[] componentBuffer, void* sourceVoid,
-                          GetResourceHandle getHandle)
-    {
-        assert(componentBuffer.length == Component.sizeof,
-               "Size of component buffer doesn't match its type");
-
-        // TODO if a field has an explicit default value, allow it to be
-        //      unspecified and set it to the default value here.
-
-        // The component is stored in a mapping; the field is stored in a
-        // Source that is one of the values in that mapping.
-        Source fieldSource;
-        Source* source = cast(Source*)sourceVoid;
-
-        // The field name used when loading from the Source. May be different
-        // from the name of the Component's field.
-        enum string fieldName = fieldNameSource!(Component, fieldNameInternal);
-        if(!source.getMappingValue(fieldName, fieldSource))
-        {
-            writefln("Failed to load component '%s': Couldn't find field: '%s'",
-                     Component.stringof, fieldName);
-            return false;
-        }
-        mixin(q{
-        auto fieldPtr = &((cast(Component*)componentBuffer.ptr).%s);
-        }.format(fieldNameInternal));
-        alias typeof(*fieldPtr) FieldType;
-
-        // If a component property is a resource handle, the Source contains a
-        // resource descriptor. We need to load the descriptor and then get the
-        // handle by getHandle(), which will create a resource with the
-        // correct resource manager and return a handle to it.
-        static if(isResourceHandle!(Component, fieldNameInternal))
-        {
-            alias Resource   = FieldType.Resource;
-            alias Descriptor = Resource.Descriptor;
-            alias Handle     = ResourceHandle!Resource;
-
-            // Load the descriptor of the resource.
-            Descriptor desc;
-            if(!Descriptor.load(fieldSource, desc))
-            {
-                writefln("Failed to load component '%s' : Field '%s' does not "
-                         "match expected type: '%s'",
-                         Component.stringof, fieldName, Descriptor.stringof);
-                return false;
-            }
-
-            // Initialize the field which is a handle to the resource.
-            *fieldPtr = Handle(getHandle(typeid(Resource), &desc));
-        }
-        // By default, properties are stored in the Source directly as values.
-        else if(!fieldSource.readTo(*fieldPtr))
-        {
-            writefln("Failed to load component '%s' : Field '%s' does not "
-                     "match expected type: '%s'",
-                     Component.stringof, fieldName, FieldType.stringof);
-            return false;
-        }
-
-        return true;
     }
 }
 

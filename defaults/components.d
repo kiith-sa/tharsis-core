@@ -40,7 +40,7 @@ struct SpawnerMultiComponent
     /// of spawn, overriding components of spawn.
     ///
     /// Used to modify entities directly in the spawner component source.
-    @(FieldName("override"))
+    @(PropertyName("override"))
     ResourceHandle!InlineEntityPrototypeResource overrideComponents;
 
     /// Spawn conditions match this to specify which SpawnerMultiComponent they

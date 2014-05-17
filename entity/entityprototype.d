@@ -317,9 +317,12 @@ public:
         auto newCompTypeIDs = (cast(ushort[])scratchBuffer)[$ - compCount .. $];
 
         // Add components of every type (in order) to the sorted buffer.
-        foreach(ref type; componentTypes.filter!(t => !t.isNull)
-                                        .until!(t => sortedCount == compCount))
+        foreach(ref type; componentTypes) if(!type.isNull)
         {
+            // Don't need to check other component types if all components have been
+            // sorted already.
+            if(sortedCount == compCount) { break; }
+
             assert(sortedCount <= compCount,
                    "Processed more components than present in the prototype");
 

@@ -56,10 +56,12 @@ public:
         foreach(Type; Types)
         {
             const id = Type.ComponentTypeID;
-            if(!componentTypeInfo_[].any!(i => !i.isNull && i.id == id))
+            bool isRegistered = false;
+            foreach(ref type; componentTypeInfo_) if(!type.isNull && type.id == id)
             {
-                return false;
+                isRegistered = true;
             }
+            if(!isRegistered) { return false; }
         }
 
         return true;
