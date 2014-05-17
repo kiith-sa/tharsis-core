@@ -23,6 +23,7 @@ import std.traits;
 import std.typecons;
 
 import tharsis.util.alloc;
+import tharsis.util.noncopyable;
 
 
 /// A paged array storing value-type items which can be initialized and then
@@ -98,7 +99,7 @@ public:
     /// No direct copying; we don't want the indirection of a reference type and
     /// we almost certainly never want to copy by value.
     @disable void opAssign(T[] array);
-    @disable this(this);
+    mixin(NonCopyable);
 
     /// Destroy the array, destroying all stored items.
     ///

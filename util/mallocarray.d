@@ -14,6 +14,7 @@ import std.traits;
 import std.typecons;
 
 import tharsis.util.alloc;
+import tharsis.util.noncopyable;
 
 /// A manually allocated dynamic array.
 ///
@@ -43,8 +44,8 @@ public:
     /// No accidental assignments from an array.
     @disable void opAssign(T[] array);
 
-    /// No copying.
-    @disable this(this);
+    /// No copying (we simply don't implement that stuff yet).
+    mixin(NonCopyable);
 
     /// Destroy the MallocArray, freeing memory.
     @trusted nothrow ~this()
