@@ -127,6 +127,10 @@ struct PropertyName
 }
 
 /// Stores a component of any component type as raw data.
+///
+/// This is a dumb struct. The code that constructs a RawComponent must make 
+/// sure the type and data used actually makes sense (also e.g. that data size
+/// matches the type).
 struct RawComponent
 {
 private:
@@ -454,25 +458,31 @@ public:
     /// Size of a single component of this type in bytes.
     size_t size;
 
-    /// Maximum possible components of this type at entity may have.
+    /// Maximum possible components of this type in a single entity.
     ///
-    /// Used mainly by MultiComponents. For normal Components this is a minimum
-    /// number of free preallocated components.
+    /// Used mainly by MultiComponents. Used by EntitySystem to ensure there are
+    /// always enough components preallocated for the next entity to process.
     size_t maxPerEntity = 1;
 
     /// Is this a MultiComponent type?
     bool isMulti = false;
 
     /// Name of the component type.
+    ///
+    /// This is the component struct name without the 'Component' suffix.
+    /// E.g. for "PhysicsComponent" this would be "Physics"
     string name = "";
 
     /// Name of the component when accessed in a Source (e.g. YAML).
+    ///
+    /// Usually this is equal to the name member with the first character forced to
+    /// lowercase.
     string sourceName = "";
 
-    /// Minimum number of components to preallocate.
+    /// Minimum number of components to preallocate between game updates.
     uint minPrealloc = 0;
 
-    /// Minimum number of components to preallocate per entity.
+    /// Minimum number of components to preallocate per entity between game updates.
     double minPreallocPerEntity = 0;
 
 private:
