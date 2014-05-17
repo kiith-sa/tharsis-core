@@ -15,16 +15,16 @@ import tharsis.entity.resourcemanager;
 
 /// Contains data about an entity to spawn.
 ///
-/// The condition which triggers the spawn is represented by a
-/// TimedSpawnConditionMultiComponent, and may be represented by other
-/// spawn condition component types in future.
+/// Condition to trigger the spawn is represented by a TimedSpawnConditionMultiComponent
+/// and may be represented by more spawn condition component types in future.
+///
+/// See_Also: SpawnerProcess
 @("defaultsComponent")
 struct SpawnerMultiComponent
 {
     enum ComponentTypeID = maxBuiltinComponentTypes + 1;
 
-    /// It's unlikely that one entity would spawn more than 1024 different
-    /// entities.
+    /// It's unlikely that one entity would spawn more than 1024 different entities.
     enum maxComponentsPerEntity = 1024;
 
     /// Cheap enough and won't be exceeded in most cases.
@@ -36,26 +36,24 @@ struct SpawnerMultiComponent
     /// Resource handle to the prototype of the entity to spawn.
     ResourceHandle!EntityPrototypeResource spawn;
 
-    /// Resource handle to a prototype storing all components to apply on top
-    /// of spawn, overriding components of spawn.
+    /// Resource handle to a prototype storing all components to apply on top of those
+    /// in spawn, overriding or adding to components of spawn.
     ///
-    /// Used to modify entities directly in the spawner component source.
+    /// Used to modify spawnees directly in the spawner source.
     @(PropertyName("override"))
     ResourceHandle!InlineEntityPrototypeResource overrideComponents;
 
-    /// Spawn conditions match this to specify which SpawnerMultiComponent they
-    /// affect.
+    /// Spawn conditions match this to specify which SpawnerMultiComponent they affect.
     ushort spawnerID;
 }
 unittest
 {
-
     import tharsis.defaults.yamlsource;
     import tharsis.entity.componenttypemanager;
-    auto compTypeMgr =
-        new ComponentTypeManager!YAMLSource(YAMLSource.Loader());
+    auto compTypeMgr = new ComponentTypeManager!YAMLSource(YAMLSource.Loader());
     compTypeMgr.registerComponentTypes!SpawnerMultiComponent();
 }
+
 
 /// Triggers a spawn after specified time.
 ///
@@ -81,8 +79,8 @@ struct TimedSpawnConditionMultiComponent
     float time;
     /// The time left until the condition is triggered.
     ///
-    /// Can be set from the start to a different value to force the condition to
-    /// be triggered earlier.
+    /// Can be set from the start to a different value to force the condition to be
+    /// triggered earlier.
     float timeLeft;
     /// If true, spawns periodically, not just once.
     bool periodic;
