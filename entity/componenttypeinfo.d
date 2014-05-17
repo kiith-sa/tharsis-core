@@ -158,6 +158,26 @@ public:
     }
 }
 
+/// An immutable equivalent of RawComponent.
+///
+/// Must be a separate type to avoid construction issues.
+///
+/// See_Also: RawComponent
+struct ImmutableRawComponent
+{
+public:
+    /// The RawComponent itself.
+    immutable(RawComponent) self_;
+    alias self_ this;
+
+    /// Construct an ImmutableRawComponent with specified type and data.
+    this(ushort typeID, immutable(ubyte)[] componentData) @safe pure nothrow
+    {
+        self_ = immutable(RawComponent)(typeID, componentData);
+    }
+}
+
+
 /// Type information about a component type property (data member).
 struct ComponentPropertyInfo
 {
