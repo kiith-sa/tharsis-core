@@ -361,14 +361,14 @@ public:
                 const endDefaults =
                     maxBuiltinComponentTypes + maxDefaultsComponentTypes;
                 assert(id >= maxBuiltinComponentTypes && id <= endDefaults,
-                    "A 'defaults' component type with ID out of range.");
+                       "A 'defaults' component type with ID out of range.");
             }
             else
             {
                 assert(!builtinRegistered_ || id >= maxReservedComponentTypes,
-                    "Registering a component type with ID reserved for builtin "
-                    "or 'defaults' component types. Use enum ComponentTypeID = "
-                    "userComponentTypeID!YOUR_ID.");
+                       "Registering a component type with ID reserved for builtin "
+                       "or 'defaults' component types. Use enum ComponentTypeID = "
+                       "userComponentTypeID!YOUR_ID.");
             }
             assert(componentTypeInfo_[id].isNull,
                 "There already is a registered component type with this ID");
