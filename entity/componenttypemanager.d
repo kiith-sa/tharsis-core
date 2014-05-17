@@ -39,19 +39,19 @@ protected:
 public:
     /// Lock the component type manager.
     ///
-    void lock() @safe pure nothrow
     /// After this is called, no more types can be registered. Must be called before
     /// passing this manager to an EntityManager.
+    final void lock() @safe pure nothrow
     {
         assert(!locked_, "Trying to lock a component type manager twice.");
         locked_ = true;
     }
 
     /// Is this manager locked?
-    @property bool locked() @safe const pure nothrow {return locked_;}
+    final @property bool locked() @safe const pure nothrow {return locked_;}
 
     /// Are all specified component types registered?
-    bool areTypesRegistered(Types ...)() @safe nothrow const
+    final bool areTypesRegistered(Types ...)() @safe nothrow const
     {
         foreach(Type; Types)
         {
@@ -72,7 +72,7 @@ public:
     /// Useful when preallocating memory for entity prototypes.
     ///
     /// Can only be called after this manager is locked.
-    size_t maxEntityBytes() @safe pure nothrow const
+    final size_t maxEntityBytes() @safe pure nothrow const
     {
         assert(locked, "Can't determine max bytes per entity before locking "
                        "ComponentTypeManager");
@@ -88,10 +88,10 @@ public:
     /// Get the maximum number of components (of all types) in a single entity.
     ///
     /// Can only be called after this manager is locked.
-    size_t maxEntityComponents() @safe pure nothrow const
+    final size_t maxEntityComponents() @safe pure nothrow const
     {
-        assert(locked, "Can't determine max components per entity before "
-                       "locking ComponentTypeManager");
+        assert(locked, "Can't determine max components per entity before locking "
+                       "ComponentTypeManager");
         size_t result;
         foreach(ref componentType; componentTypeInfo_)
         {
