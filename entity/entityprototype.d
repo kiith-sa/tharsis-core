@@ -54,6 +54,9 @@ private:
     /// the order of the (now sorted) components_ (not in reverse order), and
     /// moved to the end of storage_. It may start right after components_ or
     /// after an alignment gap.
+    ///
+    /// For MultiComponents, one ID is stored for each component even if they
+    /// have the same type.
     ushort[] componentTypeIDs_;
 
     /// Part of storage_ used to store components. Starts at the beginning of
@@ -386,23 +389,20 @@ EntityPrototype mergePrototypesOverride
 
     while(!baseRange.empty || !overRange.empty)
     {
-        // baseRange, overRange are sorted by component type. If
-        // baseRange.front.typeID is less, there's no component with that ID in
-        // overRange so use component/s from baseRange. Same for
-        // overRange.front.typeID and overRange. If the type IDs are equal,
-        // both baseRange and overRange have this component and over overrides
-        // base. If either is empty, we use the other one.
+        // baseRange, overRange are sorted by component type. If baseRange.front.typeID
+        // is less, there's no component with that ID in overRange so use component/s
+        // from baseRange. Same for overRange.front.typeID and overRange. If the type
+        // IDs are equal, both baseRange and overRange have this component and over
+        // overrides base. If either is empty, we use the other one.
 
         const bool useBase = overRange.empty ? true  // only baseRange has items
                            : baseRange.empty ? false // only overRange has items
                            : baseRange.front.typeID < overRange.front.typeID;
-        const typeID = useBase ? baseRange.front.typeID 
-                               : overRange.front.typeID;
+        const typeID = useBase ? baseRange.front.typeID : overRange.front.typeID;
 
-        // Copies components matching the current type to the result. Skips
-        // components of the same type in the ignored buffer. (Which one is used
-        // and which ignored depends on whether there's a component with this
-        // type in base and over - over overrides base.)
+        // Copies to result components of the current type. Skips components of this
+        // type in the ignored buffer. (Which is used, which ignored depends on whether
+        // there's a component of this type in base and over - over overrides base.)
         static void copyComponents
             (ref EntityPrototype result,
              ref const ComponentTypeInfo type,
@@ -411,8 +411,8 @@ EntityPrototype mergePrototypesOverride
         {
             const typeID = usedRange.front.typeID;
             const size   = type.size;
-            // Copy all components until we reach components of a different type
-            // or until usedIDs is empty.
+            // Copy all components until we reach components of a different type or
+            // until usedIDs is empty.
             while(!usedRange.empty && usedRange.front.typeID == typeID)
             {
                 ubyte[] target = result.allocateComponent(type);
