@@ -39,9 +39,9 @@ protected:
 public:
     /// Lock the component type manager.
     ///
-    /// After this is called, no more types can be registered.
-    /// Must be called before passing this manager to an EntityManager.
     void lock() @safe pure nothrow
+    /// After this is called, no more types can be registered. Must be called before
+    /// passing this manager to an EntityManager.
     {
         assert(!locked_, "Trying to lock a component type manager twice.");
         locked_ = true;
@@ -67,7 +67,7 @@ public:
         return true;
     }
 
-    /// Get the maximum size of all components in a single entity in bytes.
+    /// Get the maximum size of all components in any single entity in bytes.
     ///
     /// Useful when preallocating memory for entity prototypes.
     ///
@@ -102,8 +102,7 @@ public:
 
     /// Get type information about all registered components.
     ///
-    /// Returns a reference to a fixed-size array; if there are less than
-    /// maxComponentTypes!Policy registered component types, some values will
+    /// Returns a slice; component type IDs are indices to this slice. Some elements may
     /// be null (determine this using ComponentTypeInfo.isNull).
     ///
     /// Can only be called after this manager is locked.
@@ -122,16 +121,13 @@ enum maxSourceBytes = 512;
 
 /// Manages component type information and loading.
 ///
-/// Before creating an EntityManager, all component types must be registered
-/// with a ComponentTypeManager that will be passed to the constructor of an
-/// EntityManager.
+/// Before creating an EntityManager, all component types must be registered with a
+/// ComponentTypeManager that will be passed to the constructor of an EntityManager.
 ///
-/// Params: Source = A struct type to read components from. This may be for
-///                  example a wrapped YAML or XML node, or an INI section.
-///                  See below.
-///         Policy = Specifies compile-time parameters such as the maximum
-///                  number of component types.
-///                  See tharsis.entity.entitypolicy.d for the default
+/// Params: Source = A struct type to read components from. This may be for example a
+///                  wrapped YAML or XML node, or an INI section. See below.
+///         Policy = Specifies compile-time parameters such as the maximum number of
+///                  component types. See tharsis.entity.entitypolicy.d for the default
 ///                  Policy type.
 ///
 /// Example:
@@ -155,20 +151,19 @@ enum maxSourceBytes = 512;
 ///
 /// Limitations of a Source struct:
 ///
-/// sizeof of a Source struct can be at most maxSourceBytes (currently set to
-/// 512). A Source struct must be copyable; if it includes nested data
-/// (such as JSON/XML/YAML subnodes), copying a Source must either also copy
-/// this nested data or share it by using e.g. reference counting or garbage
-/// collector managed storage.
+/// sizeof of a Source struct can be at most maxSourceBytes (currently set to 512).
+/// A Source struct must be copyable; if it includes nested data (such as JSON/XML/YAML
+/// subnodes), copying a Source must either also copy this nested data or share it by
+/// using e.g. reference counting or garbage collector managed storage.
 ///
 /// Skeleton of a Source struct:
 /// --------------------
 /// // Note that some manual casting might be required to ensure that methods of
 /// // a Source struct have required attributes (such as pure, nothrow, etc.).
 /// //
-/// // This can be done safely by ensuring that the method indeed obeys the
-/// // attribute (e.g. ensuring that all exceptions are caught) and manually
-/// // casting any functions that don't obey the attribute.
+/// // This can be done safely by ensuring that the method indeed obeys the attribute
+/// // (e.g. ensuring that all exceptions are caught) and manually casting any functions
+/// // that don't obey the attribute.
 /// //
 /// // For example:
 /// //
@@ -183,17 +178,14 @@ enum maxSourceBytes = 512;
 ///         /// Load a Source with specified name (e.g. entity file name).
 ///         ///
 ///         ///
-///         /// Params: name      = Name to identify the source by
-///         ///                     (e.g. a file name).
+///         /// Params: name      = Name to identify the source by (e.g. a file name).
 ///         ///         logErrors = If true, errors generated during the use of
-///         ///                     the Source (such as loading errors,
-///         ///                     conversion errors etc.) should be logged,
-///         ///                     accessible through the errorLog() method of
-///         ///                     Source.
+///         ///                     the Source (such as loading errors, conversion
+///         ///                     errors etc.) should be logged, accessible through
+///         ///                     the errorLog() method of Source.
 ///         ///
-///         /// There is no requirement to load from actual files;
-///         /// this may be implemented by loading from some archive file or
-///         /// from memory.
+///         /// There is no requirement to load from actual files; this may be
+///         /// implemented by loading from some archive file or from memory.
 ///         TestSource loadSource(string name, bool logErrors) @safe nothrow
 ///         {
 ///             assert(false);
@@ -202,8 +194,8 @@ enum maxSourceBytes = 512;
 ///
 ///     /// If true, the Source is 'null' and doesn't store anything.
 ///     ///
-///     /// A null Source may be returned when loading a Source fails, e.g.
-///     /// from Loader.loadSource().
+///     /// A null Source may be returned when loading a Source fails, e.g. from 
+///     /// Loader.loadSource().
 ///     bool isNull() @safe nothrow const
 ///     {
 ///         assert(false);
@@ -257,13 +249,12 @@ enum maxSourceBytes = 512;
 // TODO once default values are supported, mention how that is handled here.
 /// Format of components in a Source struct:
 ///
-/// A Source to load components of an entity from should be a mapping with keys
-/// corresponding to lower-case names of component types without the "Component"
-/// suffix. The values corresponding to these keys should be mappings containing
-/// the component's properties.
+/// A Source to load an entity from must be a mapping where keys are lower-case names of
+/// component types without the "Component" suffix. The values corresponding to these
+/// keys must be mappings containing the component's properties.
 ///
-/// E.g. to load an int property "awesomeness" of an ExampleComponent,
-/// Tharsis will use the Source API roughly in the following way:
+/// E.g. to load an int property "awesomeness" of an ExampleComponent, Tharsis will use
+/// the Source API roughly in the following way:
 ///
 /// --------------------
 /// bool getAwesomeness(ref const(Source) components, out int awesomeness)
@@ -308,8 +299,7 @@ enum maxSourceBytes = 512;
 ///     /// component type to preallocate.
 ///     enum minComponentPrealloc = 1024;
 ///
-///     /// The multiplier to increase allocated size during an emergency
-///     /// reallocation.
+///     /// The multiplier to increase allocated size during an emergency reallocation.
 ///     enum reallocMult = 2.5;
 ///
 ///     /// Minimum relative size of component buffers (in components) for every
@@ -318,9 +308,8 @@ enum maxSourceBytes = 512;
 ///
 ///     /// Data type used internally for component counts in an entity.
 ///     ///
-///     /// The maximum number of components of one type in an entity is
-///     /// ComponentCount.max. Using data types such as uint or ulong will
-///     /// increase memory usage.
+///     /// The max number of components of one type in an entity is ComponentCount.max.
+///     /// Using data types such as uint or ulong will increase memory usage.
 ///     alias ushort ComponentCount;
 /// }
 /// --------------------
@@ -344,14 +333,13 @@ public:
 
     /// Register specified component types.
     ///
-    /// Every component type used any Process registered with the EntityManager
-    /// must be registered here. The ComponentTypeID enum member of the
-    /// component type should be set by the userComponentTypeID template with an
-    /// integer parameter with value of at least 0 and at most
-    /// Policy.maxUserComponentTypes (64 by default).
+    /// Every component type used any Process registered with the EntityManager must be
+    /// registered here. The ComponentTypeID enum member of the component type should be
+    /// set by the userComponentTypeID template with an integer parameter with value of
+    /// at least 0 and at most Policy.maxUserComponentTypes (64 by default).
     ///
-    /// XXX this should link to an .rst article describing the Component concept
-    /// and showing example component structs.
+    /// TODO this should link to an .rst article describing the Component concept and
+    /// showing example component structs.
     ///
     /// Example:
     /// --------------------
