@@ -43,8 +43,8 @@ private:
 
     /// Entity prototypes to spawn during the next game update.
     ///
-    /// Cleared at the beginning of the next game update (after entity manager
-    /// adds the new entities).
+    /// Cleared at the beginning of the next game update (after entity manager adds the
+    /// new entities).
     PagedArray!EntityPrototype toSpawn_;
 
     /// Memory used by prototypes in toSpawn_ to store components.
@@ -53,8 +53,8 @@ private:
     /// Type info about all registered component types.
     const(ComponentTypeInfo)[] componentTypes_;
 
-    /// The number of bytes to reserve when creating an entity prototype to
-    /// ensure any prototype can fit.
+    /// Number of bytes to reserve when creating a prototype to ensure any prototype can
+    /// fit.
     size_t maxPrototypeBytes_;
 
 public:
@@ -70,18 +70,17 @@ public:
     ///
     /// Params: addEntity              = Delegate to add an entity.
     ///         prototypeManager       = Manages entity prototype resources.
-    ///         inlinePrototypeManager = Manages entity prototype resources
-    ///                                  defined inline in an entity.
-    ///         componentTypeManager   = The component type manager where all
-    ///                                  used component types are registered.
+    ///         inlinePrototypeManager = Manages entity prototype resources defined
+    ///                                  inline in an entity.
+    ///         componentTypeManager   = The component type manager where all used
+    ///                                  component types are registered.
     ///
     /// Examples:
     /// --------------------
     /// // EntityManager entityManager
     /// // ResourceManager!EntityPrototypeResource prototypeManager
     /// // ComponentTypeManager componentTypeManager
-    /// auto spawner = new SpawnerProcess(&entityManager.addEntity,
-    ///                                   prototypeManager,
+    /// auto spawner = new SpawnerProcess(&entityManager.addEntity, prototypeManager,
     ///                                   componentTypeManager);
     /// --------------------
     this(Policy)
@@ -95,32 +94,29 @@ public:
         prototypeManager_       = prototypeManager;
         inlinePrototypeManager_ = inlinePrototypeManager;
         componentTypes_         = componentTypeManager.componentTypeInfo[];
-        maxPrototypeBytes_
-            = EntityPrototype.maxPrototypeBytes(componentTypeManager);
+        maxPrototypeBytes_ = EntityPrototype.maxPrototypeBytes(componentTypeManager);
     }
 
     /// Called at the beginning of a game update before processing any entities.
     void preProcess()
     {
-        // Delete prototypes from the previous game update; they should be
-        // spawned by now.
+        // Delete prototypes from the previous game update; they are be spawned by now.
         destroy(toSpawn_);
         toSpawnData_.clear();
     }
 
-    /// Reads spawners and spawn conditions. It spawns new 
-    /// entities, and doesn't write any future components.
     void process(immutable SpawnerMultiComponent[] spawners,
+    /// Reads spawners and spawn conditions. Spawns new entities, and doesn't write any
+    /// future components.
                  immutable TimedSpawnConditionMultiComponent[] spawnConditions)
     {
-        // Spawner components are kept even if any condition that may spawn
-        // them is removed (i.e. even if no condition matches the spawnerID of
-        // a spawner component). This allows the spawner component to be
-        // triggered if a new condition matching its ID is added.
+        // Spawner components are kept even if all conditions that may spawn them are
+        // removed (i.e. if no condition matches the spawnerID of a spawner component).
+        // This allows the spawner component to be triggered if a new condition matching
+        // its ID is added.
         outer: foreach(ref spawner; spawners)
         {
-            // Find spawn conditions matching current spawner component, and
-            // spawn if found.
+            // Find conditions matching this spawner component, and spawn if found.
             foreach(ref condition; spawnConditions)
             {
                 // Spawn condition must match the spawner component.
@@ -129,12 +125,11 @@ public:
                 const baseHandle = spawner.spawn;
                 const overHandle = spawner.overrideComponents;
 
-                // If we determine that the spawner is not fully loaded yet
-                // (any of its resources not in the Loaded state), we ignore
-                // the spawner completely and move on to the next one.
+                // If the spawner is not fully loaded yet (any of its resources not in
+                // the Loaded state), ignore it completely and move on to the next one.
                 //
-                // This means we miss spawns when a spawner is not loaded.
-                // We may add 'delayed' spawns to compensate for this in future.
+                // This means we miss spawns when a spawner is not loaded. We may add
+                // 'delayed' spawns to compensate for this in future.
                 if(!spawnerReady(baseHandle, overHandle)) { continue outer; }
 
                 // We've not reached the time to spawn yet.
@@ -152,16 +147,14 @@ private:
     ///
     /// Params: baseHandle = Handle to the base prototype of the entity to spawn
     ///                      (e.g. a unit type).
-    ///         overHandle = Handle to a prototype storing components added to
-    ///                      or overriding those in base (e.g. unit position
-    ///                      or other components that may vary between entities
-    ///                      of same 'type').
+    ///         overHandle = Handle to a prototype storing components added to or
+    ///                      overriding those in base (e.g. unit position or other
+    ///                      components that may vary between entities of same 'type').
     ///
-    /// Returns: True if the resources are loaded and can be used to spawn 
-    ///          an entity. False otherwise.
-    bool spawnerReady 
-        (const ResourceHandle!EntityPrototypeResource baseHandle,
-         const ResourceHandle!InlineEntityPrototypeResource overHandle)
+    /// Returns: True if the resources are loaded and can be used to spawn an entity.
+    ///          False otherwise.
+    bool spawnerReady(const ResourceHandle!EntityPrototypeResource baseHandle,
+                      const ResourceHandle!InlineEntityPrototypeResource overHandle)
     {
         const baseState  = prototypeManager_.state(baseHandle);
         const overState  = inlinePrototypeManager_.state(overHandle);
@@ -174,28 +167,25 @@ private:
             inlinePrototypeManager_.requestLoad(overHandle);
         }
 
-        return baseState == ResourceState.Loaded &&
-               overState == ResourceState.Loaded;
+        return baseState == ResourceState.Loaded && overState == ResourceState.Loaded;
     }
 
-    /// Spawn a new entity created by applying an overriding prototype to a
-    /// base prototype.
+    /// Spawn a new entity created by applying an overriding prototype to a base
+    /// prototype.
     ///
     /// Params: baseHandle = Handle to the base prototype of the entity to spawn
     ///                      (e.g. a unit type).
-    ///         overHandle = Handle to a prototype storing components added to
-    ///                      or overriding those in base (e.g. unit position
-    ///                      or other components that may vary between entities
-    ///                      of same 'type').
     void spawn(const ResourceHandle!EntityPrototypeResource baseHandle,
+    ///         overHandle = Handle to a prototype storing components added to or
+    ///                      overriding those in base (e.g. unit position or other
+    ///                      components that may vary between entities of same 'type').
                const ResourceHandle!InlineEntityPrototypeResource overHandle)
     {
         // Entity prototype serving as the base of the new entity.
         auto base = prototypeManager_.resource(baseHandle).prototype;
-        // Entity prototype storing components applied to (overriding) base to
-        // create the new entity.
+        // Entity prototype storing components applied to (overriding) base to create
+        // the new entity.
         auto over = inlinePrototypeManager_.resource(overHandle).prototype;
-
         // Allocate memory for the new component.
         auto memory = toSpawnData_.getBytes(maxPrototypeBytes_);
         // Create the prototype of the entity to spawn.
@@ -217,8 +207,7 @@ private:
 
 /// Updates timed spawn condtitions.
 ///
-/// Must be registered with the EntityManager for TimedSpawnConditionComponents
-/// to work.
+/// Must be registered with the EntityManager for TimedSpawnConditionComponents to work.
 class TimedSpawnConditionProcess
 {
 private:
@@ -231,8 +220,8 @@ public:
 
     alias TimedSpawnConditionMultiComponent FutureComponent;
 
-    /// Construct a TimedSpawnConditionProcess using specified delegate to get 
-    /// the time length of the last game update in seconds.
+    /// Construct a TimedSpawnConditionProcess using specified delegate to get the time
+    /// length of the last game update in seconds.
     this(GetUpdateLength getUpdateLength) @safe pure nothrow
     {
         getUpdateLength_ = getUpdateLength;
@@ -249,10 +238,10 @@ public:
             *future = past;
             if(past.timeLeft <= 0.0)
             {
-                // timeLeft < 0 triggers a spawn in SpawnerProcess (if there is 
-                // a SpawnerComponents to which this condition applies). After a 
-                // spawn, if the condition is not periodic, we can forget the
-                // spawn condition component.
+                // timeLeft < 0 triggers a spawn in SpawnerProcess (if there is a 
+                // SpawnerComponent to which this condition applies). After a spawn, if
+                // the condition is not periodic, we forget the spawn condition
+                // component.
                 if(!past.periodic) { continue; }
 
                 // Start the next period.
