@@ -555,7 +555,10 @@ private:
     void registerResourceManager(Manager)(Manager manager) @safe pure nothrow
         if(is(Manager : AbstractResourceManager))
     {
-        //XXX assert no other manager manages this type
+        assert(!resourceManagers_.canFind!(m => m.managedResourceType is
+                                                manager.managedResourceType),
+               "Can't register resource manager %s: a different manager already "
+               "manages the same resource type");
         resourceManagers_ ~= manager;
     }
 
