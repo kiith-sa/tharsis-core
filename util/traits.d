@@ -7,6 +7,8 @@
 module tharsis.util.traits;
 
 
+import std.algorithm;
+import std.array;
 import std.string;
 import std.traits;
 import std.typetuple;

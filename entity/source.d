@@ -7,12 +7,8 @@
 module tharsis.entity.source;
 
 
-import std.algorithm;
-import std.array;
 import std.string;
 import std.traits;
-
-import tharsis.util.traits;
 
 
 /// Validate a Source at compile-time.
@@ -21,6 +17,7 @@ import tharsis.util.traits;
 mixin template validateSource(Source)
 {
     import std.array;
+    import tharsis.util.traits;
     enum source = Source.stringof;
 
     static assert(__traits(hasMember, Source, "Loader"),
