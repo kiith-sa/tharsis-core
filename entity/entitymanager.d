@@ -169,8 +169,7 @@ public:
         auto entitiesToAdd = cast(EntitiesToAdd)&entitiesToAdd_;
         synchronized(entitiesToAdd)
         {
-            if(entitiesToAdd.prototypes.length ==
-               entitiesToAdd.prototypes.capacity)
+            if(entitiesToAdd.prototypes.length == entitiesToAdd.prototypes.capacity)
             {
                 return EntityID.init;
             }
@@ -209,12 +208,11 @@ public:
         // any dead entities from past were not copied to future (any new entities were
         // copied to both).
         assert(past_.entities.length >= future_.entities.length,
-               "Past entities from the previous frame shorter than future "
-               "entities from the previous frame. Past entities may be longer "
-               "or equal, never shorter than the future entities. The reason "
-               "is that any dead entities from past are not copied to future "
-               "(newly added entities are copied to both, so they don't affect "
-               "relative lengths");
+               "Past entities from the previous frame shorter than future entities "
+               "from the previous frame. Past entities may be longer or equal, never "
+               "shorter than the future entities. The reason is that any dead "
+               "entities from past are not copied to future (newly added entities are "
+               "copied to both, so they don't affect relative lengths");
 
         // Get the past & future component/entity buffers for the new frame.
         GameState* newFuture = cast(GameState*)past_;
@@ -276,8 +274,7 @@ package:
     ///                      of the resource type.
     ///
     /// Returns: A raw handle to the resource.
-    RawResourceHandle rawResourceHandle(TypeInfo type, void* descriptor)
-        nothrow
+    RawResourceHandle rawResourceHandle(TypeInfo type, void* descriptor) nothrow
     {
         foreach(manager; resourceManagers_)
         {
@@ -336,9 +333,8 @@ private:
         ///                    this ComponentTypeState.
         void enable(ref const(ComponentTypeInfo) typeInfo) @safe pure nothrow
         {
-            assert(!enabled_, "Trying to enable ComponentTypeState that's "
-                              "already enabled. Maybe two component types have "
-                              "the same ComponentTypeID?");
+            assert(!enabled_, "Trying to enable ComponentTypeState that's already "
+                              "enabled. Maybe 2 component types use the same type ID?");
 
             buffer.enable(typeInfo.id, typeInfo.size);
             enabled_ = true;
@@ -476,16 +472,15 @@ private:
         // All overloads of the process() method in the process.
         alias overloads     = processOverloads!P;
 
-        writef("Registering process %s: %s overloads reading past components "
-               "%s ", P.stringof,
-               overloads.length, componentIDs!(AllPastComponentTypes!P));
+        writef("Registering process %s: %s overloads reading past components %s ", 
+               P.stringof, overloads.length, componentIDs!(AllPastComponentTypes!P));
         static if(!noFuture)
         {
             assert(!writtenComponentTypes_[P.FutureComponent.ComponentTypeID],
                    "Can't register 2 processes with one future component type");
             assert(componentTypeManager_.areTypesRegistered!(P.FutureComponent),
-                   "Registering a process with unregistered future component "
-                   "type " ~ P.FutureComponent.stringof);
+                   "Registering a process with unregistered future component type " ~
+                   P.FutureComponent.stringof);
 
             // This future component is now taken; no other process can write to it.
             writtenComponentTypes_[P.FutureComponent.ComponentTypeID] = true;
@@ -530,8 +525,7 @@ private:
                 mixin(prioritizeProcessOverloads!P.map!(p => q{
                     if(entityRange.matchComponents!(%s))
                     {
-                        self.callProcessMethod!(overloads[%s])
-                                               (process, entityRange);
+                        self.callProcessMethod!(overloads[%s])(process, entityRange);
                     }
                 }.format(p[0], p[1])).join("else ").outdent);
             }
@@ -562,8 +556,7 @@ private:
     /// Params: F           = The process() method to call.
     ///         process     = Process with the process() method.
     ///         entityRange = Entity range to get the components to pass from.
-    static void callProcessMethod
-        (alias F, P, ERange)(P process, ref ERange entityRange)
+    static void callProcessMethod(alias F, P, ERange)(P process, ref ERange entityRange)
     {
         // True if the Process does not write to any future component. Usually these
         // processes read past components and produce some kind of output.
@@ -595,8 +588,7 @@ private:
                 {
                     static if(isMutable!(Param.Component))
                     {
-                        assert(futureString !is null,
-                               "future component not specified");
+                        assert(futureString !is null, "future component not specified");
                         parts ~= futureString;
                     }
                     else
@@ -633,9 +625,9 @@ private:
             // For some reason, this is compiled in release mode; we use 'debug' to
             // explicitly make it debug-only.
             debug assert(old.ptr == future.ptr && old.length >= future.length,
-                         "Process writing a future MultiComponent either "
-                         "changed the passed future MultiComponent slice to "
-                         "point to another location, or enlarged it");
+                         "Process writing a future MultiComponent either changed the "
+                         "passed future MultiComponent slice to point to another "
+                         "location, or enlarged it");
 
             // The number of components written.
             const componentCount = cast(ComponentCount)future.length;
@@ -683,21 +675,19 @@ private:
                 // If no such builtin component type exists, ignore.
                 if(info.isNull) { continue; }
                 assert(writtenComponentTypes_[id],
-                       "No process writing to builtin component type %s: "
-                       "please register a process writing this component type "
-                       "(see tharsis.defaults.copyprocess for a "
-                       "placeholder process).".format(info.name));
+                       "No process writing builtin component type %s: please register "
+                       "a process writing this component type (see "
+                       "tharsis.defaults.copyprocess for a placeholder process)."
+                       .format(info.name));
             }
             foreach(ref info; componentTypeInfo)
             {
-                if(writtenComponentTypes_[info.id] ||
-                   info.id == nullComponentTypeID)
+                if(writtenComponentTypes_[info.id] || info.id == nullComponentTypeID)
                 {
                     continue;
                 }
-                writefln("WARNING: No process writing to component type %s: "
-                         "all components of this type will disappear after the "
-                         "first frame.", info.name);
+                writefln("WARNING: No process writing component type %s: components of "
+                        "this type will disappear after the first update.", info.name);
             }
         }}
         (cast(void function(EntityManager) nothrow)&implementation)(this);
@@ -721,17 +711,16 @@ private:
     ///                  here.
     ///
     /// Returns: The number of surviving entities written to futureEntities.
-    static size_t copyLiveEntitiesToFuture
-        (const(GameState)* past, GameState* future) @trusted pure nothrow
+    static size_t copyLiveEntitiesToFuture(const(GameState)* past, GameState* future)
+        @trusted pure nothrow
     {
         assert(past.entities.length == future.entities.length,
                "Past/future entity counts do not match");
 
         // Get the past LifeComponents.
-        enum lifeID = LifeComponent.ComponentTypeID;
-        auto rawLifeComponents =
-            past.components[lifeID].buffer.committedComponentSpace;
-        auto lifeComponents = cast(immutable(LifeComponent)[])rawLifeComponents;
+        enum lifeID            = LifeComponent.ComponentTypeID;
+        auto rawLifeComponents = past.components[lifeID].buffer.committedComponentSpace;
+        auto lifeComponents    = cast(immutable(LifeComponent)[])rawLifeComponents;
 
         // Copy the alive entities to the future and count them.
         size_t aliveEntities = 0;
@@ -750,15 +739,14 @@ private:
     /// update.
     ///
     /// Params: state = Game state (past or future) to preallocate space for.
-    void preallocateComponents(GameState* state)
-        @safe nothrow
+    void preallocateComponents(GameState* state) @safe nothrow
     {
         // Preallocate space for components based on hints in the Policy and component
         // type info.
 
         // Minimums common for all component types.
-        const size_t basePreallocPerEntity = cast(size_t)
-           (Policy.minComponentPerEntityPrealloc * state.entities.length);
+        const size_t basePreallocPerEntity =
+            cast(size_t)(Policy.minComponentPerEntityPrealloc * state.entities.length);
         enum baseMinPrealloc = Policy.minComponentPrealloc;
 
         foreach(ref info; componentTypeInfo) if(!info.isNull)
@@ -810,8 +798,7 @@ private:
             ComponentCount[maxComponentTypes!Policy] componentCounts;
 
             // Copy components from the prototype to component buffers.
-            foreach(const rawComponent;
-                    prototype.constComponentRange(compTypeInfo))
+            foreach(const rawComponent; prototype.constComponentRange(compTypeInfo))
             {
                 // Copies and commits the component.
                 target[rawComponent.typeID].buffer.addComponent(rawComponent);
@@ -870,7 +857,7 @@ unittest
             assert(false);
         }
 
-        string errorLog() @safe pure nothrow const 
+        string errorLog() @safe pure nothrow const
         {
             assert(false);
         }
