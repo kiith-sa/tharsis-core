@@ -177,7 +177,8 @@ public:
     /// Access descriptors of all resources that failed to load.
     ///
     /// Used for debugging.
-    Foreachable!(const(Descriptor)) loadFailedDescriptors();
+    Foreachable!(const(Descriptor)) loadFailedDescriptors() 
+        @safe pure nothrow const;
 }
 
 

@@ -397,14 +397,16 @@ public:
     }
 
     override Foreachable!(const(Descriptor)) loadFailedDescriptors()
+        @safe pure nothrow const
     {
         class FailedDescriptors: Foreachable!(const(Descriptor))
         {
         private:
-            BasePrototypeManager prototypeManager_;
+            const(BasePrototypeManager) prototypeManager_;
 
         public:
-            this(BasePrototypeManager prototypeManager)
+            this(const(BasePrototypeManager) prototypeManager)
+                @safe pure nothrow
             {
                 prototypeManager_ = prototypeManager;
             }
