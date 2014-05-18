@@ -531,7 +531,6 @@ private:
         // entity has components A and B, the latter overload is called.
         static void runProcess(EntityManager self, P process)
         {
-            //XXX DOC in some description of the Process concept
             // If the process has a 'preProcess' method, call it before
             // processing any entities.
             static if(hasMember!(P, "preProcess")) { process.preProcess(); }
