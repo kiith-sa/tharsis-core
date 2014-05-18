@@ -31,25 +31,21 @@ package enum ushort maxBuiltinComponentTypes = 8;
 /// Maximum possible number of component types in the 'defaults' package.
 package enum ushort maxDefaultsComponentTypes = 24;
 
-/// The number of component type IDs reserved for tharsis builtins and the
-/// defaults package.
+/// Number of component type IDs reserved for Tharsis builtins and the defaults package.
 ///
-/// Component type IDs of user-defined should use userComponentTypeID to avoid
-/// collisions with builtin components.
+/// Component type IDs of user-defined components should use userComponentTypeID to
+/// avoid collisions with builtin components.
 enum ushort maxReservedComponentTypes =
     maxBuiltinComponentTypes + maxDefaultsComponentTypes;
 
 /// Generate a component type ID for a user-defined component type.
 ///
-/// Params: base = The base component type ID specified by the user. This must
-///                be different for every user-defined component type and must
-///                be less that the maxUserComponentTypes enum in the Policy
-///                parameter of the EntityManager; by default, this is 64.
-template userComponentTypeID(ushort base)
-{
-    enum userComponentTypeID =
-        maxBuiltinComponentTypes + maxDefaultsComponentTypes + base;
-}
+/// Params: base = The base component type ID specified by the user. Must be different
+///                for every user-defined component type and must be less than the
+///                maxUserComponentTypes enum in the Policy parameter of the
+///                EntityManager; by default, this is 64.
+enum userComponentTypeID(ushort base) = maxBuiltinComponentTypes +
+                                        maxDefaultsComponentTypes + base;
 
 /// A 'null' component type ID, e.g. to specify a unused component buffer.
 enum ushort nullComponentTypeID = 0;
@@ -80,10 +76,7 @@ auto maxComponentsPerEntity(ComponentType)() @safe pure nothrow
 }
 
 /// Determine if a component type is a MultiComponent type.
-template isMultiComponent(Component)
-{
-    enum isMultiComponent = Unqual!Component.stringof.endsWith("MultiComponent");
-}
+enum isMultiComponent(Component) = Unqual!Component.stringof.endsWith("MultiComponent");
 
 /// Validate a component type at compile-time.
 mixin template validateComponent(Component)
@@ -97,25 +90,23 @@ mixin template validateComponent(Component)
     static assert(BaseType.stringof.endsWith("Component"),
                   "Component type name does not end with 'Component'");
     static assert(__traits(hasMember, Component, "ComponentTypeID"),
-                  "Component type without a ComponentTypeID: add 'enum "
-                  "ComponentTypeID = <number>'");
+                  "Component type without a ComponentTypeID: add 'enum ComponentTypeID "
+                  "= <number>'");
     static assert(!isMultiComponent!Component ||
                   __traits(hasMember, Component, "maxComponentsPerEntity"),
-                  "MultiComponent types must specify maximum component count per "
-                  "entity: add 'enum maxComponentsPerEntity = <number>'");
+                  "MultiComponent types must specify max component count per entity: "
+                  "add 'enum maxComponentsPerEntity = <number>'");
     static assert(!std.traits.hasElaborateDestructor!Component,
-                  "Component type with an elaborate destructor: Neither a "
-                  "component type nor any of its data members may define a "
-                  "destructor.");
+                  "Component type with an elaborate destructor: Neither a component "
+                  "type nor any of its data members may define a destructor.");
     //TODO annotation allowing the user to force a pointer/slice/class reference
     //     data member (e.g. to data allocated by a process).
     static assert(!std.traits.hasIndirections!Component,
-                  "Component type with indirections (e.g. a pointer, slice or "
-                  "class reference data member. Components are not allowed to own "
-                  "any dynamically allocated memory; MultiComponents can be used "
-                  "to emulate arrays. Pointers or slices to externally allocated "
-                  "data, or class references may be allowed in future with a "
-                  "special annotation, but this is not implemented yet");
+                  "Component type with indirections (e.g. a pointer, slice or class "
+                  "data member) Components may not own dynamically allocated memory; "
+                  "MultiComponents can be used to emulate arrays. Pointers or slices "
+                  "to externally allocated data, or class references may be allowed in "
+                  "future with a special annotation, but this is not implemented yet");
 }
 
 /// Used as an user-defined attribute for component properties to override the
@@ -128,7 +119,7 @@ struct PropertyName
 
 /// Stores a component of any component type as raw data.
 ///
-/// This is a dumb struct. The code that constructs a RawComponent must make 
+/// This is a dumb struct. The code that constructs a RawComponent must make
 /// sure the type and data used actually makes sense (also e.g. that data size
 /// matches the type).
 struct RawComponent
@@ -206,7 +197,7 @@ private:
     ///                           no errors, this is not touched.
     ///
     /// Returns: true if the property was successfully loaded, false otherwise.
-    alias LoadProperty = 
+    alias LoadProperty =
         bool function(ubyte[], void*, GetResourceHandle, ref string) nothrow;
 
     /// A function type to add the value of this property in right to the value in left.
@@ -237,7 +228,7 @@ public:
     /// For example, @("relative") .
     /// Processes can access propeties with a specific custom attribute using the
     /// properties() method of ComponentTypeInfo. This is used e.g. in
-    /// tharsis.defaults.processes.SpawnerProcess to implement relative properties 
+    /// tharsis.defaults.processes.SpawnerProcess to implement relative properties
     /// where a property of a spawned entity is affected by the same property of
     /// the spawner.
     const(string)[] customAttributes() @safe pure nothrow const
@@ -249,7 +240,7 @@ public:
     /// the left component.
     ///
     /// If "property" is the property (data member) represented by this
-    /// ComponentPropertyInfo, this is an equivalent of 
+    /// ComponentPropertyInfo, this is an equivalent of
     /// "left.property += right.property". Both components must be of the component
     /// type that has this property.
     ///
@@ -275,7 +266,7 @@ private:
     ///                      YAMLSource.
     ///          Component = Component type the property belongs to.
     ///          fieldName = Name of the field (property) in the component type.
-    ///                      E.g. for PhysicsComponent.position this would be 
+    ///                      E.g. for PhysicsComponent.position this would be
     ///                      "position".
     this(Source, Component, string fieldName)() @safe nothrow
     {
@@ -500,7 +491,7 @@ public:
     ///
     /// The range element type is ComponentPropertyInfo.
     //
-    // Currently this works as a filter that iterates only over entities with 
+    // Currently this works as a filter that iterates only over entities with
     // a specified attribute.
     struct ComponentPropertyRange
     {
@@ -571,7 +562,7 @@ public:
     /// struct PhysicsComponent
     /// {
     ///     enum ushort ComponentTypeID = userComponentTypeID!2;
-    /// 
+    ///
     ///     float mass;
     ///     @("relative") float x;
     ///     @("relative") float y;
@@ -596,7 +587,7 @@ public:
         //     which filters on-the-fly. To avoid issues between threads we can use a
         //     static buffer (static is per-thread and this is a template method so
         //     there'd be a separate buffer per attribute - but we'd need separate
-        //     entries for every component type. We may evebuild all these arrays at 
+        //     entries for every component type. We may evebuild all these arrays at
         //     startup since we know which attributes are being used at compile-time).
         return ComponentPropertyRange(properties_, attribute);
     }
