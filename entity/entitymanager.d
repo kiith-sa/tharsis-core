@@ -88,7 +88,6 @@ private:
     /// types.
     AbstractComponentTypeManager!Policy componentTypeManager_;
 
-
     /// A simple class wrapper over entities to add when the next frame starts.
     ///
     /// A class is used to allow convenient use of synchronized and shared.
@@ -262,7 +261,6 @@ public:
         // Assign back to data members.
         future_ = newFuture;
         past_   = cast(immutable(GameState*))(newPast);
-
 
         // Run the processes (sequentially so far).
         foreach(process; processes_) { process.run(this); }
