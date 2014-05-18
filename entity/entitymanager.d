@@ -452,6 +452,7 @@ private:
         /// Stores components of all entities.
         ComponentState components;
 
+        //TODO entities should be manually allocated.
         /// All existing entities (either past or future).
         ///
         /// Ordered by entity ID. This is necessary to enable direct component
