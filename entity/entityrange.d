@@ -58,10 +58,10 @@ public:
     /// components of any entity. Should only be used when necessary.
     ///
     /// Params: Component = Type of component to access.
-    ///         Entity    = ID of the entity to access. Must be an ID of an
+    ///         entity    = ID of the entity to access. Must be an ID of an
     ///                     existing past entity.
     ///
-    /// Returns: Pointer to the past component, if the entity contains such a
+    /// Returns: Pointer to the past component if the entity contains such a
     ///          component; NULL otherwise.
     immutable(Component)* pastComponent(Component)(const EntityID entity)
         nothrow const
