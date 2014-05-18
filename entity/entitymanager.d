@@ -30,6 +30,7 @@ import tharsis.entity.processwrapper;
 import tharsis.entity.resourcemanager;
 import tharsis.util.bitmanip;
 import tharsis.util.mallocarray;
+import tharsis.util.noncopyable;
 
 
 /// The central, "World" object of Tharsis.
@@ -115,6 +116,8 @@ public:
     this(AbstractComponentTypeManager!Policy componentTypeManager)
     {
         componentTypeManager_ = componentTypeManager;
+        // Needed as of DMD 2.056, may be redundant later.
+        stateStorage_[] = GameState.init;
         foreach(ref info; componentTypeInfo)
         {
             if(info.isNull) { continue; }
@@ -295,6 +298,7 @@ private:
     /// frame begins, then added over the course of a frame.
     struct ComponentTypeState
     {
+        mixin(NonCopyable);
 
     public:
         /// Stores components as raw bytes.
@@ -317,6 +321,9 @@ private:
     private:
         /// True if this ComponentTypeState is used by an existing component type.
         bool enabled_;
+
+    public:
+        @disable this();
 
         /// Destroy the ComponentTypeState.
         ~this()
@@ -380,12 +387,16 @@ private:
     /// Also stores component counts of every component type for every entity.
     struct ComponentState
     {
+        mixin(NonCopyable);
+    public:
         /// Stores component/component count buffers for all component types at
         /// indices set by the ComponentTypeID members of the component types.
         ComponentTypeState[maxComponentTypes!Policy] self_;
 
         /// Access the component type state array directly.
         alias self_ this;
+
+        @disable this();
 
         /// Clear the buffers.
         ///
