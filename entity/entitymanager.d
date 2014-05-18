@@ -547,7 +547,7 @@ private:
         processes_ ~= new ProcessWrapper!(P, Policy)(process, &runProcess);
     }
 
-    //XXX need a "locked" state when no new stuff can be registered.
+    // TODO a "locked" EntityManager state when no new stuff can be registered.
     /// Register specified resource manager.
     ///
     /// Once registered, components may refer to resources managed by this resource
