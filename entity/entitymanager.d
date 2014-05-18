@@ -32,7 +32,6 @@ import tharsis.util.bitmanip;
 import tharsis.util.mallocarray;
 
 
-
 /// The central, "World" object of Tharsis.
 ///
 /// EntityManager fullfills multiple roles:
@@ -44,6 +43,8 @@ import tharsis.util.mallocarray;
 ///
 /// Params: Policy = A struct with enum members specifying various compile-time
 ///                  parameters and hints. See entitypolicy.d for an example.
+///
+/// TODO usage example once stable.
 class EntityManager(Policy)
 {
     mixin validateEntityPolicy!Policy;
