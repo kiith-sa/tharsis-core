@@ -62,3 +62,24 @@ template ConstTypes(ParameterTypes...)
 {
     alias ConstTypes = Filter!(templateNot!isMutable, ParameterTypes);
 }
+
+/// $(D true) if $(D func) is $(D nothrow).
+template isNothrow(alias func)
+    if(isCallable!func)
+{
+    enum isNothrow = (functionAttributes!func & FunctionAttribute.nothrow_) != 0;
+}
+
+/// $(D true) if $(D func) is $(D pure).
+template isPure(alias func)
+    if(isCallable!func)
+{
+    enum isPure = (functionAttributes!func & FunctionAttribute.pure_) != 0;
+}
+
+/// $(D true) if $(D func) returns a reference to a value.
+template returnsByRef(alias func)
+    if(isCallable!func)
+{
+    enum returnsByRef = (functionAttributes!func & FunctionAttribute.ref_) != 0;
+}
