@@ -889,13 +889,18 @@ unittest
     public:
         struct Loader
         {
-            TestSource loadSource(string name) @safe nothrow
+            TestSource loadSource(string name, bool logErrors = false) @safe nothrow
             {
                 assert(false);
             }
         }
 
         bool isNull() @safe nothrow const
+        {
+            assert(false);
+        }
+
+        string errorLog() @safe pure nothrow const 
         {
             assert(false);
         }
@@ -940,8 +945,7 @@ unittest
 
 
     import tharsis.defaults.copyprocess;
-    auto compTypeMgr =
-        new ComponentTypeManager!TestSource(TestSource.Loader());
+    auto compTypeMgr = new ComponentTypeManager!TestSource(TestSource.Loader());
     compTypeMgr.registerComponentTypes!TimeoutComponent();
     compTypeMgr.registerComponentTypes!PhysicsComponent();
     compTypeMgr.lock();
