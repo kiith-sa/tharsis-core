@@ -279,12 +279,9 @@ package:
     /// Returns: A raw handle to the resource.
     RawResourceHandle rawResourceHandle(TypeInfo type, void* descriptor) nothrow
     {
-        foreach(manager; resourceManagers_)
+        foreach(manager; resourceManagers_) if(manager.managedResourceType is type)
         {
-            if(manager.managedResourceType is type)
-            {
-                return manager.rawHandle(descriptor);
-            }
+            return manager.rawHandle(descriptor);
         }
         assert(false, "No resource manager for type " ~ to!string(type));
     }
