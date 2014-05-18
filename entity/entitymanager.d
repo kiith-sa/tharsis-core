@@ -485,7 +485,8 @@ private:
     ///                   process must be registered with the
     ///                   ComponentTypeManager passed to the EntityManager's
     ///                   constructor.
-    /// concept, process() signature and overloads, etc.
+    ///
+    /// TODO link to an process.rst once it exists
     void registerProcess(P)(P process) @trusted
     {
         mixin validateProcess!P;
