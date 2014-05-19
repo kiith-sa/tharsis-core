@@ -30,13 +30,14 @@ import tharsis.util.typecons;
 
 /// Base class for resource managers managing entity prototypes.
 ///
-/// There may be various entity prototype resource types (e.g. defined in a file
-/// or directly in a Source); these should be managed by separate resource
-/// managers derived from BasePrototypeManager templated with the resource type.
+/// There may be various entity prototype resource types (e.g. defined in a file or
+/// directly in a Source); these should be managed by separate resource managers derived
+/// from BasePrototypeManager templated with the resource type.
 ///
-/// The Resource type should define following members in addition to the
-/// Descriptor type required by ResourceManager:
+/// The Resource type should define following members in addition to the Descriptor type
+/// required by ResourceManager:
 ///
+/// -------------------------------
 /// // Constructor from descriptor.
 /// this(ref Descriptor);
 /// // The prototype stored by the resource (once loaded)
@@ -45,40 +46,38 @@ import tharsis.util.typecons;
 /// Descriptor descriptor;
 /// // The current resource state.
 /// ResourceState state;
+/// -------------------------------
 ///
 /// For an example Resource type, see
 /// tharsis.entity.entityprototype.EntityPrototypeResource .
 class BasePrototypeManager(Resource) : ResourceManager!Resource
 {
-    /// Loads a resource, setting its state to Loaded on success or LoadFailed
-    /// on failure.
+    /// Loads a resource, setting its state to Loaded on success or LoadFailed on
+    /// failure.
     ///
-    /// Using a delegate allows loadResource_ to be defined in a templated
-    /// constructor without templating the class with extra template parameters
-    /// (avoiding e.g. templating the prototype manager with Source).
+    /// Using a delegate allows loadResource_ to be defined in a templated constructor
+    /// without templating the class with extra template parameters (avoiding e.g.
+    /// templating the prototype manager with Source).
     void delegate(ref Resource, ref string) @safe nothrow loadResource_;
 
     /// Entity prototype resources are stored here.
     ///
-    /// When a resource handle corresponding to a descriptor is first requested,
-    /// an empty resource with that descriptor is added to resourcesToAdd_.
-    /// Between game updates, those resources are moved to resources_. This
-    /// allows us to avoid locking on every read from resources_, instead only
-    /// locking resourcesToAdd_ when read/written.
-    /// The state of newly added resources is ResourceState.New . Once in
-    /// resources_, a resource can be modified and loaded (even asynchronously)
-    /// by the prototype manager. After loading, the resource state is changed
-    /// to ResourceState.Loaded if loaded successfully or
-    /// ResourceState.LoadFailed if the loading failed. Once loaded, a resource
-    /// is immutable and may not be modified, allowing lock-less reading from
-    /// multiple threads.
+    /// When a resource handle corresponding to a descriptor is first requested, an
+    /// empty resource with that descriptor is added to resourcesToAdd_. Between game
+    /// updates, those resources are moved to resources_. This allows us to avoid
+    /// locking on every read from resources_, instead only locking resourcesToAdd_ when
+    /// read/written. The state of newly added resources is ResourceState.New . Once in
+    /// resources_, a resource can be modified and loaded (even asynchronously) by the
+    /// prototype manager. After loading, the resource state is changed to
+    /// ResourceState.Loaded if loaded successfully or ResourceState.LoadFailed if the
+    /// loading failed. Once loaded, a resource is immutable and may not be modified,
+    /// allowing lock-less reading from multiple threads.
     PagedArray!Resource resources_;
 
-    /// Resources are staged here after initial creation in a handle() call with
-    /// a new descriptor and until the game update ends. Then they are moved to
-    /// resources_. Shared; may be written to and/or read by multiple threads.
-    /// A class wrapper is used since destructors can't destroy shared struct
-    /// members as of DMD 2.054.
+    /// Resources are staged here after initial creation in a handle() call with a new
+    /// descriptor and until the game update ends. Then they are moved to resources_.
+    /// Shared; may be written to and/or read by multiple threads. A class wrapper is
+    /// used since destructors can't destroy shared struct members as of DMD 2.054.
     ///
     /// See_Also: resources_
     shared(Class!(MallocArray!Resource)) resourcesToAdd_;
@@ -87,16 +86,14 @@ class BasePrototypeManager(Resource) : ResourceManager!Resource
 
     /// Indices of prototypes requested to be loaded by the user.
     ///
-    /// May contain duplicates or indices of already loaded prototypes; these
-    /// will be ignored. Shared; may be written to or read by multiple threads.
-    /// A class wrapper is used since destructors can't destroy shared struct
-    /// members as of DMD 2.054.
+    /// May contain duplicates or indices of already loaded prototypes; these will be
+    /// ignored. Shared; may be written to or read by multiple threads. A class wrapper
+    /// is used since destructors can't destroy shared struct members as of DMD 2.054.
     shared(Class!(MallocArray!uint)) indicesToLoad_;
     /// Mutex used to lock indicesToLoad_.
     ReadWriteMutex indicesToLoadMutex_;
 
-    /// Memory used by loaded (immutable) entity prototypes in resources_ to
-    /// store components.
+    /// Memory used by loaded (immutable) prototypes in resources_ to store components.
     PartiallyMutablePagedBuffer prototypeData_;
 
     /// Any loading errors are written here.
@@ -105,21 +102,20 @@ class BasePrototypeManager(Resource) : ResourceManager!Resource
 public:
     /// BasePrototypeManager constructor.
     ///
-    /// Params: Source               = Type of source to load prototypes from
-    ///                                (e.g. YAMLSource).
-    ///         Policy               = Policy used with the entity manager,
-    ///                                specifying compile-time tweakables.
-    ///         componentTypeManager = Component type manager where all used
-    ///                                component types are registered.
+    /// Params: Source               = Type of source to load prototypes from (e.g. 
+    ///                                YAMLSource).
+    ///         Policy               = Policy used with the entity manager, specifying
+    ///                                compile-time tweakables.
+    ///         componentTypeManager = Component type manager where all used component
+    ///                                types are registered.
     ///         entityManager        = The entity manager.
-    ///         getPrototypeSource   = A delegate that takes a resource
-    ///                                descriptor (of Descriptor type defined by
-    ///                                the Resource type that is a template
-    ///                                parameter of the prototype manager) and
-    ///                                returns a Source storing an entity
-    ///                                prototype. The returned source may be
-    ///                                null (Source.isNull == true) if the
-    ///                                source could not be loaded.
+    ///         getPrototypeSource   = A delegate that takes a resource descriptor (of
+    ///                                Descriptor type defined by the Resource type that
+    ///                                is a template parameter of the prototype manager)
+    ///                                and returns a Source storing an entity prototype.
+    ///                                The returned source may be null 
+    ///                                (Source.isNull == true) if the source could not
+    ///                                be loaded.
     this(Source, Policy)
         (ComponentTypeManager!(Source, Policy) componentTypeManager,
          EntityManager!Policy entityManager,
@@ -139,13 +135,12 @@ public:
         ///
         /// Params:  componentType   = Type of the component to load.
         ///          componentSource = Source to load the component from.
-        ///          prototype       = Prototype to load the component into.
-        ///                            Must not be locked yet.
-        ///          errorLog        = A string to write any loading errors to.
-        ///                            If there are no errors, this is not touched.
+        ///          prototype       = Prototype to load the component into. Must not be
+        ///                            locked yet.
+        ///          errorLog        = A string to write any loading errors to. If there
+        ///                            are no errors, this is not touched.
         ///
-        /// Returns: true if the component was successfully loaded,
-        ///          false otherwise.
+        /// Returns: true if the component was successfully loaded, false otherwise.
         bool loadComponent(ref const(ComponentTypeInfo) componentType,
                            ref Source componentSource,
                            ref EntityPrototype prototype,
@@ -162,23 +157,22 @@ public:
             return true;
         }
 
-        /// Load components of a multicomponent type componentType from
-        /// sequence to prototype.
+        /// Load components of multicomponent type componentType from sequence to
+        /// prototype.
         ///
-        /// Params:  componentType   = Type of components to load. Must be a
-        ///                            MultiComponent type.
-        ///          sequence        = Source storing a sequence of components.
-        ///          prototype       = Prototype to load the components into.
-        ///                            Must not be locked yet.
-        ///          errorLog        = A string to write any loading errors to.
-        ///                            If there are no errors, this is not touched.
+        /// Params:  componentType = Type of components to load. Must be a
+        ///                          MultiComponent type.
+        ///          sequence      = Source storing a sequence of components.
+        ///          prototype     = Prototype to load the components into. Must not be
+        ///                          locked yet.
+        ///          errorLog      = A string to write any loading errors to. If there
+        ///                          are no errors, this is not touched.
         ///
         /// Returns: true if all components successfully loaded,
-        ///          false if either a) there are zero components (sequence is
-        ///          empty, b) one or more components could not be loaded, or
-        ///          c) there are more components than the maximum number of
-        ///          components of type componentType in a single entity (this
-        ///          limit is specified in a MultiComponent type definition).
+        ///          false if either a) there are zero components (sequence is empty,
+        ///          b) one or more components could not be loaded, or c) there are more
+        ///          components than the max number of components of type componentType
+        ///          per entity (this limit is specified in the component struct).
         bool loadMultiComponent(ref const(ComponentTypeInfo) componentType,
                                 ref Source sequence,
                                 ref EntityPrototype prototype,
@@ -250,8 +244,7 @@ public:
                     : storage[0 .. 0]);
             }
 
-            // Load components of the entity.
-            // Look for components of all component types.
+            // Load components of the entity. Look for components of all types.
             foreach(ref type; typeInfo) if(!type.isNull)
             {
                 Source compSrc;
@@ -276,9 +269,9 @@ public:
         }
 
         loadResource_  = &loadResource;
-        // 4 kiB won't kill us and it's likely that we won't load this many
-        // new prototypes during one game update. No locking because the
-        // PrototypeManager is constructed before process threads run.
+        // 4 kiB won't kill us and it's likely that we won't load this many new
+        // prototypes during one game update. No locking because the PrototypeManager is
+        // constructed before process threads run.
         indicesToLoad_.assumeUnshared.reserve(1024);
     }
 
@@ -292,13 +285,12 @@ public:
         destroy(prototypeData_);
     }
 
-    // Lock-free unless requesting a handle to an unknown resource (the first
-    // time a handle is requested for any given descriptor), or requesting a
-    // handle to a resource that became known only during the current game
-    // update.
+    // Lock-free unless requesting a handle to an unknown resource (the first time a
+    // handle is requested for any given descriptor), or requesting a handle to a
+    // resource that became known only during the current game update.
     //
-    // May be used outside of a Process, e.g. by the user when loading the first
-    // entity prototype at the beginning of a game.
+    // May be used outside of a Process, e.g. by the user when loading the first entity
+    // prototype at the beginning of a game.
     override Handle handle(ref Descriptor descriptor) @trusted nothrow
     {
         // If the resource already exists, return a handle to it.
@@ -311,13 +303,12 @@ public:
         }
 
         // Hack to make nothrow work with synchronized.
-        static Handle synced(ref Descriptor descriptor,
-                             BasePrototypeManager self)
+        static Handle synced(ref Descriptor descriptor, BasePrototypeManager self)
         {
             auto resourcesToAdd = self.resourcesToAdd_.assumeUnshared;
             auto mutex          = self.resourcesToAddMutex_;
-            // The descriptor may have been used to create a new resource
-            // earlier during this game update. This should happen very rarely.
+            // The descriptor may have been used to create a new resource earlier during
+            // this game update. This should happen very rarely.
             synchronized(mutex.reader) foreach(idx; 0 .. resourcesToAdd.length)
             {
                 if(resourcesToAdd[idx].descriptor.mapsToSameHandle(descriptor))
@@ -327,13 +318,13 @@ public:
                 }
             }
 
-            // New resource is being added. This should happen rarely (relative
-            // to the total number of handle() calls).
+            // New resource is being added. This should happen rarely (relative to the
+            // total number of handle() calls).
             synchronized(mutex.writer)
             {
                 resourcesToAdd ~= Resource(descriptor);
-                // Will be at this index once contents of resourcesToAdd_ are
-                // appended to resources_ when the next game update starts.
+                // Will be at this index once contents of resourcesToAdd_ are appended
+                // to resources_ when the next game update starts.
                 return Handle(cast(RawResourceHandle)(self.resourceCount - 1));
             }
         }
@@ -343,21 +334,19 @@ public:
         return (cast(Synced)&synced)(descriptor, this);
     }
 
-    // Always lock-free in the release build. Locks in the debug build to run
-    // an assertion.
+    // Always lock-free in the release build. Locks in the debug build to run an assert.
     final override ResourceState state(const Handle handle)
         @trusted pure nothrow
     {
-        // Usually the handle points to a resource created before the current
-        // game update.
+        // Usually the handle points to a resource created before the current game
+        // update, which would be in resources_ by now instead of resourcesToAdd_.
         if(handle.rawHandle < resources_.length)
         {
             return resources_.atConst(handle.rawHandle).state;
         }
 
         // This can only happen with a newly added resource that's still in
-        // resourcesToAdd_, meaning it's New at least until the next game update
-        // starts.
+        // resourcesToAdd_, meaning it's New at least until the next game update starts.
         //
         // Hack to make nothrow work with synchronized.
         static void synced(Handle handle, BasePrototypeManager self) @trusted
@@ -405,8 +394,7 @@ public:
         assert(state(handle) == ResourceState.Loaded,
                "Can't directly access a resource that is not loaded");
 
-        // If loaded, a resource is in resources_.
-        // (Only New resources can be in resourcesToAdd_.)
+        // A Loaded resource is in resources_. (New resources are in resourcesToAdd_.)
         return resources_.atImmutable(handle.rawHandle);
     }
 
@@ -425,8 +413,8 @@ public:
                 prototypeManager_ = prototypeManager;
             }
 
-            // Iterates over all resources in resources_ (which are immutable)
-            // filtering down to descriptors of resources that failed to load.
+            // Iterates over all resources in resources_ (which are immutable) filtering
+            // down to descriptors of resources that failed to load.
             int opApply(int delegate(ref const(Descriptor)) dg)
             {
                 int result = 0;
@@ -452,19 +440,19 @@ public:
 protected:
     override void update_() @trusted nothrow
     {
-        // No need for synchronization here; this runs between game updates when
-        // process threads don't run.
+        // No need for synchronization here; this runs between game updates when process
+        // threads don't run.
 
-        // Need to add resources repeatedly; newly loaded resources (prototypes)
-        // may contain handles adding new resources to resourcesToAdd_.
+        // Need to add resources repeatedly; newly loaded resources (prototypes) may
+        // contain handles adding new resources to resourcesToAdd_.
         //
-        // Even if there are no newly added resources, there may be resources
-        // requested to be loaded (indicesToLoad_).
+        // Even if there are no newly added resources, there may be resources requested
+        // to be loaded (indicesToLoad_).
         while(!resourcesToAdd_.assumeUnshared.empty ||
               !indicesToLoad_.assumeUnshared.empty)
         {
-            // DMD (as of DMD 2.053) breaks the release build if we don't
-            // iterate by reference here.
+            // DMD (as of DMD 2.053) breaks the release build if we don't iterate by
+            // reference here.
             // foreach(index; indicesToLoad_)
             foreach(ref resource; resourcesToAdd_.assumeUnshared)
             {
@@ -473,8 +461,8 @@ protected:
             // We've loaded these now, so clear them.
             resourcesToAdd_.assumeUnshared.clear();
 
-            // Load prototypes at indices from indicesToLoad_ (if not loaded
-            // already). May add new resources to resourcesToAdd_.
+            // Load prototypes at indices from indicesToLoad_ (if not loaded already).
+            // May add new resources to resourcesToAdd_.
             foreach(ref index; indicesToLoad_.assumeUnshared)
             {
                 const resource = &resources_.atConst(index);
@@ -495,8 +483,8 @@ protected:
 private:
     /// Get the total number of resources, loaded or not.
     ///
-    /// Note: Reads resourcesToAdd_ which may be read/modified by multiple
-    ///       threads. Any use of this method should be synchronized.
+    /// Note: Reads resourcesToAdd_ which may be read/modified by multiple threads. Any
+    ///       use of this method should be synchronized.
     size_t resourceCount() @trusted pure nothrow const
     {
         return resources_.length + resourcesToAdd_.assumeUnshared.length;
@@ -510,20 +498,20 @@ class PrototypeManager: BasePrototypeManager!EntityPrototypeResource
 public:
     /// Construct a PrototypeManager.
     ///
-    /// Params: Source               = Type of source to load prototypes from
-    ///                                (e.g. YAMLSource)
-    ///         Policy               = Policy used with the entity manager,
-    ///                                specifying compile-time tweakables.
-    ///         componentTypeManager = Component type manager where all used
-    ///                                component types are registered.
+    /// Params: Source               = Type of source to load prototypes from (e.g.
+    ///                                YAMLSource)
+    ///         Policy               = Policy used with the entity manager, specifying
+    ///                                compile-time tweakables.
+    ///         componentTypeManager = Component type manager where all used component
+    ///                                types are registered.
     ///         entityManager        = The entity manager.
     this(Source, Policy)
         (ComponentTypeManager!(Source, Policy) componentTypeManager,
          EntityManager!Policy entityManager)
     {
-        // An EntityPrototypeResource descriptor contains the file name where
-        // the prototype is defined. The prototype manager gets the prototype
-        // source by loading source from that file.
+        // An EntityPrototypeResource descriptor contains the file name where the
+        // prototype is defined. The prototype manager gets the prototype source by
+        // loading source from that file.
         super(componentTypeManager, entityManager,
               (ref Descriptor d)
                   => componentTypeManager.loadSource(d.fileName));
