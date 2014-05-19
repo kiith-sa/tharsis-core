@@ -27,7 +27,6 @@ import tharsis.util.typecons;
 //       (e.g. only with StringDescriptors-files) resources/resourcemanagers.
 // TODO: Try creating an universal Prototype resource and turning
 //       BasePrototypeManager into PrototypeManager.
-// TODO: Add an error log with info for every failed load on why it failed.
 
 /// Base class for resource managers managing entity prototypes.
 ///
@@ -57,7 +56,7 @@ class BasePrototypeManager(Resource) : ResourceManager!Resource
     /// Using a delegate allows loadResource_ to be defined in a templated
     /// constructor without templating the class with extra template parameters
     /// (avoiding e.g. templating the prototype manager with Source).
-    void delegate(ref Resource) @safe nothrow loadResource_;
+    void delegate(ref Resource, ref string) @safe nothrow loadResource_;
 
     /// Entity prototype resources are stored here.
     ///
@@ -100,6 +99,9 @@ class BasePrototypeManager(Resource) : ResourceManager!Resource
     /// store components.
     PartiallyMutablePagedBuffer prototypeData_;
 
+    /// Any loading errors are written here.
+    string errorLog_;
+
 public:
     /// BasePrototypeManager constructor.
     ///
@@ -135,20 +137,24 @@ public:
         /// Load a component of type componentType from componentSource to
         /// prototype.
         ///
-        /// Params: componentType   = Type of the component to load.
-        ///         componentSource = Source to load the component from.
-        ///         prototype       = Prototype to load the component into.
-        ///                           Must not be locked yet.
+        /// Params:  componentType   = Type of the component to load.
+        ///          componentSource = Source to load the component from.
+        ///          prototype       = Prototype to load the component into.
+        ///                            Must not be locked yet.
+        ///          errorLog        = A string to write any loading errors to.
+        ///                            If there are no errors, this is not touched.
         ///
         /// Returns: true if the component was successfully loaded,
         ///          false otherwise.
         bool loadComponent(ref const(ComponentTypeInfo) componentType,
                            ref Source componentSource,
-                           ref EntityPrototype prototype) nothrow
+                           ref EntityPrototype prototype,
+                           ref string errorLog) nothrow
         {
             ubyte[] storage = prototype.allocateComponent(componentType);
             if(!componentType.loadComponent(storage, componentSource,
-                                            &entityManager.rawResourceHandle))
+                                            &entityManager.rawResourceHandle,
+                                            errorLog))
             {
                 // Failed to load the component.
                 return false;
@@ -159,13 +165,15 @@ public:
         /// Load components of a multicomponent type componentType from
         /// sequence to prototype.
         ///
-        /// Params: componentType   = Type of components to load. Must be a
-        ///                           MultiComponent type.
-        ///         sequence        = Source storing a sequence of components.
-        ///         prototype       = Prototype to load the components into.
-        ///                           Must not be locked yet.
+        /// Params:  componentType   = Type of components to load. Must be a
+        ///                            MultiComponent type.
+        ///          sequence        = Source storing a sequence of components.
+        ///          prototype       = Prototype to load the components into.
+        ///                            Must not be locked yet.
+        ///          errorLog        = A string to write any loading errors to.
+        ///                            If there are no errors, this is not touched.
         ///
-        /// Returns: true if the components successfully loaded,
+        /// Returns: true if all components successfully loaded,
         ///          false if either a) there are zero components (sequence is
         ///          empty, b) one or more components could not be loaded, or
         ///          c) there are more components than the maximum number of
@@ -173,13 +181,15 @@ public:
         ///          limit is specified in a MultiComponent type definition).
         bool loadMultiComponent(ref const(ComponentTypeInfo) componentType,
                                 ref Source sequence,
-                                ref EntityPrototype prototype) nothrow
+                                ref EntityPrototype prototype,
+                                ref string errorLog) nothrow
         {
             size_t count = 0;
             Source componentSource;
             while(sequence.getSequenceValue(count, componentSource))
             {
-                if(!loadComponent(componentType, componentSource, prototype))
+                if(!loadComponent(componentType, componentSource, prototype, 
+                                  errorLog))
                 {
                     return false;
                 }
@@ -205,7 +215,10 @@ public:
         /// Params: resource = The resource to load. State of the resource will
         ///                    be set to Loaded if loaded successfully,
         ///                    LoadFailed otherwise.
-        void loadResource(ref Resource resource) @trusted nothrow
+        ///         errorLog = A string to write any loading errors to.
+        ///                    If there are no errors, this is not touched.
+        void loadResource(ref Resource resource, ref string errorLog)
+            @trusted nothrow
         {
             auto typeMgr = componentTypeManager;
             // Get the source (e.g. YAML) storing the prototype. May fail e.g if
@@ -248,8 +261,9 @@ public:
                     continue;
                 }
 
-                if(type.isMulti ? !loadMultiComponent(type, compSrc, *prototype)
-                                : !loadComponent(type, compSrc, *prototype))
+                if(type.isMulti ?
+                   !loadMultiComponent(type, compSrc, *prototype, errorLog) :
+                   !loadComponent(type, compSrc, *prototype, errorLog))
                 {
                     resource.state = ResourceState.LoadFailed;
                     return;
@@ -463,7 +477,7 @@ protected:
 
                 auto resourceMutable = &resources_.atMutable(index);
                 resourceMutable.state = ResourceState.Loading;
-                loadResource(*resourceMutable);
+                loadResource_(*resourceMutable, errorLog_);
                 if(resourceMutable.state == ResourceState.Loaded)
                 {
                     resources_.markImmutable(index);
@@ -474,12 +488,6 @@ protected:
     }
 
 private:
-    /// Load specified resource.
-    void loadResource(ref Resource resource) @safe nothrow
-    {
-        loadResource_(resource);
-    }
-
     /// Get the total number of resources, loaded or not.
     ///
     /// Note: Reads resourcesToAdd_ which may be read/modified by multiple
