@@ -17,6 +17,7 @@ import tharsis.entity.componenttypeinfo;
 import tharsis.entity.componenttypemanager;
 import tharsis.entity.entity;
 import tharsis.entity.entityid;
+import tharsis.entity.entitymanager;
 import tharsis.entity.entityprototype;
 import tharsis.entity.resourcemanager;
 
@@ -27,7 +28,79 @@ import tharsis.util.pagedarray;
 /// Reads SpawnerComponents and various spawn conditions and spawns new entities.
 ///
 /// Can be derived to add support for more spawn condition component types.
-class SpawnerProcess
+///
+///
+/// The SpawnerProcess processes SpawnerMultiComponents in combination with spawn
+/// condition components (right now only TimedSpawnConditionMultiComponent).
+///
+/// To be able to spawn new entities, an entity needs both one or more 
+/// SpawnerMultiComponents and some kind of spawn condition component/s (for now
+/// only TimedSpawnConditionMultiComponent).
+///
+/// For example (with YAMLSource):
+/// -------------------
+/// spawnerMulti:
+///     - spawn:     test_data/entity1.yaml
+///       spawnerID: 1
+///       override:
+///     - spawn:     test_data/entity2.yaml
+///       spawnerID: 2
+///       override:
+///           physics:
+///               x: 50.0
+///               y: 50.0
+///               z: 50.0
+/// 
+/// timedSpawnConditionMulti:
+///     - time:      0.03
+///       timeLeft:  0.03
+///       periodic:  true
+///       spawnerID: 1
+///     - time:      1.03
+///       timeLeft:  0.03
+///       periodic:  false
+///       spawnerID: 2
+/// -------------------
+///
+/// In this example our entity has 2 spawner components, the first of which spawns
+/// "test_data/entity1.yaml" without changing any of its components and the second
+/// spawns "test_data/entity2.yaml", but overrides (example) "physics"
+/// (PhysicsComponent). (If there is no "physics" component in the spawned entity, it
+/// is added by the override.) It also has 2 spawn condition components. The first
+/// triggers the spawner component with spawnerID 1 every 30 milliseconds while the 
+/// second triggers the spawner component with spawnerID 2 exactly once.
+///
+/// Relative properties:
+///
+/// While we don't (yet) have any comphrehensive way to modify spawned entities other
+/// than overriding, most games need at least some way to set properties of a spawnee 
+/// relative to the spawner (for example, spawning an entity in a position relative to
+/// the spawner).
+///
+/// SpawnerSystem can recognize some properties as "relative", meaning the value of the
+/// property in a spawnee is added to the value of the same property in the spawner 
+/// entity. To mark a property of a component as relative, add a string user-defined
+/// attribute with value "relative" to the property. 
+///
+/// Example:
+/// --------------------
+/// struct PhysicsComponent
+/// {
+///     enum ushort ComponentTypeID = userComponentTypeID!2;
+/// 
+///     enum minPrealloc = 16384;
+/// 
+///     enum minPreallocPerEntity = 1.0;
+/// 
+///     // not relative
+///     float mass;
+///     // these 3 are relative
+///     @("relative") float x;
+///     @("relative") float y;
+///     @("relative") float z;
+/// }
+/// --------------------
+class SpawnerProcess(Policy)
 {
 private:
     /// A function that takes an entity prototype and adds a new entity to the 
@@ -104,9 +177,10 @@ public:
         toSpawnData_.clear();
     }
 
-    void process(immutable SpawnerMultiComponent[] spawners,
     /// Reads spawners and spawn conditions. Spawns new entities, and doesn't write any
     /// future components.
+    void process(ref const(Context) context,
+                 immutable SpawnerMultiComponent[] spawners,
                  immutable TimedSpawnConditionMultiComponent[] spawnConditions)
     {
         // Spawner components are kept even if all conditions that may spawn them are
@@ -134,12 +208,15 @@ public:
                 // We've not reached the time to spawn yet.
                 if(condition.timeLeft > 0.0f) { continue; }
 
-                spawn(baseHandle, overHandle);
+                spawn(context, baseHandle, overHandle);
             }
         }
     }
 
 private:
+    /// Context for the process() method.
+    alias Context = EntityManager!Policy.Context;
+
     /// Are spawner resources ready (loaded) for spawning?
     ///
     /// Starts (async) loading of the resources if not yet loaded.
@@ -174,10 +251,11 @@ private:
     ///
     /// Params: baseHandle = Handle to the base prototype of the entity to spawn
     ///                      (e.g. a unit type).
-    void spawn(const ResourceHandle!EntityPrototypeResource baseHandle,
     ///         overHandle = Handle to a prototype storing components added to or
     ///                      overriding those in base (e.g. unit position or other
     ///                      components that may vary between entities of same 'type').
+    void spawn(ref const(Context) context,
+               const ResourceHandle!EntityPrototypeResource baseHandle,
                const ResourceHandle!InlineEntityPrototypeResource overHandle)
     {
         // Entity prototype serving as the base of the new entity.
@@ -194,6 +272,29 @@ private:
             mergePrototypesOverride(base, over, memory, componentTypes);
 
         auto combinedBytes = combined.lockAndTrimMemory(componentTypes);
+
+        // Iterate over all components of the prototype of the new entity, and the
+        // components of same types in the spawner entity (current entity),
+        // looking for properties that should be initialized relative to a value of the
+        // same property (if any) in the spawner.
+        //
+        // Properties that are relative are updated as follows:
+        // "spawnee.property += spawner.property" (the addRightToLeft() call).
+        foreach(ref RawComponent comp; combined.componentRange(componentTypes))
+        {
+            auto typeInfo = &componentTypes[comp.typeID];
+            // Relative does not work for MultiComponents.
+            if(typeInfo.isMulti) { continue; }
+            auto spawnerComp =
+                context.rawPastComponent(comp.typeID, context.currentEntity.id);
+            // If the spawner doesn't have this component, we don't have anything to be
+            // relative to so we just keep the unchanged value.
+            if(spawnerComp.isNull) { continue; }
+            foreach(ref prop; typeInfo.properties!"relative"())
+            {
+                prop.addRightToLeft(comp, spawnerComp);
+            }
+        }
 
         toSpawnData_.lockBytes(combinedBytes);
 
