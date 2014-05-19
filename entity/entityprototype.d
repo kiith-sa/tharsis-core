@@ -22,6 +22,9 @@ import tharsis.util.math;
 import tharsis.util.stackbuffer;
 
 
+// TODO eventually we will want a way to construct an EntityPrototype by adding
+//      components as structs without messing around with untyped data. This could be
+//      done using a wrapper (PrototypeBuilder?) that would include component type info.
 /// Stores data to create an entity from.
 ///
 /// An EntityPrototoype stores components that can be copied to create an
