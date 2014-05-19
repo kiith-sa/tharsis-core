@@ -22,7 +22,6 @@ import tharsis.entity.processtypeinfo;
 import tharsis.util.mallocarray;
 
 
-
 /// Used to provide direct access to entity components to process() methods.
 ///
 //  Always used as a part of EntityRange.
