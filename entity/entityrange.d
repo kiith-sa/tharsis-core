@@ -22,8 +22,8 @@ import tharsis.entity.processtypeinfo;
 import tharsis.util.mallocarray;
 
 
-/// Provides direct access to entity components. May be passed to process()
-/// methods.
+
+/// Used to provide direct access to entity components to process() methods.
 ///
 //  Always used as a part of EntityRange.
 struct EntityAccess(EntityManager)
@@ -34,8 +34,8 @@ package:
     /// Updated by EntityRange.
     size_t pastEntityIndex_ = 0;
 
-    // Hack to allow process type info to easily figure out that an EntityAccess
-    // argument is not a component argument.
+    // Hack to allow process type info to figure out that an EntityAccess argument is
+    // not a component argument.
     enum isEntityAccess_ = true;
 
 private:
@@ -58,8 +58,8 @@ public:
     /// components of any entity. Should only be used when necessary.
     ///
     /// Params: Component = Type of component to access.
-    ///         entity    = ID of the entity to access. Must be an ID of an
-    ///                     existing past entity.
+    ///         entity    = ID of the entity to access. Must be an ID of an existing
+    ///                     past entity.
     ///
     /// Returns: Pointer to the past component if the entity contains such a
     ///          component; NULL otherwise.
@@ -88,8 +88,8 @@ public:
             return componentOfEntity(pastEntityIndex_);
         }
 
-        // When accessing a component in another past entity, we binary search
-        // to find the entity with matching ID (entities are sorted by ID).
+        // If accessing a component in another past entity, binary search to find the
+        // entity with matching ID (entities are sorted by ID).
         auto slice = pastEntities_[];
         while(!slice.empty)
         {
@@ -100,8 +100,7 @@ public:
             else                   { return componentOfEntity(index); }
         }
 
-        // If this happens, we either have a bug or the user passed an
-        // invalid entity ID.
+        // If this happens, the user passed an invalid entity ID or we have a bug.
         assert(false, "Couldn't find an entity with specified ID");
     }
 
@@ -124,10 +123,9 @@ package:
 
 /// A range used to iterate over entities and their components in EntityManager.
 ///
-/// Used when executing process Process to read past entities and their
-/// components and to access space to write future components to. Iterates over
-/// _all_ past entities, but matchComponents() can be used to determine if the
-/// current entity has components required by a process() method.
+/// Used when executing process Process to read past entities/components and to provide
+/// space for future components. Iterates over _all_ past entities; matchComponents()
+/// determines if the current entity has components required by any process() method.
 struct EntityRange(EntityManager, Process)
 {
 package:
@@ -140,17 +138,17 @@ package:
 private:
     /// Stores the slice and index for past entities.
     ///
-    /// Separate from EntityRange - EntityAccess is passed to some process()
-    /// methods to provide direct access to the past entity and its components.
-    /// Still, EntityRange directly updates the past entity index inside.
+    /// Separate from EntityRange - EntityAccess can be passed to process() methods to
+    /// provide direct access to the past entity and its components. Still, EntityRange
+    /// directly updates the past entity index inside.
     EntityAccess!EntityManager entityAccess_;
 
     /// True if the Process does not write to any future component. Usually such
     /// processes only read past components and produce some kind of output.
     enum noFuture = !hasFutureComponent!Process;
 
-    /// Indices to components of current entity in past component buffers. Only
-    /// the indices of iterated component types are used.
+    /// Indices to components of current entity in past component buffers. Only the
+    /// indices of iterated component types are used.
     size_t[maxComponentTypes!Policy] componentOffsets_;
 
     /// Index of the future entity we're currently writing to.
@@ -162,8 +160,8 @@ private:
     /// Future component written by the process (if any).
     alias FutureComponent = Process.FutureComponent;
 
-    /// Number of future components (of type Process.FutureComponent) written to
-    /// the current future entity.
+    /// Number of future components (of type Process.FutureComponent) written to the
+    /// current future entity.
     ///
     /// Ease bug detection with a ridiculous value.
     ComponentCount futureComponentCount_ = ComponentCount.max;
@@ -175,8 +173,8 @@ private:
 
     /// Buffer and component count for future components written by Process.
     ///
-    /// We can't keep a typed slice as the internal buffer may get reallocated;
-    /// so we cast on every future component access.
+    /// We can't keep a typed slice as the internal buffer may get reallocated; so we
+    /// cast on every future component access.
     EntityManager.ComponentTypeState* futureComponents_;
 
     }
@@ -188,8 +186,8 @@ private:
 
     /// All processed component types.
     ///
-    /// NoDuplicates! is used to avoid having two elements for the same type if
-    /// the process reads a builtin component type.
+    /// NoDuplicates! is used to avoid having two elements for the same type if the
+    /// process reads a builtin component type.
     alias NoDuplicates!(TypeTuple!(InComponents, BuiltinComponents))
         ProcessedComponents;
 
@@ -221,13 +219,12 @@ private:
         return parts.join("\n");
     }
 
-    /// Mixin slices to access past components, and pointers to component count
-    /// buffers to read the number of components of a type per entity.
+    /// Mixin slices to access past components, and pointers to component count buffers
+    /// to read the number of components of a type per entity.
     ///
-    /// These are typed slices to the untyped buffers in the ComponentBuffer
-    /// struct of each component type. Past components can also be accessed
-    /// through EntityAccess.pastComponents_; these slices are a performance
-    /// optimization.
+    /// These are typed slices to the untyped buffers in the ComponentBuffer struct of
+    /// each component type. Past components can also be accessed through
+    /// EntityAccess.pastComponents_; these slices are a performance optimization.
     mixin(pastComponentBuffers());
 
     /// No default construction or copying.
@@ -235,8 +232,7 @@ private:
     @disable this(this);
 
 package:
-    /// Construct an EntityRange to iterate over past entities of specified
-    /// entity manager.
+    /// Construct an EntityRange to iterate over past entities of passed entity manager.
     this(EntityManager entityManager)
     {
         entityAccess_ = EntityAccess!EntityManager(entityManager);
@@ -264,8 +260,8 @@ package:
             futureComponents_ = &entityManager.future_.components[futureID];
         }
 
-        // Skip dead past entities at the beginning, if any, so front() points
-        // to an alive entity (unless we're empty)
+        // Skip dead past entities at the beginning, if any, so front() points to an
+        // alive entity (unless we're empty)
         skipDeadEntities();
     }
 
@@ -284,16 +280,15 @@ package:
     /// True if we've processed all alive past entities.
     bool empty() @safe pure nothrow
     {
-        // Only live entities are in futureEntities; if we're at the end, the
-        // rest of past entities are dead and we don't need to process them.
+        // Only live entities are in futureEntities; if we're at the end, the rest of
+        // past entities are dead and we don't need to process them.
         return futureEntityIndex_ >= futureEntities_.length;
     }
 
-    /// Move to the next alive past entity (end the range if no alive entities
-    /// left).
+    /// Move to the next alive past entity (end the range if no alive entities left).
     ///
-    /// Also moves to the next future entity (which is the same as the next
-    /// alive past entity) and moves to the components of the next entity.
+    /// Also moves to the next future entity (which is the same as the next alive past
+    /// entity) and moves to the components of the next entity.
     void popFront() @trusted
     {
         assert(!empty, "Trying to advance an empty entity range");
@@ -354,8 +349,8 @@ package:
     static if(!isMultiComponent!FutureComponent)
     {
 
-    /// Get a reference to write the future component for the current entity
-    /// (process() may still decide not to write it, though).
+    /// Get a reference to write the future component for the current entity (process()
+    /// may still decide not to write it, though).
     ref FutureComponent futureComponent() @trusted nothrow
     {
         enum neededSpace = maxComponentsPerEntity!(FutureComponent);
@@ -370,8 +365,8 @@ package:
     else
     {
 
-    /// Get a slice to write future multicomponents for the current entity to.
-    /// The slice is at least FutureComponent.maxComponentsPerEntity long.
+    /// Get a slice to write future multicomponents for the current entity to. The slice
+    /// is at least FutureComponent.maxComponentsPerEntity long.
     FutureComponent[] futureComponent() @trusted nothrow
     {
         enum maxComponents = maxComponentsPerEntity!(FutureComponent);
@@ -385,8 +380,8 @@ package:
 
     /// Specify the number of future components written for the current entity.
     ///
-    /// May be called more than once while processing an entity; the last call
-    /// must pass the number of components actually written.
+    /// May be called more than once while processing an entity; the last call must pass
+    /// the number of components actually written.
     ///
     /// Params: count = The number of components written. Must be 0 or 1 for
     ///                 non-multi components.
@@ -405,8 +400,7 @@ package:
     {
         // Type IDs of processed component types.
         enum processedIDs = componentIDs!ProcessedComponents;
-        // Type IDs of component types we're matching (must be a subset of
-        // processedIDs)
+        // Type IDs of component types we're matching (must be a subset of processedIDs)
         enum sortedIDs    = std.algorithm.sort([ComponentTypeIDs]);
         static assert(sortedIDs.setDifference(processedIDs).empty,
                       "One or more matched component types are not processed "
@@ -414,9 +408,8 @@ package:
 
         static string matchCode()
         {
-            // If the component count for any required component type is 0, the
-            // product of multiplying them all is 0. If all are at least 1, the
-            // result is true.
+            // If the component count for any required component type is 0, the product
+            // of multiplying them all is 0. If all are at least 1, the result is true.
             string[] parts;
             foreach(id; ComponentTypeIDs)
             {
@@ -445,14 +438,14 @@ private:
     /// Move to the next past entity and its components.
     void nextPastEntity() @safe nothrow
     {
-        // Generate code for every processed component type to move past the
-        // components in this entity.
+        // Generate code for every processed component type to move past the components
+        // in this entity.
         foreach(C; ProcessedComponents)
         {
             enum id = C.ComponentTypeID;
             mixin(q{
-            // Increase offset for this component type by the number of
-            // components in the current past entity.
+            // Increase offset for this component type by the number of components in
+            // the current past entity.
             componentOffsets_[id] += (*%s)[entityAccess_.pastEntityIndex_];
             }.format(countsName!id));
         }
@@ -480,8 +473,8 @@ private:
         ++futureEntityIndex_;
     }
 
-    /// A debug method to print the component counts of processed component
-    /// types in the current entity.
+    /// A debug method to print the component counts of processed component types in the
+    /// current entity.
     void printComponentCounts()
     {
         string[] parts;
