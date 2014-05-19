@@ -10,7 +10,12 @@
 module tharsis.entity.testprototypemanager;
 
 
+import core.thread;
+
 import std.algorithm;
+import std.array;
+import std.random;
+import std.stdio;
 
 import tharsis.defaults.yamlsource;
 import tharsis.entity.componenttypeinfo;
@@ -60,17 +65,13 @@ unittest
     auto entityMgr = new EntityManager!DefaultEntityPolicy(compTypeMgr);
     scope(exit) { entityMgr.destroy(); }
 
-    auto protoMgr = new PrototypeManager(compTypeMgr, entityMgr);
-    scope(exit) { protoMgr.clear(); }
+    PrototypeManager protoMgr;
 
 
-    import std.array;
-    import std.random;
-    import std.stdio;
-    import core.thread;
     void thread1()
     {
-        foreach(i; 0 .. 1000000) if(uniform(0.0, 1.0) < 0.1)
+        auto gen = Mt19937(unpredictableSeed);
+        foreach(i; 0 .. 100) if(uniform(0.0, 1.0, gen) < 0.0015)
         {
             auto descriptor1 = EntityPrototypeResource.Descriptor(testFile1);
             auto handle1 = protoMgr.handle(descriptor1);
@@ -85,10 +86,8 @@ unittest
 
             auto descriptor2 = EntityPrototypeResource.Descriptor(testFile2);
             auto handle2 = protoMgr.handle(descriptor2);
-            assert([ResourceState.New, 
-                    ResourceState.Loading, 
-                    ResourceState.Loaded]
-                    .canFind(protoMgr.state(handle2)));
+            assert([ResourceState.New, ResourceState.Loading, ResourceState.Loaded]
+                   .canFind(protoMgr.state(handle2)));
             if(protoMgr.state(handle2) == ResourceState.Loaded)
             {
                 auto resource = protoMgr.resource(handle2);
@@ -97,14 +96,14 @@ unittest
     }
     void thread2()
     {
-        foreach(i; 0 .. 1000000) if(uniform(0.0, 1.0) < 0.1)
+        auto gen = Mt19937(unpredictableSeed);
+        foreach(i; 0 .. 100) if(uniform(0.0, 1.0, gen) < 0.0015)
         {
             auto descriptor1 = EntityPrototypeResource.Descriptor(testFile1);
             auto handle1 = protoMgr.handle(descriptor1);
-            assert([ResourceState.New, 
-                    ResourceState.Loading, 
-                    ResourceState.Loaded]
-                    .canFind(protoMgr.state(handle1)));
+            assert([ResourceState.New, ResourceState.Loading, ResourceState.Loaded]
+                   .canFind(protoMgr.state(handle1)));
+
             if(protoMgr.state(handle1) == ResourceState.Loaded)
             {
                 auto resource = protoMgr.resource(handle1);
@@ -117,18 +116,17 @@ unittest
                 }
             }
 
-            auto nonexistent = "nonexistent_file";
-            auto descriptorNonexistent = EntityPrototypeResource.Descriptor(nonexistent);
+            auto nonexistent = "test_file_that_does_not_exist";
+            auto descriptorNonexistent =
+                EntityPrototypeResource.Descriptor(nonexistent);
             auto handleNonexistent = protoMgr.handle(descriptorNonexistent);
-            assert([ResourceState.New, 
-                    ResourceState.Loading, 
-                    ResourceState.LoadFailed]
-                    .canFind(protoMgr.state(handleNonexistent)));
+            assert([ResourceState.New, ResourceState.Loading, ResourceState.LoadFailed]
+                   .canFind(protoMgr.state(handleNonexistent)));
         }
     }
     void thread3()
     {
-        auto nonexistent = "nonexistent_file";
+        auto nonexistent = "test_file_that_does_not_exist";
         auto descriptorNonexistent = EntityPrototypeResource.Descriptor(nonexistent);
         auto handle = protoMgr.handle(descriptorNonexistent);
         if(protoMgr.state(handle) == ResourceState.New)
@@ -136,32 +134,38 @@ unittest
             protoMgr.requestLoad(handle);
         }
     }
-    foreach(update; 0 .. 10)
+
+    // writeln("PrototypeManager unittest: repeatedly accesses and performs "
+    //         "operations on resources to test thread-safety of PrototypeManager");
+
+    foreach(game; 0 .. 10)
     {
-        writeln("=== FRAME ", update, " ===");
-        Thread[] threads;
-        threads ~= new Thread(&thread1);
-        threads ~= new Thread(&thread2);
-        threads ~= new Thread(&thread3);
-        threads[0].start();
-        threads[1].start();
-        threads[2].start();
+        protoMgr = new PrototypeManager(compTypeMgr, entityMgr);
+        scope(exit) { protoMgr.clear(); }
 
-        // Should work even while other threads run.
-        foreach(descriptor; protoMgr.loadFailedDescriptors())
+        foreach(update; 0 .. 10)
         {
-            writeln("loadFailed descriptor ", descriptor.fileName);
+            Thread[] threads;
+            threads ~= new Thread(&thread1);
+            threads ~= new Thread(&thread2);
+            threads ~= new Thread(&thread3);
+            threads[0].start();
+            threads[1].start();
+            threads[2].start();
+
+            // Should work even while other threads run.
+            foreach(descriptor; protoMgr.loadFailedDescriptors())
+            {
+                assert(descriptor.fileName == "test_file_that_does_not_exist");
+            }
+
+            foreach(thread; threads)
+            {
+                thread.join();
+            }
+
+            // other threads don't run when update() is called.
+            protoMgr.update();
         }
-
-        foreach(thread; threads)
-        {
-            thread.join();
-            writeln("Thread joined");
-        }
-
-
-        // other threads don't run when update() is called.
-        protoMgr.update();
-
     }
-}     
+}
