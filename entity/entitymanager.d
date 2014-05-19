@@ -65,6 +65,9 @@ package:
     /// entities hat were added during the last frame.
     GameState* future_;
 
+    /// Component type manager, including type info about registered component types.
+    AbstractComponentTypeManager componentTypeManager_;
+
 private:
     /// If writtenComponentTypes_[i] is true, there is a process that writes components
     /// of type with ComponentTypeID equal to i.
@@ -84,10 +87,6 @@ private:
 
     /// Registered resource managers.
     AbstractResourceManager[] resourceManagers_;
-
-    /// Component type manager, including type info about registered component
-    /// types.
-    AbstractComponentTypeManager!Policy componentTypeManager_;
 
     /// A simple class wrapper over entities to add when the next frame starts.
     ///
@@ -111,9 +110,9 @@ public:
     /// Construct an EntityManager using component types registered with passed
     /// ComponentTypeManager.
     ///
-    /// Params: componentTypeManager = Component type manager storing component
-    ///                                type information. Must be locked.
-    this(AbstractComponentTypeManager!Policy componentTypeManager)
+    /// Params: componentTypeManager = Component type manager storing component type
+    ///                                information. Must be locked.
+    this(AbstractComponentTypeManager componentTypeManager)
     {
         componentTypeManager_ = componentTypeManager;
         // Needed as of DMD 2.056, may be redundant later.
@@ -664,8 +663,7 @@ private:
     }
 
     /// A shortcut to access component type information.
-    ref const(ComponentTypeInfo[maxComponentTypes!Policy]) componentTypeInfo()
-        @safe pure nothrow const
+    const(ComponentTypeInfo[]) componentTypeInfo() @safe pure nothrow const
     {
         return componentTypeManager_.componentTypeInfo;
     }

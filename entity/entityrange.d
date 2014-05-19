@@ -14,6 +14,7 @@ import std.string;
 import std.typetuple;
 
 import tharsis.entity.componenttypeinfo;
+import tharsis.entity.componenttypemanager;
 import tharsis.entity.entitypolicy;
 import tharsis.entity.entity;
 import tharsis.entity.entityid;
@@ -46,6 +47,9 @@ private:
     /// Stores past components of all entities.
     immutable(EntityManager.ComponentState)* pastComponents_;
 
+    /// Provides access to component type info.
+    AbstractComponentTypeManager componentTypeManager_;
+
     /// No default construction or copying.
     @disable this();
     @disable this(this);
@@ -60,31 +64,55 @@ public:
     ///         entity    = ID of the entity to access. Must be an ID of an existing
     ///                     past entity.
     ///
-    /// Returns: Pointer to the past component if the entity contains such a
-    ///          component; NULL otherwise.
-    immutable(Component)* pastComponent(Component)(const EntityID entity)
-        nothrow const
+    /// Returns: Pointer to the past component if the entity contains such a component;
+    ///          NULL otherwise.
+    immutable(Component)* pastComponent(Component)(const EntityID entity) nothrow const
         if(!isMultiComponent!Component)
     {
-        enum typeID = Component.ComponentTypeID;
-        auto componentOfEntity(size_t index) nothrow const
-        {
-            auto pastComponents = &((*pastComponents_)[typeID]);
+        auto raw = rawPastComponent(Component.ComponentTypeID, entity);
+        return raw.isNull ? null : cast(immutable(Component)*)raw.componentData.ptr;
+    }
+
+    /// Access a past (non-multi) component in _any_ past entity as raw data.
+    ///
+    /// Params: typeID = Type ID of component to access. Must be an ID of a registered
+    ///                  component type.
+    ///         Entity = ID of the entity to access. Must be an ID of an existing past
+    ///                  entity.
+    ///
+    /// Returns: A RawComponent representation of the past component if the entity
+    ///          contains such a component; NULL RawComponent otherwise.
+    ImmutableRawComponent rawPastComponent(const ushort typeID, const EntityID entity)
+        nothrow const
+    {
+        assert(!componentTypeManager_.componentTypeInfo[typeID].isMulti,
+               "rawPastComponent can't access components of MultiComponent types");
+
+        // Get the component with type typeID of past entity at index index.
+        static auto componentOfEntity(ref const(EntityAccess) self, const ushort typeID,
+                                      const size_t index) nothrow
+        { with(self) {
+            auto pastComponents  = &((*pastComponents_)[typeID]);
             const componentCount = pastComponents.counts[index];
-            if(0 == componentCount) { return null; }
+            if(0 == componentCount)
+            {
+                return ImmutableRawComponent(nullComponentTypeID, null);
+            }
 
             const offset = pastComponents.offsets[index];
             assert(offset != size_t.max, "Offset not set");
 
-            auto raw = pastComponents.buffer.committedComponentSpace;
-            auto components = cast(immutable(Component[]))raw;
-            return &components[offset];
-        }
+            auto raw           = pastComponents.buffer.committedComponentSpace;
+            auto componentSize = componentTypeManager_.componentTypeInfo[typeID].size;
+            auto byteOffset    = offset * componentSize;
+            auto componentData = raw[byteOffset .. byteOffset + componentSize];
+            return ImmutableRawComponent(typeID, componentData);
+        } }
 
         // Fast path when accessing a component in the current past entity.
         if(currentEntity().id == entity)
         {
-            return componentOfEntity(pastEntityIndex_);
+            return componentOfEntity(this, typeID, pastEntityIndex_);
         }
 
         // If accessing a component in another past entity, binary search to find the
@@ -96,7 +124,7 @@ public:
             const EntityID mid = slice[index].id;
             if(mid > entity)       { slice = slice[0 .. index]; }
             else if (mid < entity) { slice = slice[index + 1 .. $]; }
-            else                   { return componentOfEntity(index); }
+            else                   { return componentOfEntity(this, typeID, index); }
         }
 
         // If this happens, the user passed an invalid entity ID or we have a bug.
@@ -113,8 +141,9 @@ package:
     /// Construct an EntityAccess for entities of specified entity manager.
     this(EntityManager entityManager) @safe pure nothrow
     {
-        pastEntities_   = entityManager.past_.entities;
-        pastComponents_ = &entityManager.past_.components;
+        pastEntities_         = entityManager.past_.entities;
+        pastComponents_       = &entityManager.past_.components;
+        componentTypeManager_ = entityManager.componentTypeManager_;
     }
 }
 

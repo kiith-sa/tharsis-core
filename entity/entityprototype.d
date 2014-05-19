@@ -172,10 +172,8 @@ public:
 
     /// Get a range to iterate over components in the prototype as RawComponents.
     ///
-    /// Params:  componentTypeManager = Manager with type information about all 
-    ///                                 component types.
-    ComponentRange componentRange(Policy)
-        (ComponentTypeManager!Policy componentTypeManager)
+    /// Params:  componentTypeManager = Manager with type info of all component types.
+    ComponentRange componentRange(AbstractComponentTypeManager componentTypeManager)
         pure nothrow
     {
         return ComponentRange(this, componentTypeManager.componentTypeInfo);
@@ -227,12 +225,9 @@ public:
     /// Most prototypes are likely to be very small; this is the size of memory needed
     /// to avoid *any* prototype running out of memory.
     ///
-    /// TParams: Policy = The entity policy used with the current EntityManager.
-    ///
-    /// Params: componentTypeManager = Component type manager with which all
-    ///                                used component types are registered.
-    static size_t maxPrototypeBytes(Policy)
-        (ComponentTypeManager!Policy componentTypeManager)
+    /// Params: componentTypeManager = Component type manager with which all used
+    ///                                component types are registered.
+    static size_t maxPrototypeBytes(AbstractComponentTypeManager componentTypeManager)
         @safe pure nothrow
     {
         return componentTypeManager.maxEntityBytes + 32 +

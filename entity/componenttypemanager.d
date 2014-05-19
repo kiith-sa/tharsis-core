@@ -15,15 +15,14 @@ import std.typetuple;
 
 import tharsis.entity.componenttypeinfo;
 import tharsis.entity.entitypolicy;
+import tharsis.entity.source;
 
 
 /// Base class for component type managers.
 ///
 /// See_Also: ComponentTypeManager.
-class AbstractComponentTypeManager(Policy)
+class AbstractComponentTypeManager
 {
-    mixin validateEntityPolicy!Policy;
-
 private:
     /// Is this manager locked (i.e. no more types may be registered)?
     bool locked_;
@@ -31,10 +30,9 @@ private:
 protected:
     /// Type information for all registered component types.
     ///
-    /// Every index corresponds to a component type ID.
-    /// If there is no registered component type with a particular ID, the
-    /// ComponentTypeInfo at its corresponding index is null.
-    ComponentTypeInfo[maxComponentTypes!Policy] componentTypeInfo_;
+    /// Every index is a component type ID. If there is no registered component type
+    /// with a particular ID, the ComponentTypeInfo at that index is null.
+    ComponentTypeInfo[] componentTypeInfo_;
 
 public:
     /// Lock the component type manager.
@@ -106,12 +104,35 @@ public:
     /// be null (determine this using ComponentTypeInfo.isNull).
     ///
     /// Can only be called after this manager is locked.
-    ref const(ComponentTypeInfo[maxComponentTypes!Policy]) componentTypeInfo()
-        @safe pure nothrow const
+    final const(ComponentTypeInfo[]) componentTypeInfo() @safe pure nothrow const
     {
         assert(locked, "Can't access component type info before locking "
                        "ComponentTypeManager");
         return componentTypeInfo_;
+    }
+
+protected:
+    /// Provides access to component type info storage (in a derived class) to
+    /// AbstractComponentTypeManager.
+    ///
+    /// This is used because the derived class (e.g. ComponentTypeManager) will
+    /// allocate the component type info storage by itself depending on its
+    /// parameters (e.g. Policy). (We could just make componentTypeInfo_ 
+    /// protected, but that would allow ComponentTypeManagers that don't 
+    /// initialize it).
+    ComponentTypeInfo[] componentTypeInfoStorage() @safe pure nothrow
+    {
+        // This is an abstract method. Implemented here only because of a DMD
+        // bug (as of DMD 2.065).
+        assert(false,
+               "This must not be called; override this in derived class");
+    }
+
+private:
+    /// AbstracComponentTypeManager constructor, called only by ComponentTypeManager.
+    this()
+    {
+        componentTypeInfo_ = componentTypeInfoStorage();
     }
 }
 
@@ -314,9 +335,18 @@ enum maxSourceBytes = 512;
 /// }
 /// --------------------
 class ComponentTypeManager(Source, Policy = DefaultEntityPolicy)
-    : AbstractComponentTypeManager!Policy
+    : AbstractComponentTypeManager
 {
 private:
+    mixin validateEntityPolicy!Policy;
+    mixin validateSource!Source;
+
+    /// Type information for all registered component types.
+    ///
+    /// Indices are component type IDs. If there is no registered component type with a
+    /// particular ID, the ComponentTypeInfo at that index is null.
+    ComponentTypeInfo[maxComponentTypes!Policy] componentTypeInfoStorage_;
+
     /// Loads the Source objects from which entities are loaded.
     Source.Loader sourceLoader;
 
@@ -370,20 +400,18 @@ public:
                        "or 'defaults' component types. Use enum ComponentTypeID = "
                        "userComponentTypeID!YOUR_ID.");
             }
-            assert(componentTypeInfo_[id].isNull,
-                "There already is a registered component type with this ID");
+            assert(componentTypeInfoStorage_[id].isNull,
+                   "There already is a registered component type with this ID");
             static assert(id < maxComponentTypes!Policy,
-                "Component type IDs must be at most %s. This limit can be "
-                "increased by overriding the Policy template parameter of the "
-                "ComponentTypeManager"
-                .format(Policy.maxComponentTypes - 1));
-            static assert(
-                maxComponentsPerEntity!Component <= Policy.ComponentCount.max,
-                "maxComponentsPerEntity of a component type is greater than "
-                "the maximum value of ComponentCount type specified by the "
-                "Policy template parameter of the ComponentTypeManager");
-            componentTypeInfo_[id] =
-                ComponentTypeInfo.construct!(Source, Component);
+                          "Component type IDs must be at most %s. This limit can be "
+                          "increased by overriding the Policy template parameter of "
+                          "the ComponentTypeManager"
+                          .format(Policy.maxComponentTypes - 1));
+            static assert(maxComponentsPerEntity!Component <= Policy.ComponentCount.max,
+                          "maxComponentsPerEntity of a component type is greater than "
+                          "the max value of ComponentCount type specified by the "
+                          "Policy template parameter of the ComponentTypeManager");
+            componentTypeInfoStorage_[id].__ctor!(Source, Component);
         }
     }
 
@@ -391,5 +419,12 @@ public:
     Source loadSource(const string name) @safe nothrow
     {
         return sourceLoader.loadSource(name);
+    }
+
+protected:
+    final override ComponentTypeInfo[] componentTypeInfoStorage() 
+        @safe pure nothrow
+    {
+        return componentTypeInfoStorage_[];
     }
 }

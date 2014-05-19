@@ -50,8 +50,8 @@ private:
     /// Memory used by prototypes in toSpawn_ to store components.
     PartiallyMutablePagedBuffer toSpawnData_;
 
-    /// Type info about all registered component types.
-    const(ComponentTypeInfo)[] componentTypes_;
+    /// Component type manager, to access component type info.
+    AbstractComponentTypeManager componentTypeManager_;
 
     /// Number of bytes to reserve when creating a prototype to ensure any prototype can
     /// fit.
@@ -83,17 +83,16 @@ public:
     /// auto spawner = new SpawnerProcess(&entityManager.addEntity, prototypeManager,
     ///                                   componentTypeManager);
     /// --------------------
-    this(Policy)
-        (AddEntity addEntity,
+    this(AddEntity addEntity,
          ResourceManager!EntityPrototypeResource prototypeManager,
          ResourceManager!InlineEntityPrototypeResource inlinePrototypeManager,
-         ComponentTypeManager!Policy componentTypeManager)
+         AbstractComponentTypeManager componentTypeManager)
         @safe pure nothrow
     {
         addEntity_              = addEntity;
         prototypeManager_       = prototypeManager;
         inlinePrototypeManager_ = inlinePrototypeManager;
-        componentTypes_         = componentTypeManager.componentTypeInfo[];
+        componentTypeManager_   = componentTypeManager;
         maxPrototypeBytes_ = EntityPrototype.maxPrototypeBytes(componentTypeManager);
     }
 
@@ -188,11 +187,15 @@ private:
         auto over = inlinePrototypeManager_.resource(overHandle).prototype;
         // Allocate memory for the new component.
         auto memory = toSpawnData_.getBytes(maxPrototypeBytes_);
+
+        auto componentTypes = componentTypeManager_.componentTypeInfo;
         // Create the prototype of the entity to spawn.
         EntityPrototype combined = 
-            mergePrototypesOverride(base, over, memory, componentTypes_);
+            mergePrototypesOverride(base, over, memory, componentTypes);
 
-        toSpawnData_.lockBytes(combined.lockAndTrimMemory(componentTypes_));
+        auto combinedBytes = combined.lockAndTrimMemory(componentTypes);
+
+        toSpawnData_.lockBytes(combinedBytes);
 
         // Add the prototype to toSpawn_ to ensure it exists until the
         // beginning of the next game update when it is spawned.  It will be
