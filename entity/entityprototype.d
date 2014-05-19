@@ -25,61 +25,57 @@ import tharsis.util.stackbuffer;
 // TODO eventually we will want a way to construct an EntityPrototype by adding
 //      components as structs without messing around with untyped data. This could be
 //      done using a wrapper (PrototypeBuilder?) that would include component type info.
+
 /// Stores data to create an entity from.
 ///
-/// An EntityPrototoype stores components that can be copied to create an
-/// entity. Components can be loaded from a file once, and then used many times
-/// to create entities without loading again.
+/// An EntityPrototoype stores components that can be copied to create an entity.
+/// Components can be loaded from a file once, and then used many times to create
+/// entities without loading again.
 ///
-/// An EntityPrototype is usually used through PrototypeManager. The code that
-/// creates an EntityPrototype must provide it with memory as well as the
-/// components it should store
+/// An EntityPrototype is usually used through PrototypeManager. Code that creates an
+/// EntityPrototype must provide it with memory as well as the components it should
+/// store.
 ///
-/// An EntityPrototype can't contain builtin components at the moment. This
-/// restriction may be relaxed in future if needed.
+/// An EntityPrototype can't contain builtin components at the moment. This restriction
+/// may be relaxed in future if needed.
 struct EntityPrototype
 {
 private:
     /// Storage provided to the EntityPrototype by its owner.
-    /// Both componentTypeIDs_ and components_ point to this storage.
     ///
-    /// Passed by useMemory(). Never resized; running out of this space triggers
-    /// an assertion error.
+    /// Both componentTypeIDs_ and components_ point to this storage. Passed by
+    /// useMemory(). Never resized; running out of this space triggers an assert error.
     ///
-    /// After a call to lockAndTrimMemory, componentTypeIDs_ and components_ are
-    /// packed and the length of storage_ is decreased to only the used space.
+    /// After a call to lockAndTrimMemory, componentTypeIDs_ and components_ are packed
+    /// and the length of storage_ is decreased to only the used space.
     ubyte[] storage_;
 
     /// Part of storage_ used to store type IDs.
     ///
-    /// Before lockAndTrimMemory() is called, this is at the end of storage_ and
-    /// in reverse order. When the memory is trimmed, this is reordered to match
-    /// the order of the (now sorted) components_ (not in reverse order), and
-    /// moved to the end of storage_. It may start right after components_ or
-    /// after an alignment gap.
+    /// Before lockAndTrimMemory() is called, this is at the end of storage_ and in
+    /// reverse order. When the memory is trimmed, this is reordered to match the order
+    /// of the (now sorted) components_ (not in reverse order), and moved to the end of
+    /// storage_. It may start right after components_ or after an alignment gap.
     ///
-    /// For MultiComponents, one ID is stored for each component even if they
-    /// have the same type.
+    /// For MultiComponents, one ID is stored for each component even if they have the
+    /// same type.
     ushort[] componentTypeIDs_;
 
-    /// Part of storage_ used to store components. Starts at the beginning of
-    /// storage_. After a call to loacAndTrimMemory, the components are sorted
-    /// by component type ID.
+    /// Part of storage_ used to store components. Starts at the beginning of storage_.
+    /// After a call to loacAndTrimMemory, components are sorted by component type ID.
     ubyte[] components_;
 
-    /// Set to true by lockAndTrimMemory(), after which no more components can
-    /// be added.
+    /// Set to true by lockAndTrimMemory(), after which no more components can be added.
     bool locked_ = false;
 
 public:
     /// A range to iterate over components in an EntityPrototype.
     ///
-    /// If the isConst parameter is true, the range can only read components.
-    /// Otherwise the components can be modified.
+    /// If the isConst parameter is true, the range can only read components. Otherwise
+    /// the components can be modified.
     ///
-    /// The components are iterated as RawComponents, i.e. raw byte data with
-    /// type ID. Usually they will need to be cast to an actual component type
-    /// to be useful.
+    /// The components are iterated as RawComponents, i.e. raw byte data with type ID.
+    /// Usually they will need to be cast to an actual component type to be useful.
     struct GenericComponentRange(Flag!"isConst" isConst)
     {
     private:
@@ -97,12 +93,11 @@ public:
 
         /// Index of the current component in the prototype.
         ///
-        /// Used with Prototype.componentTypeIDs_ to get type of the current
-        /// component.
+        /// Used with Prototype.componentTypeIDs_ to get type of the current component.
         size_t componentIndex_ = 0;
 
-        /// Offset, in bytes, where the current component in 
-        /// Prototype.components_ starts.
+        /// Offset, in bytes, where the current component in Prototype.components_
+        /// starts.
         size_t componentOffset_ = 0;
 
         /// Current element of the range (type ID + slice with component data).
@@ -117,10 +112,8 @@ public:
         /// Construct a component range.
         ///
         /// Params:  prototype         = Entity prototype to iterate over.
-        ///          componentTypeInfo = Type information about all registered
-        ///                              component types.
-        this(ref Prototype prototype,
-             const(ComponentTypeInfo)[] componentTypeInfo)
+        ///          componentTypeInfo = Type info about all registered component types.
+        this(ref Prototype prototype, const(ComponentTypeInfo)[] componentTypeInfo)
             pure nothrow
         {
             assert(prototype.locked_,
@@ -169,8 +162,7 @@ public:
             auto  data = prototype_.components_[componentOffset_ ..
                                                 componentOffset_ + size];
 
-            // The cast is OK if isConst == true; front() will still only allow
-            // const access.
+            // The cast is OK if isConst == true; front() will only allow const access.
             front_ = RawComponent(type, cast(ubyte[])data);
         }
     }
@@ -180,9 +172,7 @@ public:
     /// See_Also: GenericComponentRange
     alias ConstComponentRange = GenericComponentRange!(Yes.isConst);
 
-    
-    /// Get a component range to iterate over components in the prototype
-    /// (as RawComponents).
+    /// Get a range to iterate over components in the prototype as RawComponents.
     ///
     /// Params:  componentTypeManager = Manager with type information about all 
     ///                                 component types.
@@ -193,11 +183,9 @@ public:
         return ComponentRange(this, componentTypeManager.componentTypeInfo);
     }
 
-    /// Get a component range to iterate over components in the prototype
-    /// (as RawComponents).
+    /// Get a range to iterate over components in the prototype as RawComponents.
     ///
-    /// Params:  componentTypeInfo = Slice with type information about all
-    ///                                 component types.
+    /// Params:  componentTypeInfo = Slice with type info of all component types.
     ComponentRange componentRange(const(ComponentTypeInfo)[] componentTypeInfo)
         pure nothrow
     {
@@ -205,9 +193,8 @@ public:
     }
 
     /// Ditto.
-    ConstComponentRange
-        constComponentRange(const(ComponentTypeInfo)[] componentTypeInfo)
-        pure nothrow const
+    ConstComponentRange constComponentRange
+        (const(ComponentTypeInfo)[] componentTypeInfo) pure nothrow const
     {
         return ConstComponentRange(this, componentTypeInfo);
     }
@@ -215,13 +202,11 @@ public:
 
     /// Provide memory for the prototype to use.
     ///
-    /// Must be called before adding any components.
-    /// Can only be called once.
+    /// Must be called before adding any components. Can only be called once.
     ///
-    /// The size of passed memory must be enough for all components that will
-    /// be added to this prototype, plus ushort.sizeof per component for
-    /// component type IDs. The size of passed memory should be aligned upwards
-    /// to a multiple of 16.
+    /// Size of passed memory must be enough for all components that will be added to
+    /// this prototype, plus ushort.sizeof per component for component type IDs. Size of
+    /// passed memory should be aligned upwards to a multiple of 16.
     ///
     /// Params: memory = Memory for the prototype to use. Must be at least
     ///                  maxPrototypeBytes() bytes long.
@@ -241,10 +226,9 @@ public:
 
     /// Get the maximum number of bytes any entity prototype might need.
     ///
-    /// Used to determine the minimum size of memory to pass to
-    /// EntityPrototype.useMemory(). Most prototypes are likely to be very
-    /// small; this is the size of memory needed to avoid *any* prototype
-    /// running out of memory.
+    /// Used to determine minimum size of memory to pass to EntityPrototype.useMemory().
+    /// Most prototypes are likely to be very small; this is the size of memory needed
+    /// to avoid *any* prototype running out of memory.
     ///
     /// TParams: Policy = The entity policy used with the current EntityManager.
     ///
@@ -262,14 +246,12 @@ public:
     ///
     /// Can only be called between calls to useMemory() and lockAndTrimMemory().
     ///
-    /// Params: info = Type information about the component. Except for
-    ///                MultiComponents, multiple components of the same type
-    ///                can not be added.
+    /// Params: info = Type information about the component. Except for MultiComponents,
+    ///                multiple components of the same type can not be added.
     ///
-    /// Returns: A slice to write the component to. The component $(B must) be
-    ///          written to this slice or the prototype must be thrown away.
-    ubyte[] allocateComponent
-        (ref const(ComponentTypeInfo) info) @trusted nothrow
+    /// Returns: A slice to write the component to. The component $(B must) be written
+    ///          to this slice or the prototype must be thrown away.
+    ubyte[] allocateComponent(ref const(ComponentTypeInfo) info) @trusted nothrow
     {
         assert(!locked_, "Adding a component to a locked EntityPrototype");
         assert(info.id >= maxBuiltinComponentTypes,
@@ -295,12 +277,10 @@ public:
     ///
     /// Trims used memory and aligns it to a multiple of 16.
     ///
-    /// Params: componentTypes = Type information about all registered component
-    ///                          types.
+    /// Params: componentTypes = Type information about all registered component types.
     ///
-    /// Returns: The part of the memory passed by useMemory that is used by the
-    ///          prototype. The rest is unused and can be used by the caller for
-    ///          something else.
+    /// Returns: Part of memory passed by useMemory that is used by the prototype. The
+    ///          rest is unused and can be used by the caller for something else.
     const(ubyte)[] lockAndTrimMemory(const(ComponentTypeInfo)[] componentTypes)
         @trusted nothrow
     {
@@ -309,8 +289,8 @@ public:
         // Used memory must be aligned to 16 bytes.
         const alignedBytes = totalBytes.alignUp(16);
 
-        // Sort the components by type ID (simplifies component overriding when
-        // merging entity prototypes).
+        // Sort the components by type ID (simplifies component overriding when merging
+        // entity prototypes).
 
         // Avoid heap allocation by using stack if the prototype is small.
         auto scratchBuffer = StackBuffer!(ubyte, 16 * 1024)(alignedBytes);
@@ -333,9 +313,9 @@ public:
                    "Processed more components than present in the prototype");
 
             size_t offsetOld = 0;
-            // Copy every component with matching type ID to the sorted buffer.
-            // Using foreach_reverse since componentTypeIDs_ are in reverse
-            // order during the construction of the prototype.
+            // Copy every component with matching type ID to the sorted buffer. Using
+            // foreach_reverse since componentTypeIDs_ are in reverse order during
+            // prototype construction.
             foreach_reverse(id; componentTypeIDs_)
             {
                 const bytes = componentTypes[id].size;
@@ -362,24 +342,22 @@ public:
 }
 
 
-/// Merge two entity prototypes; components from over override components from
-/// base. The returned prototype is not locked/trimmed.
+/// Merge two entity prototypes; components from over override components from base.
+/// The returned prototype is not locked/trimmed.
 ///
-/// The result is created by taking all components from base and adding
-/// components of each type from over. If components of the same type are both
-/// in base and over, the component/s from over are used (overriding base).
+/// The result is created by taking all components from base and adding components of
+/// each type from over. If components of the same type are both in base and over,
+/// component/s from over are used (overriding base).
 ///
 /// Params: base           = The base for the merged prototype.
-///         over           = Prototype with components added to/overriding
-///                          components in base.
-///         memory         = Memory to use for the new entity prototype.
-///                          Must be at least
-///                          EntityPrototype.maxPrototypeBytes() bytes long.
-///         componentTypes = Type information about all registered component
-///                          types.
+///         over           = Prototype with components added to/overriding components in
+///                          base.
+///         memory         = Memory to use for the new entity prototype. Must be at
+///                          least EntityPrototype.maxPrototypeBytes() bytes long.
+///         componentTypes = Type information about all registered component types.
 ///
-/// Returns: The merged prototype. The prototype is not locked, allowing more
-///          components to be added. To be used it must be locked by calling
+/// Returns: The merged prototype. The prototype is not locked, allowing more components
+///          to be added. To be used it must be locked by calling
 ///          EntityPrototype.lockAndTrimMemory().
 EntityPrototype mergePrototypesOverride
     (ref const(EntityPrototype) base, ref const(EntityPrototype) over,
@@ -447,8 +425,7 @@ struct EntityPrototypeResource
     /// No default construction.
     @disable this();
 
-    /// Construct a new (not loaded) EntityPrototypeResource with specified
-    /// descriptor.
+    /// Construct a new (not loaded) EntityPrototypeResource with specified descriptor.
     this(ref Descriptor descriptor) @safe pure nothrow
     {
         this.descriptor = descriptor;
