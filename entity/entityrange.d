@@ -238,10 +238,9 @@ package:
         entityAccess_ = EntityAccess!EntityManager(entityManager);
         futureEntities_ = entityManager.future_.entities;
 
-        immutable(EntityManager.ComponentState)* pastComponents
-            = &entityManager.past_.components;
-        // Initialize component and component count buffers for processed past
-        // component types.
+        immutable(EntityManager.ComponentState)* pastComponents =
+            &entityManager.past_.components;
+        // Init component/component count buffers for processed past component types.
         foreach(index, Component; ProcessedComponents)
         {
             enum id  = Component.ComponentTypeID;
@@ -295,13 +294,12 @@ package:
         const past   = front().id;
         const future = futureEntities_[futureEntityIndex_].id;
         assert(past == future,
-               "The past (%s) and future (%s) entity is not the same. Maybe we "
-               "forgot to skip a dead past entity, or we copied a dead entity "
-               "into future entities, or we inserted a new entity elsewhere "
-               "than the end of future entities.".format(past, future));
+               "The past (%s) and future (%s) entity is not the same. Maybe we forgot "
+               "to skip a dead past entity, or we copied a dead entity into future "
+               "entities, or we inserted a new entity elsewhere than the end of future "
+               "entities.".format(past, future));
         assert(pastComponent!LifeComponent().alive,
-               "Current entity is dead. Likely a bug in how skipDeadEntities "
-               "is called.");
+               "Current entity is dead. Likely a bug when calling skipDeadEntities?");
 
         nextFutureEntity();
         nextPastEntity();
@@ -318,8 +316,9 @@ package:
         if(!isMultiComponent!Component)
     {
         enum id = Component.ComponentTypeID;
-        mixin(q{return %s[componentOffsets_[id]];}
-              .format(bufferName!Component));
+        mixin(q{
+        return %s[componentOffsets_[id]];
+        }.format(bufferName!Component));
     }
 
     /// Access past multi components of one type in the current entity.
@@ -355,8 +354,8 @@ package:
     {
         enum neededSpace = maxComponentsPerEntity!(FutureComponent);
         // Ensures the needed space is allocated.
-        ubyte[] unused = futureComponents_.buffer
-                         .forceUncommittedComponentSpace(neededSpace);
+        ubyte[] unused =
+            futureComponents_.buffer.forceUncommittedComponentSpace(neededSpace);
         return *cast(FutureComponent*)(unused.ptr);
     }
 
@@ -371,8 +370,8 @@ package:
     {
         enum maxComponents = maxComponentsPerEntity!(FutureComponent);
         // Ensures the needed space is allocated.
-        ubyte[] unused = futureComponents_.buffer
-                         .forceUncommittedComponentSpace(maxComponents);
+        ubyte[] unused =
+            futureComponents_.buffer.forceUncommittedComponentSpace(maxComponents);
         return (cast(FutureComponent*)(unused.ptr))[0 .. maxComponents];
     }
 
@@ -383,10 +382,9 @@ package:
     /// May be called more than once while processing an entity; the last call must pass
     /// the number of components actually written.
     ///
-    /// Params: count = The number of components written. Must be 0 or 1 for
-    ///                 non-multi components.
-    void setFutureComponentCount(const ComponentCount count)
-        @safe pure nothrow
+    /// Params: count = Number of components written. Must be 0 or 1 for non-multi
+    ///                 components.
+    void setFutureComponentCount(const ComponentCount count) @safe pure nothrow
     {
         assert(isMultiComponent!FutureComponent || count <= 1,
                "Component count for a non-multi component can be at most 1");
@@ -403,8 +401,8 @@ package:
         // Type IDs of component types we're matching (must be a subset of processedIDs)
         enum sortedIDs    = std.algorithm.sort([ComponentTypeIDs]);
         static assert(sortedIDs.setDifference(processedIDs).empty,
-                      "One or more matched component types are not processed "
-                      "by this EntityRange.");
+                      "One or more matched component types are not processed by this "
+                      "EntityRange.");
 
         static string matchCode()
         {
@@ -413,10 +411,9 @@ package:
             string[] parts;
             foreach(id; ComponentTypeIDs)
             {
-                // Component count for this component type will be a member
-                // of the product.
-                parts ~= q{(*%s)[entityAccess_.pastEntityIndex_]}
-                         .format(countsName!id);
+                // Component count for this component type will be a member of the
+                // product.
+                parts ~= q{(*%s)[entityAccess_.pastEntityIndex_]}.format(countsName!id);
             }
             return parts.join(" * ");
         }
@@ -486,7 +483,6 @@ private:
             }.format(countsName!id));
             parts ~= "%s: %s".format(id, count);
         }
-        return writefln("Component counts (typeid: count):\n%s",
-                        parts.join(","));
+        return writefln("Component counts (typeid: count):\n%s", parts.join(","));
     }
 }
