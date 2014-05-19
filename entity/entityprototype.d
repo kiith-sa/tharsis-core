@@ -80,8 +80,7 @@ public:
     {
     private:
         /// Work with a const or non-const EntityPrototype depending on isConst.
-        alias Prototype =
-            Select!(isConst, const(EntityPrototype), EntityPrototype);
+        alias Prototype = Select!(isConst, const(EntityPrototype), EntityPrototype);
 
         /// The entity prototype we're iterating over.
         Prototype* prototype_;
@@ -116,8 +115,7 @@ public:
         this(ref Prototype prototype, const(ComponentTypeInfo)[] componentTypeInfo)
             pure nothrow
         {
-            assert(prototype.locked_,
-                   "ComponentRange requires a locked EntityPrototype");
+            assert(prototype.locked_, "ComponentRange needs a locked EntityPrototype");
             prototype_         = &prototype;
             componentTypeInfo_ = componentTypeInfo;
             updateFront();
@@ -214,13 +212,12 @@ public:
     {
         assert(!locked_, "Providing memory to a locked EntityPrototype");
         assert(storage_ == null,
-               "Trying to provide memory to an EntityPrototype that already "
-               "has memory");
+               "Trying to provide memory to an EntityPrototype that already has memory");
         assert(memory.length % 16 == 0,
                "EntityPrototype memory must be divisible by 16");
 
-        storage_ = memory;
-        components_  = memory[0 .. 0];
+        storage_          = memory;
+        components_       = memory[0 .. 0];
         componentTypeIDs_ = cast(ushort[])memory[$ .. $];
     }
 
@@ -259,8 +256,8 @@ public:
         assert(info.isMulti || !componentTypeIDs_.canFind(info.id),
                "EntityPrototype with 2 non-multi components of the same type");
 
-        assert(components_.length + info.size +
-               componentTypeIDs_.length * ushort.sizeof <= storage_.length,
+        assert(components_.length + info.size + componentTypeIDs_.length * ushort.sizeof
+               <= storage_.length,
                "Ran out of memory provided to an EntityPrototype");
 
         components_ = storage_[0 .. components_.length + info.size];
