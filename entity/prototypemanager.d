@@ -124,14 +124,12 @@ public:
         resourcesToAdd_ = new shared(Class!(MallocArray!Resource))();
         indicesToLoad_  = new shared(Class!(MallocArray!uint))();
 
-        // Write access should be very rare, but if it happens, give it a
-        // priority to ensure it ends ASAP
-        resourcesToAddMutex_ =
-            new ReadWriteMutex(ReadWriteMutex.Policy.PREFER_WRITERS);
-        indicesToLoadMutex_ =
-            new ReadWriteMutex(ReadWriteMutex.Policy.PREFER_WRITERS);
-        /// Load a component of type componentType from componentSource to
-        /// prototype.
+        // Write access should be very rare, but if it happens, give it a priority to
+        // ensure it ends ASAP
+        resourcesToAddMutex_ = new ReadWriteMutex(ReadWriteMutex.Policy.PREFER_WRITERS);
+        indicesToLoadMutex_  = new ReadWriteMutex(ReadWriteMutex.Policy.PREFER_WRITERS);
+
+        /// Load a component of type componentType from componentSource to prototype.
         ///
         /// Params:  componentType   = Type of the component to load.
         ///          componentSource = Source to load the component from.
@@ -148,8 +146,7 @@ public:
         {
             ubyte[] storage = prototype.allocateComponent(componentType);
             if(!componentType.loadComponent(storage, componentSource,
-                                            &entityManager.rawResourceHandle,
-                                            errorLog))
+                                            &entityManager.rawResourceHandle, errorLog))
             {
                 // Failed to load the component.
                 return false;
@@ -182,8 +179,7 @@ public:
             Source componentSource;
             while(sequence.getSequenceValue(count, componentSource))
             {
-                if(!loadComponent(componentType, componentSource, prototype, 
-                                  errorLog))
+                if(!loadComponent(componentType, componentSource, prototype, errorLog))
                 {
                     return false;
                 }
@@ -195,24 +191,17 @@ public:
                 }
             }
 
-            // Zero components of this type (or a non-sequence Source): loading
-            // failed.
-            if(count == 0)
-            {
-                return false;
-            }
-            return true;
+            // Zero components of this type (or a non-sequence Source): loading failed.
+            return count == 0 ? false : true;
         }
 
         /// Load an entity prototype resource.
         ///
-        /// Params: resource = The resource to load. State of the resource will
-        ///                    be set to Loaded if loaded successfully,
-        ///                    LoadFailed otherwise.
-        ///         errorLog = A string to write any loading errors to.
-        ///                    If there are no errors, this is not touched.
-        void loadResource(ref Resource resource, ref string errorLog)
-            @trusted nothrow
+        /// Params: resource = The resource to load. State of the resource will be set
+        ///                    to Loaded if loaded successfully, LoadFailed otherwise.
+        ///         errorLog = A string to write any loading errors to. If there are no
+        ///                    errors, this is not touched.
+        void loadResource(ref Resource resource, ref string errorLog) @trusted nothrow
         {
             auto typeMgr = componentTypeManager;
             // Get the source (e.g. YAML) storing the prototype. May fail e.g if
@@ -239,9 +228,8 @@ public:
 
                 const loaded = resource.state == ResourceState.Loaded;
                 // The prototype should return any memory it does not use.
-                prototypeData_.lockBytes(loaded
-                    ? prototype.lockAndTrimMemory(typeInfo)
-                    : storage[0 .. 0]);
+                prototypeData_.lockBytes(loaded ? prototype.lockAndTrimMemory(typeInfo)
+                                                : storage[0 .. 0]);
             }
 
             // Load components of the entity. Look for components of all types.
@@ -254,9 +242,9 @@ public:
                     continue;
                 }
 
-                if(type.isMulti ?
-                   !loadMultiComponent(type, compSrc, *prototype, errorLog) :
-                   !loadComponent(type, compSrc, *prototype, errorLog))
+                if(type.isMulti 
+                   ? !loadMultiComponent(type, compSrc, *prototype, errorLog)
+                   : !loadComponent(type, compSrc, *prototype, errorLog))
                 {
                     resource.state = ResourceState.LoadFailed;
                     return;
@@ -329,8 +317,7 @@ public:
             }
         }
 
-        alias Handle function(ref Descriptor, BasePrototypeManager) nothrow
-            Synced;
+        alias Handle function(ref Descriptor, BasePrototypeManager) nothrow Synced;
         return (cast(Synced)&synced)(descriptor, this);
     }
 
@@ -513,8 +500,7 @@ public:
         // prototype is defined. The prototype manager gets the prototype source by
         // loading source from that file.
         super(componentTypeManager, entityManager,
-              (ref Descriptor d)
-                  => componentTypeManager.loadSource(d.fileName));
+              (ref Descriptor d) => componentTypeManager.loadSource(d.fileName));
     }
 }
 unittest
