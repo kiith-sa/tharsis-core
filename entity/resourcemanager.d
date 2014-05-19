@@ -179,6 +179,11 @@ public:
     /// Used for debugging.
     Foreachable!(const(Descriptor)) loadFailedDescriptors() 
         @safe pure nothrow const;
+
+    /// Get a detailed string log of all loading errors. 
+    ///
+    /// Used for debugging.
+    string errorLog() @safe pure nothrow const;
 }
 
 

@@ -444,6 +444,11 @@ public:
         return new FailedDescriptors(this);
     }
 
+    override string errorLog() @safe pure nothrow const
+    {
+        return errorLog_;
+    }
+
 protected:
     override void update_() @trusted nothrow
     {
