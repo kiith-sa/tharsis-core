@@ -185,6 +185,7 @@ void main(string[] args)
     auto baseIgnore = [".+?D-YAML/unittest.d", 
                        ".+?D-YAML/examples/.+?",
                        ".+?D-YAML/test/.+?",
+                       ".+?D-YAML/source/dyaml/test.+?",
                        ".+?D-YAML/cdc.d"];
 
     void compile_(string[] files, string binaryName, string[] ignore,

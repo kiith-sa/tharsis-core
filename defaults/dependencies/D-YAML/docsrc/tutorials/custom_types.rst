@@ -78,6 +78,7 @@ CSS-like format, RRGGBB, or from a mapping, where we use the following format:
        //Get value of a hex digit.
        uint hex(char c)
        {
+           import std.ascii;
            if(!std.ascii.isHexDigit(c))
            {
                throw new Exception("Invalid color: " ~ value);
@@ -201,6 +202,7 @@ Add this to your code to add implicit resolution of ``!color``.
    //code from the previous example...
 
    auto resolver = new Resolver;
+   import std.regex;
    resolver.addImplicitResolver("!color", std.regex.regex("[0-9a-fA-F]{6}"),
                                 "0123456789abcdefABCDEF");
    
@@ -301,6 +303,7 @@ such as the color being white.
            representer.addRepresenter!Color(&representColor);
 
            auto resolver = new Resolver;
+           import std.regex;
            resolver.addImplicitResolver("!color", std.regex.regex("[0-9a-fA-F]{6}"),
                                         "0123456789abcdefABCDEF");
 

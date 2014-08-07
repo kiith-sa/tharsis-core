@@ -1,6 +1,7 @@
 
 ///Random YAML generator. Used to generate benchmarking inputs.
 
+import std.algorithm;
 import std.conv;
 import std.datetime;
 import std.math;
@@ -9,9 +10,6 @@ import std.stdio;
 import std.string;
 import dyaml.all;
 
-
-immutable alphabet = " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_";
-immutable digits   = "0123456789";
 
 Node config;
 Node function(bool)[string] generators;
@@ -36,7 +34,7 @@ static this()
     generators["set"]       = &genSet;
 }
 
-real randomNormalized(in string distribution = "linear") 
+real randomNormalized(const string distribution = "linear")
 {
     auto generator = Random(unpredictableSeed());
     const r = uniform!"[]"(0.0L, 1.0L, generator);
@@ -49,23 +47,23 @@ real randomNormalized(in string distribution = "linear")
         case "cubic":
             return r * r * r;
         default:
-            writeln("Unknown random distribution: ", distribution, 
+            writeln("Unknown random distribution: ", distribution,
                     ", falling back to linear");
             return randomNormalized("linear");
     }
 }
 
-long randomLong(in long min, in long max, in string distribution = "linear") 
+long randomLong(const long min, const long max, const string distribution = "linear")
 {
     return min + cast(long)round((max - min) * randomNormalized(distribution));
 }
 
-real randomReal(in real min, in real max, in string distribution = "linear") 
+real randomReal(const real min, const real max, const string distribution = "linear")
 {
     return min + (max - min) * randomNormalized(distribution);
 }
 
-char randomChar(in string chars)
+dchar randomChar(const dstring chars)
 {
     return chars[randomLong(0, chars.length - 1)];
 }
@@ -84,24 +82,26 @@ Node genString(bool root = false)
 {
     auto range = config["string"]["range"];
 
-    const chars = randomLong(range["min"].as!uint, range["max"].as!uint, 
+    auto alphabet = config["string"]["alphabet"].as!dstring;
+
+    const chars = randomLong(range["min"].as!uint, range["max"].as!uint,
                              range["dist"].as!string);
 
-    char[] result = new char[chars];
+    dchar[] result = new dchar[chars];
     result[0] = randomChar(alphabet);
     foreach(i; 1 .. chars)
     {
-        result[i] = randomChar(alphabet ~ digits);
+        result[i] = randomChar(alphabet);
     }
 
-    return Node(cast(string)result);
+    return Node(result.to!string);
 }
 
 Node genInt(bool root = false)
 {
     auto range = config["int"]["range"];
 
-    const result = randomLong(range["min"].as!int, range["max"].as!int, 
+    const result = randomLong(range["min"].as!int, range["max"].as!int,
                               range["dist"].as!string);
 
     return Node(result);
@@ -111,7 +111,7 @@ Node genFloat(bool root = false)
 {
     auto range = config["float"]["range"];
 
-    const result = randomReal(range["min"].as!real, range["max"].as!real, 
+    const result = randomReal(range["min"].as!real, range["max"].as!real,
                               range["dist"].as!string);
 
     return Node(result);
@@ -126,7 +126,7 @@ Node genTimestamp(bool root = false)
 {
     auto range = config["timestamp"]["range"];
 
-    auto hnsecs = randomLong(range["min"].as!ulong, range["max"].as!ulong, 
+    auto hnsecs = randomLong(range["min"].as!ulong, range["max"].as!ulong,
                              range["dist"].as!string);
 
     if(randomNormalized() <= config["timestamp"]["round-chance"].as!real)
@@ -141,7 +141,7 @@ Node genBinary(bool root = false)
 {
     auto range = config["binary"]["range"];
 
-    const bytes = randomLong(range["min"].as!uint, range["max"].as!uint, 
+    const bytes = randomLong(range["min"].as!uint, range["max"].as!uint,
                              range["dist"].as!string);
 
     ubyte[] result = new ubyte[bytes];
@@ -153,7 +153,7 @@ Node genBinary(bool root = false)
     return Node(result);
 }
 
-Node nodes(in bool root, Node range, in string tag, in bool set = false)
+Node nodes(const bool root, Node range, const string tag, const bool set = false)
 {
     auto types = config["collection-keys"].as!bool ? typesCollection : [];
     types ~= (set ? typesScalarKey : typesScalar);
@@ -163,12 +163,13 @@ Node nodes(in bool root, Node range, in string tag, in bool set = false)
     {
         while(!(totalNodes >= minNodesDocument))
         {
+            nodes.assumeSafeAppend;
             nodes ~= generateNode(randomType(types));
         }
     }
     else
     {
-        const elems = randomLong(range["min"].as!uint, range["max"].as!uint, 
+        const elems = randomLong(range["min"].as!uint, range["max"].as!uint,
                                  range["dist"].as!string);
 
         nodes = new Node[elems];
@@ -199,20 +200,31 @@ Node pairs(bool root, bool complex, Node range, string tag)
     {
         while(!(totalNodes >= minNodesDocument))
         {
-            keys ~= generateNode(randomType(typesScalarKey ~ (complex ? typesCollection : [])));
+            const key = generateNode(randomType(typesScalarKey ~ (complex ? typesCollection : [])));
+            // Maps can't contain duplicate keys
+            if(tag.endsWith("map") && keys.canFind(key)) { continue; }
+            keys.assumeSafeAppend;
+            values.assumeSafeAppend;
+            keys ~= key;
             values ~= generateNode(randomType(typesScalar ~ typesCollection));
         }
     }
     else
     {
-        const pairs = randomLong(range["min"].as!uint, range["max"].as!uint, 
+        const pairs = randomLong(range["min"].as!uint, range["max"].as!uint,
                                  range["dist"].as!string);
 
         keys = new Node[pairs];
         values = new Node[pairs];
-        foreach(i; 0 .. pairs)
+        outer: foreach(i; 0 .. pairs)
         {
-            keys[i] = generateNode(randomType(typesScalarKey ~ (complex ? typesCollection : [])));
+            auto key = generateNode(randomType(typesScalarKey ~ (complex ? typesCollection : [])));
+            // Maps can't contain duplicate keys
+            while(tag.endsWith("map") && keys[0 .. i].canFind(key)) 
+            {
+                key = generateNode(randomType(typesScalarKey ~ (complex ? typesCollection : [])));
+            }
+            keys[i]   = key;
             values[i] = generateNode(randomType(typesScalar ~ typesCollection));
         }
     }
@@ -244,13 +256,13 @@ Node genPairs(bool root = false)
     return pairs(root, complex, range, "tag:yaml.org,2002:pairs");
 }
 
-Node generateNode(in string type, bool root = false)
+Node generateNode(const string type, bool root = false)
 {
     ++totalNodes;
     return generators[type](root);
 }
 
-Node[] generate(in string configFileName)
+Node[] generate(const string configFileName)
 {
     config = Loader(configFileName).load();
 
@@ -285,12 +297,12 @@ void main(string[] args)
         //Generate and dump the nodes.
         Node[] generated = generate(configFile);
 
-        auto dumper = Dumper(args[1]);
-        auto encoding = config["encoding"];
+        auto dumper     = Dumper(args[1]);
+        auto encoding   = config["encoding"];
         dumper.encoding = encoding == "utf-16" ? Encoding.UTF_16:
-                          encoding == "utf-32" ? Encoding.UTF_32: 
+                          encoding == "utf-32" ? Encoding.UTF_32:
                                                  Encoding.UTF_8;
-                
+
         dumper.indent = config["indent"].as!uint;
         dumper.textWidth = config["text-width"].as!uint;
         dumper.dump(generated);

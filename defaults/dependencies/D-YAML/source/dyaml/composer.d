@@ -84,7 +84,7 @@ final class Composer
             parser_ = null;
             resolver_ = null;
             constructor_ = null;
-            clear(anchors_);
+            anchors_.destroy();
             anchors_ = null;
         }
 
@@ -167,7 +167,7 @@ final class Composer
             //Drop the DOCUMENT-END event.
             parser_.getEvent();
 
-            clear(anchors_);
+            anchors_.destroy();
             return node;
         }
 
@@ -309,7 +309,11 @@ final class Composer
                 Node[] toMerge;
                 foreach(ref Node key, ref Node value; root)
                 {
-                    if(key.isType!YAMLMerge){toMerge ~= value;}
+                    if(key.isType!YAMLMerge)
+                    {
+                        toMerge.assumeSafeAppend();
+                        toMerge ~= value;
+                    }
                     else
                     {
                         auto temp = Node.Pair(key, value);

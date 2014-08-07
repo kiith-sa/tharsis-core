@@ -6,6 +6,9 @@
 
 module dyaml.testcommon;
 
+version(unittest)
+{
+
 public import std.conv;
 public import std.stdio;
 public import std.stream;
@@ -85,7 +88,7 @@ alias Tuple!(string, "name", string[], "filenames", TestStatus, "kind", string, 
  *
  * Returns: Test input base filenames and their extensions.
  */
-string[][string] findTestFilenames(in string dir)
+string[][string] findTestFilenames(const string dir)
 {
     //Groups of extensions indexed by base names.
     string[][string] names;
@@ -112,7 +115,7 @@ string[][string] findTestFilenames(in string dir)
  *          tuple   = Tuple to copy to.
  *          strings = Strings to copy.
  */
-void stringsToTuple(uint index, F ...)(ref F tuple, in string[] strings)
+void stringsToTuple(uint index, F ...)(ref F tuple, const string[] strings)
 in{assert(F.length == strings.length);}
 body
 {
@@ -130,8 +133,8 @@ body
  *
  * Returns: Information about the results of the unittest.
  */
-Result execute(F ...)(in string testName, void function(bool, F) testFunction, 
-                      string[] filenames, in bool verbose)
+Result execute(F ...)(const string testName, void function(bool, F) testFunction, 
+                      string[] filenames, const bool verbose)
 {
     if(verbose)
     {
@@ -167,7 +170,7 @@ Result execute(F ...)(in string testName, void function(bool, F) testFunction,
  * Params:  results = Unittest results.
  *          verbose = Print verbose output? 
  */
-void display(Result[] results, in bool verbose)
+void display(Result[] results, const bool verbose)
 {
     if(results.length > 0 && !verbose){write("\n");}
 
@@ -201,3 +204,5 @@ void display(Result[] results, in bool verbose)
     if(failures > 0){writeln("FAILURES: ", failures);}
     if(errors > 0)  {writeln("ERRORS: ", errors);}
 }
+
+} // version(unittest)

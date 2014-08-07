@@ -5,9 +5,9 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 /**
- * Implements a class that processes YAML mappings, sequences and scalars into
- * nodes. This can be used to implement custom data types. A tutorial can be 
- * found $(LINK2 ../tutorials/custom_types.html, here).
+ * Class that processes YAML mappings, sequences and scalars into nodes. This can be
+ * used to add custom data types. A tutorial can be found
+ * $(LINK2 ../tutorials/custom_types.html, here).
  */
 module dyaml.constructor;
 
@@ -19,7 +19,7 @@ import std.container;
 import std.conv;
 import std.datetime;
 import std.exception;
-import std.stdio; 
+import std.stdio;
 import std.regex;
 import std.string;
 import std.typecons;
@@ -31,22 +31,16 @@ import dyaml.tag;
 import dyaml.style;
 
 
-/**
- * Exception thrown at constructor errors.
- *
- * Can be thrown by custom constructor functions.
- */
+// Exception thrown at constructor errors.
 package class ConstructorException : YAMLException
 {
-    /**
-     * Construct a ConstructorException.
-     *
-     * Params:  msg   = Error message.
-     *          start = Start position of the error context.
-     *          end   = End position of the error context.
-     */
+    /// Construct a ConstructorException.
+    ///
+    /// Params:  msg   = Error message.
+    ///          start = Start position of the error context.
+    ///          end   = End position of the error context.
     this(string msg, Mark start, Mark end, string file = __FILE__, int line = __LINE__)
-        @safe
+        @safe pure nothrow
     {
         super(msg ~ "\nstart: " ~ start.toString() ~ "\nend: " ~ end.toString(),
               file, line);
@@ -55,8 +49,7 @@ package class ConstructorException : YAMLException
 
 private alias ConstructorException Error;
 
-/**
- * Constructs YAML values.
+/** Constructs YAML values.
  *
  * Each YAML scalar, sequence or mapping has a tag specifying its data type.
  * Constructor uses user-specifyable functions to create a node of desired
@@ -64,7 +57,7 @@ private alias ConstructorException Error;
  *
  *
  * Each of these functions is associated with a tag, and can process either
- * a scalar, a sequence, or a mapping. The constructor passes each value to 
+ * a scalar, a sequence, or a mapping. The constructor passes each value to
  * the function with corresponding tag, which then returns the resulting value
  * that can be stored in a node.
  *
@@ -73,22 +66,20 @@ private alias ConstructorException Error;
 final class Constructor
 {
     private:
-        ///Constructor functions from scalars.
+        /// Constructor functions from scalars.
         Node.Value delegate(ref Node)[Tag] fromScalar_;
-        ///Constructor functions from sequences.
+        /// Constructor functions from sequences.
         Node.Value delegate(ref Node)[Tag] fromSequence_;
-        ///Constructor functions from mappings.
+        /// Constructor functions from mappings.
         Node.Value delegate(ref Node)[Tag] fromMapping_;
 
     public:
-        /**
-         * Construct a Constructor.
-         *
-         * If you don't want to support default YAML tags/data types, you can use
-         * defaultConstructors to disable constructor functions for these.
-         *
-         * Params:  defaultConstructors = Use constructors for default YAML tags?
-         */
+        /// Construct a Constructor.
+        ///
+        /// If you don't want to support default YAML tags/data types, you can use
+        /// defaultConstructors to disable constructor functions for these.
+        ///
+        /// Params:  defaultConstructors = Use constructors for default YAML tags?
         this(const Flag!"useDefaultConstructors" defaultConstructors = Yes.useDefaultConstructors)
             @safe nothrow
         {
@@ -113,26 +104,25 @@ final class Constructor
             addConstructorScalar("tag:yaml.org,2002:merge",     &constructMerge);
         }
 
-        ///Destroy the constructor.
-        pure @safe nothrow ~this()
+        /// Destroy the constructor.
+        @nogc pure @safe nothrow ~this()
         {
-            clear(fromScalar_);
+            fromScalar_.destroy();
             fromScalar_ = null;
-            clear(fromSequence_);
+            fromSequence_.destroy();
             fromSequence_ = null;
-            clear(fromMapping_);
+            fromMapping_.destroy();
             fromMapping_ = null;
         }
 
-        /**
-         * Add a constructor function from scalar.
+        /** Add a constructor function from scalar.
          *
          * The function must take a reference to $(D Node) to construct from.
-         * The node contains a string for scalars, $(Node[]) for sequences and 
-         * $(Node.Pair[]) for mappings. 
+         * The node contains a string for scalars, $(D Node[]) for sequences and
+         * $(D Node.Pair[]) for mappings.
          *
          * Any exception thrown by this function will be caught by D:YAML and
-         * its message will be added to a $(YAMLException) that will also tell 
+         * its message will be added to a $(D YAMLException) that will also tell
          * the user which type failed to construct, and position in the file.
          *
          *
@@ -141,10 +131,10 @@ final class Constructor
          * Only one constructor function can be set for one tag.
          *
          *
-         * Structs and classes must implement the $(D opCmp()) operator for D:YAML 
-         * support. The signature of the operator that must be implemented 
-         * is $(D const int opCmp(ref const MyStruct s)) for structs where 
-         * $(I MyStruct) is the struct type, and $(D int opCmp(Object o)) for 
+         * Structs and classes must implement the $(D opCmp()) operator for D:YAML
+         * support. The signature of the operator that must be implemented
+         * is $(D const int opCmp(ref const MyStruct s)) for structs where
+         * $(I MyStruct) is the struct type, and $(D int opCmp(Object o)) for
          * classes. Note that the class $(D opCmp()) should not alter the compared
          * values - it is not const for compatibility reasons.
          *
@@ -170,15 +160,15 @@ final class Constructor
          *         if(y != s.y){return y - s.y;}
          *         if(z != s.z){return z - s.z;}
          *         return 0;
-         *     }        
+         *     }
          * }
          *
          * MyStruct constructMyStructScalar(ref Node node)
-         * { 
+         * {
          *     //Guaranteed to be string as we construct from scalar.
          *     //!mystruct x:y:z
          *     auto parts = node.as!string().split(":");
-         *     //If this throws, the D:YAML will handle it and throw a YAMLException.
+         *     // If this throws, the D:YAML will handle it and throw a YAMLException.
          *     return MyStruct(to!int(parts[0]), to!int(parts[1]), to!int(parts[2]));
          * }
          *
@@ -200,11 +190,10 @@ final class Constructor
             (*delegates!string)[t] = deleg;
         }
 
-        /**
-         * Add a constructor function from sequence.
+        /** Add a constructor function from sequence.
          *
          * See_Also:    addConstructorScalar
-         * 
+         *
          * Example:
          *
          * --------------------
@@ -224,11 +213,11 @@ final class Constructor
          *         if(y != s.y){return y - s.y;}
          *         if(z != s.z){return z - s.z;}
          *         return 0;
-         *     }        
+         *     }
          * }
          *
          * MyStruct constructMyStructSequence(ref Node node)
-         * { 
+         * {
          *     //node is guaranteed to be sequence.
          *     //!mystruct [x, y, z]
          *     return MyStruct(node[0].as!int, node[1].as!int, node[2].as!int);
@@ -252,11 +241,10 @@ final class Constructor
             (*delegates!(Node[]))[t] = deleg;
         }
 
-        /**
-         * Add a constructor function from a mapping.
+        /** Add a constructor function from a mapping.
          *
          * See_Also:    addConstructorScalar
-         * 
+         *
          * Example:
          *
          * --------------------
@@ -276,11 +264,11 @@ final class Constructor
          *         if(y != s.y){return y - s.y;}
          *         if(z != s.z){return z - s.z;}
          *         return 0;
-         *     }        
+         *     }
          * }
          *
          * MyStruct constructMyStructMapping(ref Node node)
-         * { 
+         * {
          *     //node is guaranteed to be mapping.
          *     //!mystruct {"x": x, "y": y, "z": z}
          *     return MyStruct(node["x"].as!int, node["y"].as!int, node["z"].as!int);
@@ -315,16 +303,16 @@ final class Constructor
          *          style = Style of the node (scalar or collection style).
          *
          * Returns: Constructed node.
-         */ 
-        Node node(T, U)(const Mark start, const Mark end, const Tag tag, 
+         */
+        Node node(T, U)(const Mark start, const Mark end, const Tag tag,
                         T value, U style) @trusted
             if((is(T : string) || is(T == Node[]) || is(T == Node.Pair[])) &&
                (is(U : CollectionStyle) || is(U : ScalarStyle)))
         {
-            static type = is(T : string)       ? "scalar"   :
-                          is(T == Node[])      ? "sequence" :
-                          is(T == Node.Pair[]) ? "mapping"  :
-                                                 "ERROR";
+            enum type = is(T : string)       ? "scalar"   :
+                        is(T == Node[])      ? "sequence" :
+                        is(T == Node.Pair[]) ? "mapping"  :
+                                               "ERROR";
             enforce((tag in *delegates!T) !is null,
                     new Error("No constructor function from " ~ type ~
                               " for tag " ~ tag.get(), start, end));
@@ -346,22 +334,22 @@ final class Constructor
             }
             catch(Exception e)
             {
-                throw new Error("Error constructing " ~ typeid(T).toString() 
+                throw new Error("Error constructing " ~ typeid(T).toString()
                                 ~ ":\n" ~ e.msg, start, end);
             }
         }
 
     private:
-        /* 
+        /*
          * Add a constructor function.
          *
          * Params:  tag  = Tag for the function to handle.
          *          ctor = Constructor function.
          */
-        auto addConstructor(T)(const Tag tag, T function(ref Node) ctor) 
-            @trusted nothrow
+        auto addConstructor(T)(const Tag tag, T function(ref Node) ctor)
+            @safe pure nothrow
         {
-            assert((tag in fromScalar_) is null && 
+            assert((tag in fromScalar_) is null &&
                    (tag in fromSequence_) is null &&
                    (tag in fromMapping_) is null,
                    "Constructor function for tag " ~ tag.get ~ " is already "
@@ -372,11 +360,11 @@ final class Constructor
             {
                 static if(Node.allowed!T){return Node.value(ctor(n));}
                 else                     {return Node.userValue(ctor(n));}
-            }; 
+            };
         }
 
         //Get the array of constructor functions for scalar, sequence or mapping.
-        @property auto delegates(T)() pure @safe nothrow
+        @property auto delegates(T)() @safe pure nothrow @nogc
         {
             static if(is(T : string))          {return &fromScalar_;}
             else static if(is(T : Node[]))     {return &fromSequence_;}
@@ -386,20 +374,20 @@ final class Constructor
 }
 
 
-///Construct a _null _node.
-YAMLNull constructNull(ref Node node)
+/// Construct a _null _node.
+YAMLNull constructNull(ref Node node) @safe pure nothrow @nogc 
 {
     return YAMLNull();
 }
 
-///Construct a merge _node - a _node that merges another _node into a mapping.
-YAMLMerge constructMerge(ref Node node)
+/// Construct a merge _node - a _node that merges another _node into a mapping.
+YAMLMerge constructMerge(ref Node node) @safe pure nothrow @nogc 
 {
     return YAMLMerge();
 }
 
-///Construct a boolean _node.
-bool constructBool(ref Node node)
+/// Construct a boolean _node.
+bool constructBool(ref Node node) @safe
 {
     static yes = ["yes", "true", "on"];
     static no = ["no", "false", "off"];
@@ -409,7 +397,7 @@ bool constructBool(ref Node node)
     throw new Exception("Unable to parse boolean value: " ~ value);
 }
 
-///Construct an integer (long) _node.
+/// Construct an integer (long) _node.
 long constructLong(ref Node node)
 {
     string value = node.as!string().replace("_", "");
@@ -478,7 +466,7 @@ unittest
     assert(685230 == getLong(sexagesimal));
 }
 
-///Construct a floating point (real) _node.
+/// Construct a floating point (real) _node.
 real constructReal(ref Node node)
 {
     string value = node.as!string().replace("_", "").toLower();
@@ -549,11 +537,11 @@ unittest
     assert(to!string(getReal(NaN)) == "nan");
 }
 
-///Construct a binary (base64) _node.
+/// Construct a binary (base64) _node.
 ubyte[] constructBinary(ref Node node)
 {
     string value = node.as!string;
-    //For an unknown reason, this must be nested to work (compiler bug?).
+    // For an unknown reason, this must be nested to work (compiler bug?).
     try
     {
         try{return Base64.decode(value.removechars("\n"));}
@@ -578,7 +566,7 @@ unittest
     assert(value == test);
 }
 
-///Construct a timestamp (SysTime) _node.
+/// Construct a timestamp (SysTime) _node.
 SysTime constructTimestamp(ref Node node)
 {
     string value = node.as!string;
@@ -589,10 +577,10 @@ SysTime constructTimestamp(ref Node node)
 
     try
     {
-        //First, get year, month and day.
+        // First, get year, month and day.
         auto matches = match(value, YMDRegexp);
 
-        enforce(!matches.empty, 
+        enforce(!matches.empty,
                 new Exception("Unable to parse timestamp value: " ~ value));
 
         auto captures = matches.front.captures;
@@ -600,7 +588,7 @@ SysTime constructTimestamp(ref Node node)
         const month = to!int(captures[2]);
         const day   = to!int(captures[3]);
 
-        //If available, get hour, minute, second and fraction, if present.
+        // If available, get hour, minute, second and fraction, if present.
         value = matches.front.post;
         matches  = match(value, HMSRegexp);
         if(matches.empty)
@@ -614,28 +602,30 @@ SysTime constructTimestamp(ref Node node)
         const second          = to!int(captures[3]);
         const hectonanosecond = cast(int)(to!real("0" ~ captures[4]) * 10000000);
 
-        //If available, get timezone.
+        // If available, get timezone.
         value = matches.front.post;
         matches = match(value, TZRegexp);
         if(matches.empty || matches.front.captures[0] == "Z")
         {
+            // No timezone.
             return SysTime(DateTime(year, month, day, hour, minute, second),
                            FracSec.from!"hnsecs"(hectonanosecond), UTC());
         }
 
+        // We have a timezone, so parse it.
         captures = matches.front.captures;
         int sign    = 1;
         int tzHours = 0;
         if(!captures[1].empty)
         {
-            if(captures[1][0] == '-'){sign = -1;}
+            if(captures[1][0] == '-') {sign = -1;}
             tzHours   = to!int(captures[1][1 .. $]);
         }
-        auto tzMinutes = (!captures[2].empty) ? to!int(captures[2][1 .. $]) : 0;
-        auto tzOffset = sign * (60 * tzHours + tzMinutes);
+        const tzMinutes = (!captures[2].empty) ? to!int(captures[2][1 .. $]) : 0;
+        const tzOffset  = dur!"minutes"(sign * (60 * tzHours + tzMinutes));
 
         return SysTime(DateTime(year, month, day, hour, minute, second),
-                       FracSec.from!"hnsecs"(hectonanosecond), 
+                       FracSec.from!"hnsecs"(hectonanosecond),
                        new immutable SimpleTimeZone(tzOffset));
     }
     catch(ConvException e)
@@ -678,42 +668,43 @@ unittest
     assert(timestamp(ymd)            == "20021214T000000Z");
 }
 
-///Construct a string _node.
+/// Construct a string _node.
 string constructString(ref Node node)
 {
     return node.as!string;
 }
 
-///Convert a sequence of single-element mappings into a sequence of pairs.
-Node.Pair[] getPairs(string type, Node[] nodes) 
+/// Convert a sequence of single-element mappings into a sequence of pairs.
+Node.Pair[] getPairs(string type, Node[] nodes)
 {
     Node.Pair[] pairs;
 
     foreach(ref node; nodes)
     {
         enforce(node.isMapping && node.length == 1,
-                new Exception("While constructing " ~ type ~ 
-                          ", expected a mapping with single element"));
+                new Exception("While constructing " ~ type ~
+                              ", expected a mapping with single element"));
 
+        pairs.assumeSafeAppend();
         pairs ~= node.as!(Node.Pair[]);
     }
 
     return pairs;
 }
 
-///Construct an ordered map (ordered sequence of key:value pairs without duplicates) _node.
+/// Construct an ordered map (ordered sequence of key:value pairs without duplicates) _node.
 Node.Pair[] constructOrderedMap(ref Node node)
 {
     auto pairs = getPairs("ordered map", node.as!(Node[]));
 
-    //Detect duplicates. 
+    //Detect duplicates.
     //TODO this should be replaced by something with deterministic memory allocation.
     auto keys = redBlackTree!Node();
-    scope(exit){clear(keys);}
+    scope(exit){keys.destroy();}
     foreach(ref pair; pairs)
     {
         enforce(!(pair.key in keys),
-                new Exception("Duplicate entry in an ordered map: " 
+                new Exception("Duplicate entry in an ordered map: "
                               ~ pair.key.debugString()));
         keys.insert(pair.key);
     }
@@ -730,8 +721,8 @@ unittest
         Node[] pairs;
         foreach(long i; 0 .. length)
         {
-            auto pair = (i % 2) ? Pair(to!string(i), i)
-                                : Pair(i, to!string(i));
+            auto pair = (i % 2) ? Pair(i.to!string, i) : Pair(i, i.to!string);
+            pairs.assumeSafeAppend();
             pairs ~= Node([pair]);
         }
         return pairs;
@@ -742,7 +733,8 @@ unittest
         Node[] pairs;
         foreach(long i; 0 .. length)
         {
-            auto pair = Pair(to!string(i), i);
+            auto pair = Pair(i.to!string, i);
+            pairs.assumeSafeAppend();
             pairs ~= Node([pair]);
         }
         return pairs;
@@ -762,28 +754,28 @@ unittest
     assert(!hasDuplicates(alternateTypes(64)));
 }
 
-///Construct a pairs (ordered sequence of key: value pairs allowing duplicates) _node.
+/// Construct a pairs (ordered sequence of key: value pairs allowing duplicates) _node.
 Node.Pair[] constructPairs(ref Node node)
 {
     return getPairs("pairs", node.as!(Node[]));
 }
 
-///Construct a set _node.
+/// Construct a set _node.
 Node[] constructSet(ref Node node)
 {
     auto pairs = node.as!(Node.Pair[]);
 
-    //In future, the map here should be replaced with something with deterministic
-    //memory allocation if possible.
-    //Detect duplicates.
+    // In future, the map here should be replaced with something with deterministic
+    // memory allocation if possible.
+    // Detect duplicates.
     ubyte[Node] map;
-    scope(exit){clear(map);}
+    scope(exit){map.destroy();}
     Node[] nodes;
     foreach(ref pair; pairs)
     {
-        enforce((pair.key in map) is null,
-                new Exception("Duplicate entry in a set"));
+        enforce((pair.key in map) is null, new Exception("Duplicate entry in a set"));
         map[pair.key] = 0;
+        nodes.assumeSafeAppend();
         nodes ~= pair.key;
     }
 
@@ -798,7 +790,8 @@ unittest
         Node.Pair[] pairs;
         foreach(long i; 0 .. length)
         {
-            pairs ~= Node.Pair(to!string(i), YAMLNull());
+            pairs.assumeSafeAppend();
+            pairs ~= Node.Pair(i.to!string, YAMLNull());
         }
 
         return pairs;
@@ -833,35 +826,33 @@ unittest
     assert(null is  collectException(constructSet(nodeNoDuplicatesLong)));
 }
 
-///Construct a sequence (array) _node.
+/// Construct a sequence (array) _node.
 Node[] constructSequence(ref Node node)
 {
     return node.as!(Node[]);
 }
 
-///Construct an unordered map (unordered set of key:value _pairs without duplicates) _node.
+/// Construct an unordered map (unordered set of key:value _pairs without duplicates) _node.
 Node.Pair[] constructMap(ref Node node)
 {
     auto pairs = node.as!(Node.Pair[]);
-    //Detect duplicates. 
+    //Detect duplicates.
     //TODO this should be replaced by something with deterministic memory allocation.
     auto keys = redBlackTree!Node();
-    scope(exit){clear(keys);}
+    scope(exit){keys.destroy();}
     foreach(ref pair; pairs)
     {
         enforce(!(pair.key in keys),
-                new Exception("Duplicate entry in a map: " 
-                              ~ pair.key.debugString()));
+                new Exception("Duplicate entry in a map: " ~ pair.key.debugString()));
         keys.insert(pair.key);
     }
     return pairs;
 }
 
 
-//Unittests
+// Unittests
 private:
 
-import std.stream;
 import dyaml.loader;
 
 struct MyStruct
@@ -878,29 +869,28 @@ struct MyStruct
 }
 
 MyStruct constructMyStructScalar(ref Node node)
-{ 
-    //Guaranteed to be string as we construct from scalar.
+{
+    // Guaranteed to be string as we construct from scalar.
     auto parts = node.as!string().split(":");
     return MyStruct(to!int(parts[0]), to!int(parts[1]), to!int(parts[2]));
 }
 
 MyStruct constructMyStructSequence(ref Node node)
-{ 
-    //node is guaranteed to be sequence.
+{
+    // node is guaranteed to be sequence.
     return MyStruct(node[0].as!int, node[1].as!int, node[2].as!int);
 }
 
 MyStruct constructMyStructMapping(ref Node node)
-{ 
-    //node is guaranteed to be mapping.
+{
+    // node is guaranteed to be mapping.
     return MyStruct(node["x"].as!int, node["y"].as!int, node["z"].as!int);
 }
 
 unittest
 {
-    char[] data = cast(char[])"!mystruct 1:2:3";
-    auto loadStream  = new MemoryStream(data);
-    auto loader = Loader(loadStream);
+    char[] data = "!mystruct 1:2:3".dup;
+    auto loader = Loader(data);
     auto constructor = new Constructor;
     constructor.addConstructorScalar("!mystruct", &constructMyStructScalar);
     loader.constructor = constructor;
@@ -911,9 +901,8 @@ unittest
 
 unittest
 {
-    char[] data = cast(char[])"!mystruct [1, 2, 3]";
-    auto loadStream  = new MemoryStream(data);
-    auto loader = Loader(loadStream);
+    char[] data = "!mystruct [1, 2, 3]".dup;
+    auto loader = Loader(data);
     auto constructor = new Constructor;
     constructor.addConstructorSequence("!mystruct", &constructMyStructSequence);
     loader.constructor = constructor;
@@ -924,9 +913,8 @@ unittest
 
 unittest
 {
-    char[] data = cast(char[])"!mystruct {x: 1, y: 2, z: 3}";
-    auto loadStream  = new MemoryStream(data);
-    auto loader = Loader(loadStream);
+    char[] data = "!mystruct {x: 1, y: 2, z: 3}".dup;
+    auto loader = Loader(data);
     auto constructor = new Constructor;
     constructor.addConstructorMapping("!mystruct", &constructMyStructMapping);
     loader.constructor = constructor;

@@ -1,5 +1,5 @@
 
-//          Copyright Ferdinand Majerech 2011.
+//          Copyright Ferdinand Majerech 2011-2014.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -11,6 +11,7 @@
 module dyaml.parser;
 
 
+import std.algorithm;
 import std.array;
 import std.container;
 import std.conv;
@@ -31,7 +32,7 @@ package:
 /**
  * The following YAML grammar is LL(1) and is parsed by a recursive descent
  * parser.
- * 
+ *
  * stream            ::= STREAM-START implicit_document? explicit_document* STREAM-END
  * implicit_document ::= block_node DOCUMENT-END*
  * explicit_document ::= DIRECTIVE* DOCUMENT-START block_node? DOCUMENT-END*
@@ -67,9 +68,9 @@ package:
  *                       flow_mapping_entry?
  *                       FLOW-MAPPING-END
  * flow_mapping_entry    ::= flow_node | KEY flow_node? (VALUE flow_node?)?
- * 
+ *
  * FIRST sets:
- * 
+ *
  * stream: { STREAM-START }
  * explicit_document: { DIRECTIVE DOCUMENT-START }
  * implicit_document: FIRST(block_node)
@@ -88,7 +89,7 @@ package:
  * flow_mapping: { FLOW-MAPPING-START }
  * flow_sequence_entry: { ALIAS ANCHOR TAG SCALAR FLOW-SEQUENCE-START FLOW-MAPPING-START KEY }
  * flow_mapping_entry: { ALIAS ANCHOR TAG SCALAR FLOW-SEQUENCE-START FLOW-MAPPING-START KEY }
- */            
+ */
 
 
 /**
@@ -103,8 +104,13 @@ class ParserException : MarkedYAMLException
 
 private alias ParserException Error;
 
-///Generates events from tokens provided by a Scanner.
-final class Parser 
+/// Generates events from tokens provided by a Scanner.
+///
+/// While Parser receives tokens with non-const character slices, the events it 
+/// produces are immutable strings, which are usually the same slices, cast to string.
+/// Parser is the last layer of D:YAML that may possibly do any modifications to these
+/// slices.
+final class Parser
 {
     private:
         ///Default tag handle shortcuts and replacements.
@@ -146,11 +152,11 @@ final class Parser
         ///Destroy the parser.
         @trusted ~this()
         {
-            clear(currentEvent_);
-            clear(tagDirectives_);
+            currentEvent_.destroy();
+            tagDirectives_.destroy();
             tagDirectives_ = null;
-            clear(states_);
-            clear(marks_);
+            states_.destroy();
+            marks_.destroy();
         }
 
         /**
@@ -189,7 +195,7 @@ final class Parser
         }
 
         /**
-         * Return the next event, but keep it in the queue. 
+         * Return the next event, but keep it in the queue.
          *
          * Must not be called if there are no events left.
          */
@@ -229,7 +235,7 @@ final class Parser
         ///Pop and return the newest state in states_.
         Event delegate() popState() @trusted
         {
-            enforce(states_.length > 0, 
+            enforce(states_.length > 0,
                     new YAMLException("Parser: Need to pop state but no states left to pop"));
             const result = states_.back;
             states_.length = states_.length - 1;
@@ -239,7 +245,7 @@ final class Parser
         ///Pop and return the newest mark in marks_.
         Mark popMark() @trusted
         {
-            enforce(marks_.length > 0, 
+            enforce(marks_.length > 0,
                     new YAMLException("Parser: Need to pop mark but no marks left to pop"));
             const result = marks_.back;
             marks_.length = marks_.length - 1;
@@ -255,24 +261,24 @@ final class Parser
         ///Parse stream start.
         Event parseStreamStart() @safe
         {
-            immutable token = scanner_.getToken();
+            const token = scanner_.getToken();
             state_ = &parseImplicitDocumentStart;
             return streamStartEvent(token.startMark, token.endMark, token.encoding);
         }
 
-        ///Parse implicit document start, unless explicit is detected: if so, parse explicit.
+        /// Parse implicit document start, unless explicit detected: if so, parse explicit.
         Event parseImplicitDocumentStart() @trusted
         {
-            //Parse an implicit document.
+            // Parse an implicit document.
             if(!scanner_.checkToken(TokenID.Directive, TokenID.DocumentStart,
                                     TokenID.StreamEnd))
             {
-                tagDirectives_ = defaultTagDirectives_;
-                immutable token = scanner_.peekToken();
+                tagDirectives_  = defaultTagDirectives_;
+                const token = scanner_.peekToken();
 
                 states_ ~= &parseDocumentEnd;
                 state_ = &parseBlockNode;
-                
+
                 return documentStartEvent(token.startMark, token.endMark, false, null, null);
             }
             return parseDocumentStart();
@@ -292,7 +298,7 @@ final class Parser
                 auto tagDirectives = processDirectives();
                 enforce(scanner_.checkToken(TokenID.DocumentStart),
                         new Error("Expected document start but found " ~
-                                  scanner_.peekToken().idString, 
+                                  scanner_.peekToken().idString,
                                   scanner_.peekToken().startMark));
 
                 const endMark = scanner_.getToken().endMark;
@@ -303,7 +309,7 @@ final class Parser
             else
             {
                 //Parse the end of the stream.
-                immutable token = scanner_.getToken();
+                const token = scanner_.getToken();
                 assert(states_.length == 0);
                 assert(marks_.length == 0);
                 state_ = null;
@@ -326,7 +332,7 @@ final class Parser
         ///Parse document content.
         Event parseDocumentContent() @safe
         {
-            if(scanner_.checkToken(TokenID.Directive, TokenID.DocumentStart,
+            if(scanner_.checkToken(TokenID.Directive,   TokenID.DocumentStart,
                                    TokenID.DocumentEnd, TokenID.StreamEnd))
             {
                 state_ = popState();
@@ -335,44 +341,44 @@ final class Parser
             return parseBlockNode();
         }
 
-        ///Process directives at the beginning of a document.
+        /// Process directives at the beginning of a document.
         TagDirective[] processDirectives() @system
         {
-            //Destroy version and tag handles from previous document.
+            // Destroy version and tag handles from previous document.
             YAMLVersion_ = null;
             tagDirectives_.length = 0;
 
-            //Process directives.
+            // Process directives.
             while(scanner_.checkToken(TokenID.Directive))
             {
-                immutable token = scanner_.getToken();
-                //Name and value are separated by '\0'.
-                const parts = token.value.split("\0");
-                const name = parts[0];
-                if(name == "YAML")
+                const token = scanner_.getToken();
+                const value = token.value;
+                if(token.directive == DirectiveType.YAML)
                 {
-                    enforce(YAMLVersion_ is null, 
+                    enforce(YAMLVersion_ is null,
                             new Error("Duplicate YAML directive", token.startMark));
-                    const minor = parts[1].split(".")[0];
-                    enforce(minor == "1", 
+                    const minor = value.split(".")[0];
+                    enforce(minor == "1",
                             new Error("Incompatible document (version 1.x is required)",
                                       token.startMark));
-                    YAMLVersion_ = parts[1];
+                    YAMLVersion_ = cast(string)value;
                 }
-                else if(name == "TAG")
+                else if(token.directive == DirectiveType.TAG)
                 {
-                    assert(parts.length == 3, "Tag directive stored incorrectly in a token");
-                    auto handle = parts[1];
+                    auto handle = cast(string)value[0 .. token.valueDivider];
 
                     foreach(ref pair; tagDirectives_)
                     {
-                        //handle
+                        // handle
                         const h = pair.handle;
                         enforce(h != handle, new Error("Duplicate tag handle: " ~ handle,
                                                        token.startMark));
                     }
-                    tagDirectives_ ~= TagDirective(handle, parts[2]);
+                    tagDirectives_ ~= 
+                        TagDirective(handle, cast(string)value[token.valueDivider .. $]);
                 }
+                // Any other directive type is ignored (only YAML and TAG are in YAML
+                // 1.1/1.2, any other directives are "reserved")
             }
 
             TagDirective[] value = tagDirectives_;
@@ -386,7 +392,7 @@ final class Parser
                     found = true;
                     break;
                 }
-                if(!found){tagDirectives_ ~= defaultPair;}
+                if(!found) {tagDirectives_ ~= defaultPair; }
             }
 
             return value;
@@ -412,30 +418,38 @@ final class Parser
 
         ///Parse a node.
         Event parseNode(const Flag!"block" block,
-                        const Flag!"indentlessSequence" indentlessSequence = No.indentlessSequence) @safe
+                        const Flag!"indentlessSequence" indentlessSequence = No.indentlessSequence)
+            @trusted
         {
             if(scanner_.checkToken(TokenID.Alias))
             {
-                immutable token = scanner_.getToken();
+                const token = scanner_.getToken();
                 state_ = popState();
-                return aliasEvent(token.startMark, token.endMark, Anchor(token.value));
+                return aliasEvent(token.startMark, token.endMark, 
+                                  Anchor(cast(string)token.value));
             }
 
             string anchor = null;
             string tag = null;
             Mark startMark, endMark, tagMark;
             bool invalidMarks = true;
+            // The index in the tag string where tag handle ends and tag suffix starts.
+            uint tagHandleEnd;
 
             //Get anchor/tag if detected. Return false otherwise.
             bool get(const TokenID id, const Flag!"first" first, ref string target)
             {
                 if(!scanner_.checkToken(id)){return false;}
                 invalidMarks = false;
-                immutable token = scanner_.getToken();
+                const token = scanner_.getToken();
                 if(first){startMark = token.startMark;}
-                if(id == TokenID.Tag){tagMark = token.startMark;}
-                endMark = token.endMark; 
-                target  = token.value;
+                if(id == TokenID.Tag)
+                {
+                    tagMark = token.startMark;
+                    tagHandleEnd = token.valueDivider;
+                }
+                endMark = token.endMark;
+                target  = cast(string)token.value;
                 return true;
             }
 
@@ -443,7 +457,7 @@ final class Parser
             if(get(TokenID.Anchor, Yes.first, anchor)){get(TokenID.Tag, No.first, tag);}
             else if(get(TokenID.Tag, Yes.first, tag)) {get(TokenID.Anchor, No.first, anchor);}
 
-            if(tag !is null){tag = processTag(tag, startMark, tagMark);}
+            if(tag !is null){tag = processTag(tag, tagHandleEnd, startMark, tagMark);}
 
             if(invalidMarks)
             {
@@ -462,20 +476,23 @@ final class Parser
 
             if(scanner_.checkToken(TokenID.Scalar))
             {
-                immutable token = scanner_.getToken();
+                auto token = scanner_.getToken();
+                auto value = token.style == ScalarStyle.DoubleQuoted
+                           ? handleDoubleQuotedScalarEscapes(token.value)
+                           : cast(string)token.value;
 
                 implicit = (token.style == ScalarStyle.Plain && tag is null) || tag == "!";
                 bool implicit_2 = (!implicit) && tag is null;
                 state_ = popState();
-                return scalarEvent(startMark, token.endMark, Anchor(anchor), Tag(tag), 
-                                   tuple(implicit, implicit_2), token.value, token.style);
+                return scalarEvent(startMark, token.endMark, Anchor(anchor), Tag(tag),
+                                   tuple(implicit, implicit_2), value, token.style);
             }
 
             if(scanner_.checkToken(TokenID.FlowSequenceStart))
             {
                 endMark = scanner_.peekToken().endMark;
                 state_ = &parseFlowSequenceEntry!(Yes.first);
-                return sequenceStartEvent(startMark, endMark, Anchor(anchor), Tag(tag), 
+                return sequenceStartEvent(startMark, endMark, Anchor(anchor), Tag(tag),
                                           implicit, CollectionStyle.Flow);
             }
 
@@ -483,7 +500,7 @@ final class Parser
             {
                 endMark = scanner_.peekToken().endMark;
                 state_ = &parseFlowMappingKey!(Yes.first);
-                return mappingStartEvent(startMark, endMark, Anchor(anchor), Tag(tag), 
+                return mappingStartEvent(startMark, endMark, Anchor(anchor), Tag(tag),
                                          implicit, CollectionStyle.Flow);
             }
 
@@ -491,7 +508,7 @@ final class Parser
             {
                 endMark = scanner_.peekToken().endMark;
                 state_ = &parseBlockSequenceEntry!(Yes.first);
-                return sequenceStartEvent(startMark, endMark, Anchor(anchor), Tag(tag), 
+                return sequenceStartEvent(startMark, endMark, Anchor(anchor), Tag(tag),
                                           implicit, CollectionStyle.Block);
             }
 
@@ -499,7 +516,7 @@ final class Parser
             {
                 endMark = scanner_.peekToken().endMark;
                 state_ = &parseBlockMappingKey!(Yes.first);
-                return mappingStartEvent(startMark, endMark, Anchor(anchor), Tag(tag), 
+                return mappingStartEvent(startMark, endMark, Anchor(anchor), Tag(tag),
                                          implicit, CollectionStyle.Block);
             }
 
@@ -507,35 +524,113 @@ final class Parser
             {
                 state_ = popState();
 
-                //PyYAML uses a tuple(implicit, false) for the second last arg here, 
+                //PyYAML uses a tuple(implicit, false) for the second last arg here,
                 //but the second bool is never used after that - so we don't use it.
 
                 //Empty scalars are allowed even if a tag or an anchor is specified.
-                return scalarEvent(startMark, endMark, Anchor(anchor), Tag(tag), 
+                return scalarEvent(startMark, endMark, Anchor(anchor), Tag(tag),
                                    tuple(implicit, false) , "");
             }
 
-            immutable token = scanner_.peekToken();
-            throw new Error("While parsing a " ~ (block ? "block" : "flow") ~ " node", 
-                            startMark, "expected node content, but found: " 
+            const token = scanner_.peekToken();
+            throw new Error("While parsing a " ~ (block ? "block" : "flow") ~ " node",
+                            startMark, "expected node content, but found: "
                             ~ token.idString, token.startMark);
+        }
+
+        /// Handle escape sequences in a double quoted scalar.
+        ///
+        /// Moved here from scanner as it can't always be done in-place with slices.
+        string handleDoubleQuotedScalarEscapes(char[] tokenValue)
+        {
+            string notInPlace;
+            bool inEscape = false;
+            import dyaml.nogcutil;
+            auto appender = appenderNoGC(cast(char[])tokenValue);
+            for(char[] oldValue = tokenValue; !oldValue.empty();)
+            {
+                const dchar c = oldValue.front();
+                oldValue.popFront();
+
+                if(!inEscape)
+                {
+                    if(c != '\\')
+                    {
+                        if(notInPlace is null) { appender.putDChar(c); }
+                        else                   { notInPlace ~= c; }
+                        continue;
+                    }
+                    // Escape sequence starts with a '\'
+                    inEscape = true;
+                    continue;
+                }
+
+                import dyaml.escapes;
+                scope(exit) { inEscape = false; }
+
+                // 'Normal' escape sequence.
+                if(dyaml.escapes.escapes.canFind(c))
+                {
+                    if(notInPlace is null)
+                    {
+                        // \L and \C can't be handled in place as the expand into
+                        // many-byte unicode chars
+                        if(c != 'L' && c != 'P')
+                        {
+                            appender.putDChar(dyaml.escapes.fromEscape(c));
+                            continue;
+                        }
+                        // Need to duplicate as we won't fit into
+                        // token.value - which is what appender uses
+                        notInPlace = appender.data.dup;
+                        notInPlace ~= dyaml.escapes.fromEscape(c);
+                        continue;
+                    }
+                    notInPlace ~= dyaml.escapes.fromEscape(c);
+                    continue;
+                }
+
+                // Unicode char written in hexadecimal in an escape sequence.
+                if(dyaml.escapes.escapeHexCodeList.canFind(c))
+                {
+                    // Scanner has already checked that the hex string is valid.
+
+                    const hexLength = dyaml.escapes.escapeHexLength(c);
+                    // Any hex digits are 1-byte so this works.
+                    char[] hex = oldValue[0 .. hexLength];
+                    oldValue = oldValue[hexLength .. $];
+                    assert(!hex.canFind!(d => !d.isHexDigit),
+                            "Scanner must ensure the hex string is valid");
+
+                    bool overflow;
+                    const decoded = cast(dchar)parseNoGC!int(hex, 16u, overflow);
+                    assert(!overflow, "Scanner must ensure there's no overflow");
+                    if(notInPlace is null) { appender.putDChar(decoded); }
+                    else                   { notInPlace ~= decoded; }
+                    continue;
+                }
+
+                assert(false, "Scanner must handle unsupported escapes");
+            }
+
+            return notInPlace is null ? cast(string)appender.data : notInPlace;
         }
 
         /**
          * Process a tag string retrieved from a tag token.
          *
          * Params:  tag       = Tag before processing.
+         *          handleEnd = Index in tag where tag handle ends and tag suffix
+         *                      starts.
          *          startMark = Position of the node the tag belongs to.
          *          tagMark   = Position of the tag.
-         */ 
-        string processTag(const string tag, const Mark startMark, const Mark tagMark)
+         */
+        string processTag(const string tag, const uint handleEnd,
+                          const Mark startMark, const Mark tagMark)
             const @trusted
         {
-            //Tag handle and suffix are separated by '\0'.
-            const parts = tag.split("\0");
-            assert(parts.length == 2, "Tag data stored incorrectly in a token");
-            const handle = parts[0];
-            const suffix = parts[1];
+            const handle = tag[0 .. handleEnd];
+            const suffix = tag[handleEnd .. $];
 
             if(handle.length > 0)
             {
@@ -571,7 +666,7 @@ final class Parser
 
             if(scanner_.checkToken(TokenID.BlockEntry))
             {
-                immutable token = scanner_.getToken();
+                const token = scanner_.getToken();
                 if(!scanner_.checkToken(TokenID.BlockEntry, TokenID.BlockEnd))
                 {
                     states_~= &parseBlockSequenceEntry!(No.first);
@@ -584,15 +679,15 @@ final class Parser
 
             if(!scanner_.checkToken(TokenID.BlockEnd))
             {
-                immutable token = scanner_.peekToken();
+                const token = scanner_.peekToken();
                 throw new Error("While parsing a block collection", marks_.back,
-                                "expected block end, but found " ~ token.idString, 
+                                "expected block end, but found " ~ token.idString,
                                 token.startMark);
             }
 
             state_ = popState();
             popMark();
-            immutable token = scanner_.getToken();
+            const token = scanner_.getToken();
             return sequenceEndEvent(token.startMark, token.endMark);
         }
 
@@ -603,11 +698,11 @@ final class Parser
         {
             if(scanner_.checkToken(TokenID.BlockEntry))
             {
-                immutable token = scanner_.getToken();
+                const token = scanner_.getToken();
 
-                if(!scanner_.checkToken(TokenID.BlockEntry, TokenID.Key, 
+                if(!scanner_.checkToken(TokenID.BlockEntry, TokenID.Key,
                                         TokenID.Value, TokenID.BlockEnd))
-                {                  
+                {
                     states_ ~= &parseIndentlessSequenceEntry;
                     return parseBlockNode();
                 }
@@ -617,7 +712,7 @@ final class Parser
             }
 
             state_ = popState();
-            immutable token = scanner_.peekToken();
+            const token = scanner_.peekToken();
             return sequenceEndEvent(token.startMark, token.endMark);
         }
 
@@ -635,7 +730,7 @@ final class Parser
 
             if(scanner_.checkToken(TokenID.Key))
             {
-                immutable token = scanner_.getToken();
+                const token = scanner_.getToken();
 
                 if(!scanner_.checkToken(TokenID.Key, TokenID.Value, TokenID.BlockEnd))
                 {
@@ -649,15 +744,15 @@ final class Parser
 
             if(!scanner_.checkToken(TokenID.BlockEnd))
             {
-                immutable token = scanner_.peekToken();
+                const token = scanner_.peekToken();
                 throw new Error("While parsing a block mapping", marks_.back,
-                                "expected block end, but found: " ~ token.idString, 
+                                "expected block end, but found: " ~ token.idString,
                                 token.startMark);
             }
 
             state_ = popState();
             popMark();
-            immutable token = scanner_.getToken();
+            const token = scanner_.getToken();
             return mappingEndEvent(token.startMark, token.endMark);
         }
 
@@ -666,7 +761,7 @@ final class Parser
         {
             if(scanner_.checkToken(TokenID.Value))
             {
-                immutable token = scanner_.getToken();
+                const token = scanner_.getToken();
 
                 if(!scanner_.checkToken(TokenID.Key, TokenID.Value, TokenID.BlockEnd))
                 {
@@ -688,7 +783,7 @@ final class Parser
          *                       flow_sequence_entry?
          *                       FLOW-SEQUENCE-END
          * flow_sequence_entry   ::= flow_node | KEY flow_node? (VALUE flow_node?)?
-         * 
+         *
          * Note that while production rules for both flow_sequence_entry and
          * flow_mapping_entry are equal, their interpretations are different.
          * For `flow_sequence_entry`, the part `KEY flow_node? (VALUE flow_node?)?`
@@ -710,7 +805,7 @@ final class Parser
                     }
                     else
                     {
-                        immutable token = scanner_.peekToken();
+                        const token = scanner_.peekToken();
                         throw new Error("While parsing a flow sequence", marks_.back,
                                         "expected ',' or ']', but got: " ~
                                         token.idString, token.startMark);
@@ -719,9 +814,9 @@ final class Parser
 
                 if(scanner_.checkToken(TokenID.Key))
                 {
-                    immutable token = scanner_.peekToken();
+                    const token = scanner_.peekToken();
                     state_ = &parseFlowSequenceEntryMappingKey;
-                    return mappingStartEvent(token.startMark, token.endMark, 
+                    return mappingStartEvent(token.startMark, token.endMark,
                                              Anchor(), Tag(), true, CollectionStyle.Flow);
                 }
                 else if(!scanner_.checkToken(TokenID.FlowSequenceEnd))
@@ -731,7 +826,7 @@ final class Parser
                 }
             }
 
-            immutable token = scanner_.getToken();
+            const token = scanner_.getToken();
             state_ = popState();
             popMark();
             return sequenceEndEvent(token.startMark, token.endMark);
@@ -740,9 +835,9 @@ final class Parser
         ///Parse a key in flow context.
         Event parseFlowKey(in Event delegate() nextState) @trusted
         {
-            immutable token = scanner_.getToken();
+            const token = scanner_.getToken();
 
-            if(!scanner_.checkToken(TokenID.Value, TokenID.FlowEntry, 
+            if(!scanner_.checkToken(TokenID.Value, TokenID.FlowEntry,
                                     TokenID.FlowSequenceEnd))
             {
                 states_ ~= nextState;
@@ -765,13 +860,13 @@ final class Parser
         {
             if(scanner_.checkToken(TokenID.Value))
             {
-                immutable token = scanner_.getToken();
+                const token = scanner_.getToken();
                 if(!scanner_.checkToken(TokenID.FlowEntry, checkId))
                 {
                     states_ ~= nextState;
                     return parseFlowNode();
                 }
-                
+
                 state_ = nextState;
                 return processEmptyScalar(token.endMark);
             }
@@ -791,7 +886,7 @@ final class Parser
         Event parseFlowSequenceEntryMappingEnd() @safe
         {
             state_ = &parseFlowSequenceEntry!(No.first);
-            immutable token = scanner_.peekToken();
+            const token = scanner_.peekToken();
             return mappingEndEvent(token.startMark, token.startMark);
         }
 
@@ -818,7 +913,7 @@ final class Parser
                     }
                     else
                     {
-                        immutable token = scanner_.peekToken();
+                        const token = scanner_.peekToken();
                         throw new Error("While parsing a flow mapping", marks_.back,
                                         "expected ',' or '}', but got: " ~
                                         token.idString, token.startMark);
@@ -837,7 +932,7 @@ final class Parser
                 }
             }
 
-            immutable token = scanner_.getToken();
+            const token = scanner_.getToken();
             state_ = popState();
             popMark();
             return mappingEndEvent(token.startMark, token.endMark);
@@ -857,7 +952,7 @@ final class Parser
         }
 
         ///Return an empty scalar.
-        Event processEmptyScalar(const Mark mark) const pure @safe nothrow
+        Event processEmptyScalar(const Mark mark) @safe pure nothrow const @nogc
         {
             return scalarEvent(mark, mark, Anchor(), Tag(), tuple(true, false), "");
         }

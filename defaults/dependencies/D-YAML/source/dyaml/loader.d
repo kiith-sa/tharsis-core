@@ -4,14 +4,13 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-/**
- * Class used to load YAML documents.
- */
+/// Class used to load YAML documents.
 module dyaml.loader;
 
 
 import std.exception;
-import std.stream;
+import std.file;
+import std.string;
 
 import dyaml.composer;
 import dyaml.constructor;
@@ -25,8 +24,7 @@ import dyaml.scanner;
 import dyaml.token;
 
 
-/**
- * Loads YAML documents from files or streams.
+/** Loads YAML documents from files or streams.
  *
  * User specified Constructor and/or Resolver can be used to support new
  * tags / data types.
@@ -48,59 +46,73 @@ import dyaml.token;
  * Iterate over YAML documents in a file, lazily loading them:
  * --------------------
  * auto loader = Loader("file.yaml");
- * 
+ *
  * foreach(ref node; loader)
  * {
  *     ...
  * }
  * --------------------
- * 
- * Load YAML from memory:
- * --------------------
- * import std.stream;
- * import std.stdio;
  *
- * string yaml_input = "red:   '#ff0000'\n"
+ * Load YAML from a string:
+ * --------------------
+ * char[] yaml_input = "red:   '#ff0000'\n"
  *                     "green: '#00ff00'\n"
- *                     "blue:  '#0000ff'";
+ *                     "blue:  '#0000ff'".dup;
  *
  * auto colors = Loader.fromString(yaml_input).load();
  *
  * foreach(string color, string value; colors)
  * {
+ *     import std.stdio;
  *     writeln(color, " is ", value, " in HTML/CSS");
+ * }
+ * --------------------
+ *
+ * Load a file into a buffer in memory and then load YAML from that buffer:
+ * --------------------
+ * try
+ * {
+ *     import std.file;
+ *     void[] buffer = std.file.read("file.yaml");
+ *     auto yamlNode = Loader(buffer);
+ *
+ *     // Read data from yamlNode here...
+ * }
+ * catch(FileException e)
+ * {
+ *     writeln("Failed to read file 'file.yaml'");
  * }
  * --------------------
  *
  * Use a custom constructor/resolver to support custom data types and/or implicit tags:
  * --------------------
  * auto constructor = new Constructor();
- * auto resolver = new Resolver();
+ * auto resolver    = new Resolver();
  *
- * //Add constructor functions / resolver expressions here...
+ * // Add constructor functions / resolver expressions here...
  *
  * auto loader = Loader("file.yaml");
  * loader.constructor = constructor;
- * loader.resolver = resolver;
- * auto rootNode = loader.load(node);
+ * loader.resolver    = resolver;
+ * auto rootNode      = loader.load(node);
  * --------------------
  */
 struct Loader
 {
     private:
-        ///Reads character data from a stream.
+        /// Reads character data from a stream.
         Reader reader_;
-        ///Processes character data to YAML tokens.
+        /// Processes character data to YAML tokens.
         Scanner scanner_;
-        ///Processes tokens to YAML events.
+        /// Processes tokens to YAML events.
         Parser parser_;
-        ///Resolves tags (data types).
+        /// Resolves tags (data types).
         Resolver resolver_;
-        ///Constructs YAML data types.
+        /// Constructs YAML data types.
         Constructor constructor_;
-        ///Name of the input file or stream, used in error messages.
+        /// Name of the input file or stream, used in error messages.
         string name_ = "<unknown>";
-        ///Are we done loading?
+        /// Are we done loading?
         bool done_ = false;
 
     public:
@@ -108,8 +120,7 @@ struct Loader
         @disable int opCmp(ref Loader);
         @disable bool opEquals(ref Loader);
 
-        /**
-         * Construct a Loader to load YAML from a file.
+        /** Construct a Loader to load YAML from a file.
          *
          * Params:  filename = Name of the file to load from.
          *
@@ -118,85 +129,128 @@ struct Loader
         this(string filename) @trusted
         {
             name_ = filename;
-            try{this(new File(filename));}
-            catch(StreamException e)
+            try
             {
-                throw new YAMLException("Unable to open file " ~ filename ~ 
-                                        " for YAML loading: " ~ e.msg);
+                this(std.file.read(filename)); 
+            }
+            catch(FileException e)
+            {
+                throw new YAMLException("Unable to open file %s for YAML loading: %s"
+                                        .format(filename, e.msg));
             }
         }
 
-        /// Construct a Loader to load YAML from a string.
-        ///
-        /// Params:  data = String to load YAML from.
-        ///
-        /// Returns: Loader loading YAML from given string.
+        deprecated("Loader.fromString(string) is deprecated. Use Loader.fromString(char[]) instead.")
         static Loader fromString(string data)
         {
-            return Loader(new MemoryStream(cast(char[])data));
+            return Loader(cast(ubyte[])data.dup);
         }
+
+        /** Construct a Loader to load YAML from a string (char []).
+         *
+         * Params:  data = String to load YAML from. $(B will) be overwritten during
+         *                 parsing as D:YAML reuses memory. Use data.dup if you don't
+         *                 want to modify the original string.
+         *
+         * Returns: Loader loading YAML from given string.
+         *
+         * Throws:
+         *
+         * YAMLException if data could not be read (e.g. a decoding error)
+         */
+        static Loader fromString(char[] data) @safe
+        {
+            return Loader(cast(ubyte[])data);
+        }
+        ///
         unittest
         {
-            assert(Loader.fromString("42").load().as!int == 42);
+            assert(Loader.fromString(cast(char[])"42").load().as!int == 42);
         }
-        
-        /**
-         * Construct a Loader to load YAML from a _stream.
-         *
-         * Params:  stream = Stream to read from. Must be readable and seekable.
-         *
-         * Throws:  YAMLException if stream could not be read.
-         */
+
+        import std.stream;
+        deprecated("Loader(Stream) is deprecated. Use Loader(ubyte[]) instead.")
         this(Stream stream) @safe
         {
             try
             {
-                reader_      = new Reader(stream);
-                scanner_     = new Scanner(reader_);
-                parser_      = new Parser(scanner_);
-                resolver_    = new Resolver();
-                constructor_ = new Constructor();
+                import dyaml.streamcompat;
+                auto streamBytes  = streamToBytesGC(stream);
+                reader_           = new Reader(streamBytes);
+                scanner_          = new Scanner(reader_);
+                parser_           = new Parser(scanner_);
             }
             catch(YAMLException e)
             {
-                throw new YAMLException("Unable to open stream " ~ name_ ~ 
-                                        " for YAML loading: " ~ e.msg);
+                throw new YAMLException("Unable to open stream %s for YAML loading: %s"
+                                        .format(name_, e.msg));
             }
         }
 
-        ///Destroy the Loader.
-        @trusted ~this()
+        /** Construct a Loader to load YAML from a buffer.
+         *
+         * Params: yamlData = Buffer with YAML data to load. This may be e.g. a file
+         *                    loaded to memory or a string with YAML data. Note that
+         *                    buffer $(B will) be overwritten, as D:YAML minimizes
+         *                    memory allocations by reusing the input _buffer.
+         *                    $(B Must not be deleted or modified by the user  as long
+         *                    as nodes loaded by this Loader are in use!) - Nodes may
+         *                    refer to data in this buffer.
+         *
+         * Note that D:YAML looks for byte-order-marks YAML files encoded in
+         * UTF-16/UTF-32 (and sometimes UTF-8) use to specify the encoding and
+         * endianness, so it should be enough to load an entire file to a buffer and
+         * pass it to D:YAML, regardless of Unicode encoding.
+         *
+         * Throws:  YAMLException if yamlData contains data illegal in YAML.
+         */
+        this(void[] yamlData) @safe
         {
-            clear(reader_);
-            clear(scanner_);
-            clear(parser_);
+            try
+            {
+                reader_      = new Reader(cast(ubyte[])yamlData);
+                scanner_     = new Scanner(reader_);
+                parser_      = new Parser(scanner_);
+            }
+            catch(YAMLException e)
+            {
+                throw new YAMLException("Unable to open %s for YAML loading: %s"
+                                        .format(name_, e.msg));
+            }
         }
 
-        ///Set stream _name. Used in debugging messages.
-        @property void name(string name) pure @safe nothrow
+        /// Destroy the Loader.
+        @trusted ~this()
+        {
+            reader_.destroy();
+            scanner_.destroy();
+            parser_.destroy();
+        }
+
+        /// Set stream _name. Used in debugging messages.
+        void name(string name) pure @safe nothrow @nogc
         {
             name_ = name;
         }
 
-        ///Specify custom Resolver to use.
-        @property void resolver(Resolver resolver) pure @safe nothrow
+        /// Specify custom Resolver to use.
+        void resolver(Resolver resolver) pure @safe nothrow @nogc
         {
             resolver_ = resolver;
         }
 
-        ///Specify custom Constructor to use.
-        @property void constructor(Constructor constructor) pure @safe nothrow
+        /// Specify custom Constructor to use.
+        void constructor(Constructor constructor) pure @safe nothrow @nogc
         {
             constructor_ = constructor;
         }
 
-        /**
-         * Load single YAML document.
+        /** Load single YAML document.
          *
          * If none or more than one YAML document is found, this throws a YAMLException.
          *
          * This can only be called once; this is enforced by contract.
-         *                  
+         *
          * Returns: Root node of the document.
          *
          * Throws:  YAMLException if there wasn't exactly one document
@@ -211,41 +265,43 @@ struct Loader
         {
             try
             {
-                scope(exit){done_ = true;}
+                lazyInitConstructorResolver();
+                scope(exit) { done_ = true; }
                 auto composer = new Composer(parser_, resolver_, constructor_);
                 enforce(composer.checkNode(), new YAMLException("No YAML document to load"));
                 return composer.getSingleNode();
             }
             catch(YAMLException e)
             {
-                throw new YAMLException("Unable to load YAML from stream " ~ 
-                                        name_ ~ " : " ~ e.msg);
+                throw new YAMLException("Unable to load YAML from %s : %s"
+                                        .format(name_, e.msg));
             }
         }
 
-        /**
-         * Load all YAML documents.
+        /** Load all YAML documents.
          *
-         * This is just a shortcut that iterates over all documents and returns
-         * them all at once. Calling loadAll after iterating over the node or
-         * vice versa will not return any documents, as they have all been parsed
-         * already.
+         * This is just a shortcut that iterates over all documents and returns them
+         * all at once. Calling loadAll after iterating over the node or vice versa
+         * will not return any documents, as they have all been parsed already.
          *
          * This can only be called once; this is enforced by contract.
-         *                  
+         *
          * Returns: Array of root nodes of all documents in the file/stream.
          *
          * Throws:  YAMLException on a parsing error.
          */
-        Node[] loadAll() @safe
+        Node[] loadAll() @trusted
         {
             Node[] nodes;
-            foreach(ref node; this){nodes ~= node;}
+            foreach(ref node; this) 
+            {
+                nodes.assumeSafeAppend();
+                nodes ~= node;
+            }
             return nodes;
         }
 
-        /**
-         * Foreach over YAML documents.
+        /** Foreach over YAML documents.
          *
          * Parses documents lazily, when they are needed.
          *
@@ -260,9 +316,10 @@ struct Loader
         }
         body
         {
-            scope(exit){done_ = true;}
+            scope(exit) { done_ = true; }
             try
             {
+                lazyInitConstructorResolver();
                 auto composer = new Composer(parser_, resolver_, constructor_);
 
                 int result = 0;
@@ -270,65 +327,93 @@ struct Loader
                 {
                     auto node = composer.getNode();
                     result = dg(node);
-                    if(result){break;}
+                    if(result) { break; }
                 }
 
                 return result;
             }
             catch(YAMLException e)
             {
-                throw new YAMLException("Unable to load YAML from stream " ~ 
-                                        name_ ~ " : " ~ e.msg);
+                throw new YAMLException("Unable to load YAML from %s : %s "
+                                        .format(name_, e.msg));
             }
         }
 
     package:
-        //Scan and return all tokens. Used for debugging.
-        Token[] scan() @safe
+        // Scan and return all tokens. Used for debugging.
+        Token[] scan() @trusted
         {
             try
             {
                 Token[] result;
-                while(scanner_.checkToken()){result ~= scanner_.getToken();}
+                while(scanner_.checkToken())
+                {
+                    result.assumeSafeAppend();
+                    result ~= scanner_.getToken();
+                }
                 return result;
             }
             catch(YAMLException e)
             {
-                throw new YAMLException("Unable to scan YAML from stream " ~ 
+                throw new YAMLException("Unable to scan YAML from stream " ~
                                         name_ ~ " : " ~ e.msg);
             }
         }
 
-        //Parse and return all events. Used for debugging.
+        // Scan all tokens, throwing them away. Used for benchmarking.
+        void scanBench() @safe
+        {
+            try while(scanner_.checkToken())
+            {
+                scanner_.getToken();
+            }
+            catch(YAMLException e)
+            {
+                throw new YAMLException("Unable to scan YAML from stream " ~
+                                        name_ ~ " : " ~ e.msg);
+            }
+        }
+
+
+        // Parse and return all events. Used for debugging.
         immutable(Event)[] parse() @safe
         {
             try
             {
                 immutable(Event)[] result;
-                while(parser_.checkEvent()){result ~= parser_.getEvent();}
+                while(parser_.checkEvent())
+                {
+                    result ~= parser_.getEvent();
+                }
                 return result;
             }
             catch(YAMLException e)
             {
-                throw new YAMLException("Unable to parse YAML from stream " ~ 
-                                        name_ ~ " : " ~ e.msg);
+                throw new YAMLException("Unable to parse YAML from stream %s : %s "
+                                        .format(name_, e.msg));
             }
+        }
+
+        // Construct default constructor/resolver if the user has not yet specified
+        // their own.
+        void lazyInitConstructorResolver() @safe
+        {
+            if(resolver_ is null)    { resolver_    = new Resolver(); }
+            if(constructor_ is null) { constructor_ = new Constructor(); }
         }
 }
 
 unittest
 {
-    import std.stream;
-    import std.stdio;
-    
-    string yaml_input = "red:   '#ff0000'\n"
+    char[] yaml_input = "red:   '#ff0000'\n"
                         "green: '#00ff00'\n"
-                        "blue:  '#0000ff'";
-    
-    auto colors = Loader(new MemoryStream(cast(char[])yaml_input)).load();
-    
+                        "blue:  '#0000ff'".dup;
+
+    auto colors = Loader.fromString(yaml_input).load();
+
     foreach(string color, string value; colors)
     {
+        import std.stdio;
         writeln(color, " is ", value, " in HTML/CSS");
     }
 }

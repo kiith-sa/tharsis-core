@@ -1,3 +1,8 @@
+/__test__library__
+/examples/resolver/resolver
+/examples/representer/representer
+/examples/getting_started/getting-started
+/examples/constructor/constructor
 /libdyaml
 /examples/yaml_gen/yaml_gen
 /unittest.obj
@@ -8,10 +13,15 @@
 /examples/getting_started/main.obj
 /cdc.obj
 /unittest
+
 # Backups #
 ###########
 *~
 *.sw*
+
+# dub #
+#######
+*.dub*
 
 # Compiled source #
 ###################
@@ -39,3 +49,9 @@ ehthumbs.db
 Icon?
 Thumbs.db
 .directory
+
+# Profiling outputs #
+#####################
+perf.data
+perf.data.old
+callgrind.out.*

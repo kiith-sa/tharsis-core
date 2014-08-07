@@ -16,52 +16,70 @@ import std.conv;
 alias to!string str;
 
 
-///Base class for all exceptions thrown by D:YAML.
+/// Base class for all exceptions thrown by D:YAML.
 class YAMLException : Exception
 {
-    ///Construct a YAMLException with specified message and position where it was thrown.
+    /// Construct a YAMLException with specified message and position where it was thrown.
     public this(string msg, string file = __FILE__, int line = __LINE__)
-        @trusted pure nothrow
+        @safe pure nothrow
     {
         super(msg, file, line);
     }
 }
 
-///Position in a YAML stream, used for error messages.
+package:
+// Position in a YAML stream, used for error messages.
 struct Mark
 {
-    private:
-        ///Line number.
+    package:
+        /// Line number.
         ushort line_;
-        ///Column number.
+        /// Column number.
         ushort column_;
 
     public:
-        ///Construct a Mark with specified line and column in the file.
-        this(const uint line, const uint column) pure @safe nothrow
+        /// Construct a Mark with specified line and column in the file.
+        this(const uint line, const uint column) @safe pure nothrow @nogc
         {
             line_   = cast(ushort)min(ushort.max, line);
-            column_ = cast(ushort)min(ushort.max, column);
+            // This *will* overflow on extremely wide files but saves CPU time
+            // (mark ctor takes ~5% of time)
+            column_ = cast(ushort)column;
         }
 
-        ///Get a string representation of the mark.
-        string toString() const @trusted pure
+        /// Get a string representation of the mark.
+        string toString() @safe pure nothrow const
         {
-            //Line/column numbers start at zero internally, make them start at 1.
-            string clamped(ushort v){return str(v + 1) ~ (v == ushort.max ? " or higher" : "");}
+            // Line/column numbers start at zero internally, make them start at 1.
+            static string clamped(ushort v) @safe pure nothrow
+            {
+                return str(v + 1) ~ (v == ushort.max ? " or higher" : "");
+            }
             return "line " ~ clamped(line_) ~ ",column " ~ clamped(column_);
         }
 }
 
 static assert(Mark.sizeof == 4, "Unexpected Mark size");
 
-package:
-//Base class of YAML exceptions with marked positions of the problem.
+// A struct storing parameters to the MarkedYAMLException constructor.
+struct MarkedYAMLExceptionData
+{
+    // Context of the error.
+    string context;
+    // Position of the context in a YAML buffer.
+    Mark contextMark;
+    // The error itself.
+    string problem;
+    // Position if the error.
+    Mark problemMark;
+}
+
+// Base class of YAML exceptions with marked positions of the problem.
 abstract class MarkedYAMLException : YAMLException
 {
-    //Construct a MarkedYAMLException with specified context and problem.
-    this(string context, Mark contextMark, string problem, Mark problemMark,
-         string file = __FILE__, int line = __LINE__) @safe pure
+    // Construct a MarkedYAMLException with specified context and problem.
+    this(string context, const Mark contextMark, string problem, const Mark problemMark,
+         string file = __FILE__, int line = __LINE__) @safe pure nothrow
     {
         const msg = context ~ '\n' ~
                     (contextMark != problemMark ? contextMark.toString() ~ '\n' : "") ~
@@ -69,15 +87,24 @@ abstract class MarkedYAMLException : YAMLException
         super(msg, file, line);
     }
 
-    //Construct a MarkedYAMLException with specified problem.
-    this(string problem, Mark problemMark, string file = __FILE__, int line = __LINE__)
-        @safe pure
+    // Construct a MarkedYAMLException with specified problem.
+    this(string problem, const Mark problemMark,
+         string file = __FILE__, int line = __LINE__)
+        @safe pure nothrow
     {
         super(problem ~ '\n' ~ problemMark.toString(), file, line);
     }
+
+    /// Construct a MarkedYAMLException from a struct storing constructor parameters.
+    this(ref const(MarkedYAMLExceptionData) data) @safe pure nothrow
+    {
+        with(data) this(context, contextMark, problem, problemMark);
+    }
 }
 
-//Constructors of YAML exceptions are mostly the same, so we use a mixin.
+// Constructors of YAML exceptions are mostly the same, so we use a mixin.
+//
+// See_Also: YAMLException
 template ExceptionCtors()
 {
     public this(string msg, string file = __FILE__, int line = __LINE__)
@@ -87,20 +114,29 @@ template ExceptionCtors()
     }
 }
 
-//Constructors of marked YAML exceptions are mostly the same, so we use a mixin.
+// Constructors of marked YAML exceptions are mostly the same, so we use a mixin.
+//
+// See_Also: MarkedYAMLException
 template MarkedExceptionCtors()
 {
     public:
-        this(string context, Mark contextMark, string problem, Mark problemMark,
-             string file = __FILE__, int line = __LINE__) @safe pure
+        this(string context, const Mark contextMark, string problem, 
+             const Mark problemMark, string file = __FILE__, int line = __LINE__)
+            @safe pure nothrow
         {
-            super(context, contextMark, problem, problemMark, 
+            super(context, contextMark, problem, problemMark,
                   file, line);
         }
 
-        this(string problem, Mark problemMark, string file = __FILE__, int line = __LINE__)
-            @safe pure
+        this(string problem, const Mark problemMark,
+             string file = __FILE__, int line = __LINE__)
+            @safe pure nothrow
         {
             super(problem, problemMark, file, line);
+        }
+
+        this(ref const(MarkedYAMLExceptionData) data) @safe pure nothrow
+        {
+            super(data);
         }
 }

@@ -1,4 +1,5 @@
 
+module dyaml.yaml_bench;
 //Benchmark that loads, and optionally extracts data from and/or emits a YAML file. 
 
 import std.conv;
@@ -12,16 +13,21 @@ void help()
 {
     string help =
         "D:YAML benchmark\n"
-        "Copyright (C) 2011 Ferdinand Majerech\n"
+        "Copyright (C) 2011-2014 Ferdinand Majerech\n"
         "Usage: yaml_bench [OPTION ...] [YAML_FILE]\n"
         "\n"
         "Loads and optionally extracts data and/or dumps a YAML file.\n"
         "\n"
         "Available options:\n"
         " -h --help          Show this help information.\n"
-        " -g --get           Extract data from the file (using Node.get()).\n"
+        " -g --get           Extract data from the file (using Node.as()).\n"
         " -d --dump          Dump the loaded data (to YAML_FILE.dump).\n"
-        " -r --runs=NUM      Repeat the benchmark NUM times.\n";
+        " -r --runs=NUM      Repeat parsing the file NUM times.\n"
+        "    --reload        Reload the file from the diskl on every repeat\n"
+        "                    By default, the file is loaded to memory once\n"
+        "                    and repeatedly parsed from memory.\n"
+        " -s --scan-only    Do not execute the entire parsing process, only\n"
+        "                    scanning. Overrides '--dump'.\n";
     writeln(help);
 }
 
@@ -57,8 +63,10 @@ void extract(ref Node document)
 
 void main(string[] args)
 {
-    bool get = false;
-    bool dump = false;
+    bool get      = false;
+    bool dump     = false;
+    bool reload   = false;
+    bool scanOnly = false;
     uint runs = 1;
     string file = null;
 
@@ -68,10 +76,12 @@ void main(string[] args)
         auto parts = arg.split("=");
         if(arg[0] == '-') switch(parts[0]) 
         {
-            case "--help", "-h": help(); return;
-            case "--get",  "-g": get = true; break;
-            case "--dump", "-d": dump = true; break;
-            case "--runs", "-r": runs = to!uint(parts[1]); break;
+            case "--help", "-h":      help(); return;
+            case "--get",  "-g":      get      = true; break;
+            case "--dump", "-d":      dump     = true; break;
+            case "--reload":          reload   = true; break;
+            case "--scan-only", "-s": scanOnly = true; break;
+            case "--runs", "-r":      runs     = parts[1].to!uint; break;
             default: writeln("\nUnknown argument: ", arg, "\n\n"); help(); return;
         }
         else
@@ -95,9 +105,33 @@ void main(string[] args)
 
     try
     {
+        import std.file;
+        void[] fileInMemory;
+        if(!reload) { fileInMemory = std.file.read(file); }
+        void[] fileWorkingCopy = fileInMemory.dup;
+
+        // Instead of constructing a resolver/constructor with each Loader,
+        // construct them once to remove noise when profiling.
+        auto resolver    = new Resolver();
+        auto constructor = new Constructor();
+
         while(runs--)
         {
-            auto nodes = Loader(file).loadAll();
+            // Loading the file rewrites the loaded buffer, so if we don't reload from
+            // disk, we need to use a copy of the originally loaded file.
+            if(reload) { fileInMemory = std.file.read(file); }
+            else       { fileWorkingCopy[] = fileInMemory[]; }
+            void[] fileToLoad = reload ? fileInMemory : fileWorkingCopy;
+            if(scanOnly)
+            {
+                auto loader = Loader(fileToLoad);
+                loader.scanBench();
+                continue;
+            }
+            auto loader        = Loader(fileToLoad);
+            loader.resolver    = resolver;
+            loader.constructor = constructor;
+            auto nodes = loader.loadAll();
             if(dump)
             {
                 Dumper(file ~ ".dump").dump(nodes);
