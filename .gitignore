@@ -5,3 +5,5 @@ meta/*
 *.bkp?
 /unittest
 /cdc.o
+*.log
+*.aux
