@@ -187,7 +187,7 @@ public:
     /// Useful e.g. before loading a big map.
     ///
     /// Params:  mult = Multiplier for size of preallocations. Must be greater than 0.
-    @property void allocMult(const double mult) @safe pure nothrow
+    void allocMult(const double mult) @safe pure nothrow
     {
         assert(mult > 0.0, "allocMult parameter set to 0 or less");
         allocMult_ = mult;
