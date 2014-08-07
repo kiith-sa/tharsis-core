@@ -847,46 +847,46 @@ private:
     //////////////////////////////////////////
 }
 
-unittest
+private struct TestSource
 {
-    /// Not a 'real' Source, just for testing.
-    struct TestSource
+public:
+    struct Loader
     {
-    public:
-        struct Loader
-        {
-            TestSource loadSource(string name, bool logErrors = false) @safe nothrow
-            {
-                assert(false);
-            }
-        }
-
-        bool isNull() @safe nothrow const
-        {
-            assert(false);
-        }
-
-        string errorLog() @safe pure nothrow const
-        {
-            assert(false);
-        }
-
-        bool readTo(T)(out T target) @safe nothrow
-        {
-            assert(false);
-        }
-
-        bool getSequenceValue(size_t index, out TestSource target) @safe nothrow
-        {
-            assert(false);
-        }
-
-        bool getMappingValue(string key, out TestSource target) @safe nothrow
+        TestSource loadSource(string name, bool logErrors = false) @safe nothrow
         {
             assert(false);
         }
     }
 
+    bool isNull() @safe nothrow const
+    {
+        assert(false);
+    }
+
+    string errorLog() @safe pure nothrow const
+    {
+        assert(false);
+    }
+
+    bool readTo(T)(out T target) @safe nothrow
+    {
+        assert(false);
+    }
+
+    bool getSequenceValue(size_t index, out TestSource target) @safe nothrow
+    {
+        assert(false);
+    }
+
+    bool getMappingValue(string key, out TestSource target) @safe nothrow
+    {
+        assert(false);
+    }
+}
+
+unittest
+{
+    /// Not a 'real' Source, just for testing.
     struct TimeoutComponent
     {
         enum ushort ComponentTypeID = userComponentTypeID!1;
