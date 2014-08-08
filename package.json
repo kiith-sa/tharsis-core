@@ -5,7 +5,7 @@
     "libs": [],
     "importPaths": ["source"],
     "license": "Boost 1.0",
-    "homepage": "https://github.com/kiith-sa/Tharsis",
+    "homepage": "https://github.com/kiith-sa/tharsis-core",
     "copyright": "Copyright © 2013-2014, Ferdinand Majerech",
 
     "buildTypes":
