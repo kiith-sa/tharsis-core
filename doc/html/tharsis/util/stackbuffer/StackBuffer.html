@@ -1,0 +1,290 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/><!-- using block title in layout.dt--><!-- using block ddox.defs in ddox.layout.dt--><!-- using block ddox.title in ddox.layout.dt-->
+		<title>Struct StackBuffer</title>
+		<link rel="stylesheet" type="text/css" href="../../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../../scripts/jquery.js">/**/</script>
+		<script type="text/javascript" src="../../../prettify/prettify.js">/**/</script>
+		<script type="text/javascript" src="../../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="prettyPrint(); setupDdox();">
+		<nav id="main-nav"><!-- using block navigation in layout.dt-->
+						<ul>
+						<li>
+							<a href="../../../tharsis/entity/componentbuffer.html">tharsis.entity.componentbuffer</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/componenttypeinfo.html">tharsis.entity.componenttypeinfo</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/componenttypemanager.html">tharsis.entity.componenttypemanager</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/descriptors.html">tharsis.entity.descriptors</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entity.html">tharsis.entity.entity</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entityid.html">tharsis.entity.entityid</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entitymanager.html">tharsis.entity.entitymanager</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entitypolicy.html">tharsis.entity.entitypolicy</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entityprototype.html">tharsis.entity.entityprototype</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entityrange.html">tharsis.entity.entityrange</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/lifecomponent.html">tharsis.entity.lifecomponent</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/processtypeinfo.html">tharsis.entity.processtypeinfo</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/processwrapper.html">tharsis.entity.processwrapper</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/prototypemanager.html">tharsis.entity.prototypemanager</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/resourcemanager.html">tharsis.entity.resourcemanager</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/source.html">tharsis.entity.source</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/alloc.html">tharsis.util.alloc</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/array.html">tharsis.util.array</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/bitmanip.html">tharsis.util.bitmanip</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/debughacks.html">tharsis.util.debughacks</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/interfaces.html">tharsis.util.interfaces</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/mallocarray.html">tharsis.util.mallocarray</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/math.html">tharsis.util.math</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/noncopyable.html">tharsis.util.noncopyable</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/pagedarray.html">tharsis.util.pagedarray</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/qualifierhacks.html">tharsis.util.qualifierhacks</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/stackbuffer.html">tharsis.util.stackbuffer</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/testing.html">tharsis.util.testing</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/traits.html">tharsis.util.traits</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/typecons.html">tharsis.util.typecons</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/typetuple.html">tharsis.util.typetuple</a>
+						</li>
+						</ul>
+				<noscript>
+					<p style="color: red">The search functionality needs JavaScript enabled</p>
+				</noscript>
+				<div id="symbolSearchPane" style="display: none">
+					<p>
+						<input id="symbolSearch" type="text" placeholder="Search for symbols" onchange="performSymbolSearch(24);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+					</p>
+	<ul id="symbolSearchResults" style="display: none"></ul>
+	<script type="application/javascript" src="../../../symbols.js"></script>
+	<script type="application/javascript">
+var symbolSearchRootDir = "../../../";
+$('#symbolSearchPane').show();
+	</script>
+				</div>
+				<script type="text/javascript" src="../../../scripts/mousetrap.js"></script>
+				<script type="text/javascript">
+$(document).ready(function() {
+	Mousetrap.bind('s', function(e) {
+		$("#symbolSearch").focus();
+		return false;
+	});
+});
+				</script>
+		</nav>
+		<div id="main-contents">
+			<h1>Struct StackBuffer</h1><!-- using block body in layout.dt--><!-- Default block ddox.description in ddox.layout.dt--><!-- Default block ddox.sections in ddox.layout.dt--><!-- using block ddox.members in ddox.layout.dt-->
+			<section>
+				<p>An array that uses stack storage (avoiding allocation overhead) if its
+</p>
+<section>
+<p><a href="../../../tharsis/util/stackbuffer/StackBuffer.length.html"><code class="prettyprint lang-d">length</code></a> is short and heap (manual allocation) if its <a href="../../../tharsis/util/stackbuffer/StackBuffer.length.html"><code class="prettyprint lang-d">length</code></a> is long.
+</p>
+
+
+</section>
+
+					<section>
+						<h3>Constructors</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/util/stackbuffer/StackBuffer.this.html" class="public">
+										<code>this</code>
+									</a>
+								</td>
+								<td>Disable any slice operations that may assume a GC-allocated array.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/util/stackbuffer/StackBuffer.this.html" class="public">
+										<code>this</code>
+									</a>
+								</td>
+								<td>Construct a <a href="../../../tharsis/util/stackbuffer/StackBuffer.html"><code class="prettyprint lang-d">StackBuffer</code></a> of specified <a href="../../../tharsis/util/stackbuffer/StackBuffer.this.html#size"><code class="prettyprint lang-d">size</code></a> filled with T.init .
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Fields</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/util/stackbuffer/StackBuffer.self_.html" class="public"><code>self_</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d">T[]</code></td>
+								<td>The buffer itself from the user's point of view.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/util/stackbuffer/StackBuffer.stackBuffer_.html" class="public"><code>stackBuffer_</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d">T[maxStackSize]</code></td>
+								<td>The stack storage used if the size of the array is &lt;= maxStackSize.
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Methods</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/util/stackbuffer/StackBuffer.length.html" class="public">
+										<code>length</code>
+									</a>
+								</td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/util/stackbuffer/StackBuffer.opAssign.html" class="public">
+										<code>opAssign</code>
+									</a>
+								</td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/util/stackbuffer/StackBuffer.opCat.html" class="public">
+										<code>opCat</code>
+									</a>
+								</td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/util/stackbuffer/StackBuffer.opCat.html" class="public">
+										<code>opCat</code>
+									</a>
+								</td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/util/stackbuffer/StackBuffer.opCatAssign.html" class="public">
+										<code>opCatAssign</code>
+									</a>
+								</td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/util/stackbuffer/StackBuffer.opCatAssign.html" class="public">
+										<code>opCatAssign</code>
+									</a>
+								</td>
+								<td></td>
+							</tr>
+						</table>
+					</section>
+<section><h3>Parameters</h3>
+<table><col class="caption"><tr><th>Name</th><th>Description</th></tr>
+<tr><td id="T">T</td><td> The type stored in the array.
+</td></tr>
+<tr><td id="maxStackSize">maxStackSize</td><td> If the array is larger than this, it is allocated on
+
+the heap.
+
+
+
+Currently only supports value types without destructors.
+
+This may be changed in future.</td></tr>
+</table>
+</section>
+
+			</section>
+			<section>
+				<h2>Authors</h2><!-- using block ddox.authors in ddox.layout.dt-->
+
+			</section>
+			<section>
+				<h2>Copyright</h2><!-- using block ddox.copyright in ddox.layout.dt-->
+
+			</section>
+			<section>
+				<h2>License</h2><!-- using block ddox.license in ddox.layout.dt-->
+
+			</section>
+		</div>
+	</body>
+</html>

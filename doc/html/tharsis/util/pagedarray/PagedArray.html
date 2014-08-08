@@ -1,0 +1,452 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/><!-- using block title in layout.dt--><!-- using block ddox.defs in ddox.layout.dt--><!-- using block ddox.title in ddox.layout.dt-->
+		<title>Struct PagedArray</title>
+		<link rel="stylesheet" type="text/css" href="../../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../../scripts/jquery.js">/**/</script>
+		<script type="text/javascript" src="../../../prettify/prettify.js">/**/</script>
+		<script type="text/javascript" src="../../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="prettyPrint(); setupDdox();">
+		<nav id="main-nav"><!-- using block navigation in layout.dt-->
+						<ul>
+						<li>
+							<a href="../../../tharsis/entity/componentbuffer.html">tharsis.entity.componentbuffer</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/componenttypeinfo.html">tharsis.entity.componenttypeinfo</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/componenttypemanager.html">tharsis.entity.componenttypemanager</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/descriptors.html">tharsis.entity.descriptors</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entity.html">tharsis.entity.entity</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entityid.html">tharsis.entity.entityid</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entitymanager.html">tharsis.entity.entitymanager</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entitypolicy.html">tharsis.entity.entitypolicy</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entityprototype.html">tharsis.entity.entityprototype</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entityrange.html">tharsis.entity.entityrange</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/lifecomponent.html">tharsis.entity.lifecomponent</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/processtypeinfo.html">tharsis.entity.processtypeinfo</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/processwrapper.html">tharsis.entity.processwrapper</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/prototypemanager.html">tharsis.entity.prototypemanager</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/resourcemanager.html">tharsis.entity.resourcemanager</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/source.html">tharsis.entity.source</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/alloc.html">tharsis.util.alloc</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/array.html">tharsis.util.array</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/bitmanip.html">tharsis.util.bitmanip</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/debughacks.html">tharsis.util.debughacks</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/interfaces.html">tharsis.util.interfaces</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/mallocarray.html">tharsis.util.mallocarray</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/math.html">tharsis.util.math</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/noncopyable.html">tharsis.util.noncopyable</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/pagedarray.html">tharsis.util.pagedarray</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/qualifierhacks.html">tharsis.util.qualifierhacks</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/stackbuffer.html">tharsis.util.stackbuffer</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/testing.html">tharsis.util.testing</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/traits.html">tharsis.util.traits</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/typecons.html">tharsis.util.typecons</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/typetuple.html">tharsis.util.typetuple</a>
+						</li>
+						</ul>
+				<noscript>
+					<p style="color: red">The search functionality needs JavaScript enabled</p>
+				</noscript>
+				<div id="symbolSearchPane" style="display: none">
+					<p>
+						<input id="symbolSearch" type="text" placeholder="Search for symbols" onchange="performSymbolSearch(24);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+					</p>
+	<ul id="symbolSearchResults" style="display: none"></ul>
+	<script type="application/javascript" src="../../../symbols.js"></script>
+	<script type="application/javascript">
+var symbolSearchRootDir = "../../../";
+$('#symbolSearchPane').show();
+	</script>
+				</div>
+				<script type="text/javascript" src="../../../scripts/mousetrap.js"></script>
+				<script type="text/javascript">
+$(document).ready(function() {
+	Mousetrap.bind('s', function(e) {
+		$("#symbolSearch").focus();
+		return false;
+	});
+});
+				</script>
+		</nav>
+		<div id="main-contents">
+			<h1>Struct PagedArray</h1><!-- using block body in layout.dt--><!-- Default block ddox.description in ddox.layout.dt--><!-- Default block ddox.sections in ddox.layout.dt--><!-- using block ddox.members in ddox.layout.dt-->
+			<section>
+				<p>A paged array storing value-type items which can be initialized and then
+</p>
+<section>
+<p>marked immutable.
+</p>
+
+
+
+<p>Items can be appended using '~=' and are never moved in memory. By default,
+</p>
+
+<p>items are mutable and can be accessed by <a href="../../../tharsis/util/pagedarray/PagedArray.atMutable.html"><code class="prettyprint lang-d">atMutable</code></a>() and <a href="../../../tharsis/util/pagedarray/PagedArray.atConst.html"><code class="prettyprint lang-d">atConst</code></a>().
+</p>
+
+<p>A call to <a href="../../../tharsis/util/pagedarray/PagedArray.markImmutable.html"><code class="prettyprint lang-d">markImmutable</code></a>() marks an item immutable, after which it can only
+</p>
+
+<p>be accessed by <a href="../../../tharsis/util/pagedarray/PagedArray.atConst.html"><code class="prettyprint lang-d">atConst</code></a>() and <a href="../../../tharsis/util/pagedarray/PagedArray.atImmutable.html"><code class="prettyprint lang-d">atImmutable</code></a>().
+</p>
+
+
+
+<p>This allows to add and initialize an item before marking it definitively
+</p>
+
+<p>immutable.
+</p>
+
+
+
+<p>That said, <code class="prettyprint lang-d">PagedArray</code> allocates its items manually, and all items regardless
+</p>
+
+<p>of their mutability are destroyed when the <code class="prettyprint lang-d">PagedArray</code> is destroyed.
+</p>
+
+
+
+<p>Currently, <code class="prettyprint lang-d">PagedArray</code> doesn't support structs with elaborate desctructors;
+</p>
+
+<p>that may be added in future if at all useful with immutable objects.
+</p>
+</section>
+
+					<section>
+						<h3>Fields</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/util/pagedarray/PagedArray.base_.html" class="public"><code>base_</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../tharsis/util/pagedarray/PagedArrayBase.html">PagedArrayBase</a></code></td>
+								<td>Handles page allocation.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/util/pagedarray/PagedArray.length_.html" class="public"><code>length_</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d">uint</code></td>
+								<td>The number of items stored in the array.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/util/pagedarray/PagedArray.pageCapacity.html" class="public"><code>pageCapacity</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d">void</code></td>
+								<td>The number of items stored in one page.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/util/pagedarray/PagedArray.pageItemBytes.html" class="public"><code>pageItemBytes</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d">void</code></td>
+								<td>The number of bytes taken by items stored in one page.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/util/pagedarray/PagedArray.pageItemFlagsBytes.html" class="public"><code>pageItemFlagsBytes</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d">void</code></td>
+								<td>The number of bytes at the end of each page used to store item flags
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Properties</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/util/pagedarray/PagedArray.capacity.html" class="public property"><code>capacity</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d">size_t</code></td>
+								<td>Get the number of items can we store without allocating a new page.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/util/pagedarray/PagedArray.length.html" class="public property"><code>length</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d">size_t</code></td>
+								<td>Get the number of items stored in the array.
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Methods</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/util/pagedarray/PagedArray.addPage.html" class="public">
+										<code>addPage</code>
+									</a>
+								</td>
+								<td>Add a new page with type info about the stored type for debugging.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/util/pagedarray/PagedArray.atConst.html" class="public">
+										<code>atConst</code>
+									</a>
+								</td>
+								<td>Access the item at specified <a href="../../../tharsis/util/pagedarray/PagedArray.atConst.html#index"><code class="prettyprint lang-d">index</code></a> using a const reference.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/util/pagedarray/PagedArray.atImmutable.html" class="public">
+										<code>atImmutable</code>
+									</a>
+								</td>
+								<td>Access the immutable item at specified <a href="../../../tharsis/util/pagedarray/PagedArray.atImmutable.html#index"><code class="prettyprint lang-d">index</code></a>.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/util/pagedarray/PagedArray.atMutable.html" class="public">
+										<code>atMutable</code>
+									</a>
+								</td>
+								<td>Access the mutable item at specified <a href="../../../tharsis/util/pagedarray/PagedArray.atMutable.html#index"><code class="prettyprint lang-d">index</code></a>.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/util/pagedarray/PagedArray.clear.html" class="public">
+										<code>clear</code>
+									</a>
+								</td>
+								<td>Destroy all objects in the array and set its size to zero.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/util/pagedarray/PagedArray.markImmutable.html" class="public">
+										<code>markImmutable</code>
+									</a>
+								</td>
+								<td>Mark the item at specified <a href="../../../tharsis/util/pagedarray/PagedArray.markImmutable.html#index"><code class="prettyprint lang-d">index</code></a> as immutable.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/util/pagedarray/PagedArray.opAssign.html" class="public">
+										<code>opAssign</code>
+									</a>
+								</td>
+								<td>No direct copying; we don't want the indirection of a reference type and
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/util/pagedarray/PagedArray.pageItemFlags.html" class="public">
+										<code>pageItemFlags</code>
+									</a>
+								</td>
+								<td>Get a slice of flags (mutability, etc.) of items in a <a href="../../../tharsis/util/pagedarray/PagedArray.pageItemFlags.html#page"><code class="prettyprint lang-d">page</code></a>.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/util/pagedarray/PagedArray.pageItems.html" class="public">
+										<code>pageItems</code>
+									</a>
+								</td>
+								<td>Access the part of specified <a href="../../../tharsis/util/pagedarray/PagedArray.pageItems.html#page"><code class="prettyprint lang-d">page</code></a> containing items.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/util/pagedarray/PagedArray.pages_.html" class="public">
+										<code>pages_</code>
+									</a>
+								</td>
+								<td>Access the pages as if they were a direct data member.
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Inner structs</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/util/pagedarray/PagedArray.ItemFlags.html" class="public">
+										<code>ItemFlags</code>
+									</a>
+								</td>
+								<td>Flags specifying mutability of each item (more flags may be added later if needed).
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Aliases</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/util/pagedarray/PagedArray.Page.html" class="public">
+										<code>Page</code>
+									</a>
+								</td>
+								<td>Shortcut aliases.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/util/pagedarray/PagedArray.PageSize.html" class="public">
+										<code>PageSize</code>
+									</a>
+								</td>
+								<td></td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Templates</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/util/pagedarray/PagedArray.appendImmutable.html" class="public">
+										<code>appendImmutable</code>
+									</a>
+								</td>
+								<td>Add a new item to the end of the array and mark it immutable.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/util/pagedarray/PagedArray.opCatAssign.html" class="public">
+										<code>opCatAssign</code>
+									</a>
+								</td>
+								<td>Add a new item to the end of the array.
+</td>
+							</tr>
+						</table>
+					</section>
+
+			</section>
+			<section>
+				<h2>Authors</h2><!-- using block ddox.authors in ddox.layout.dt-->
+
+			</section>
+			<section>
+				<h2>Copyright</h2><!-- using block ddox.copyright in ddox.layout.dt-->
+
+			</section>
+			<section>
+				<h2>License</h2><!-- using block ddox.license in ddox.layout.dt-->
+
+			</section>
+		</div>
+	</body>
+</html>

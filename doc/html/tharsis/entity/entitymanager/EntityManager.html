@@ -1,0 +1,539 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/><!-- using block title in layout.dt--><!-- using block ddox.defs in ddox.layout.dt--><!-- using block ddox.title in ddox.layout.dt-->
+		<title>Class EntityManager</title>
+		<link rel="stylesheet" type="text/css" href="../../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../../scripts/jquery.js">/**/</script>
+		<script type="text/javascript" src="../../../prettify/prettify.js">/**/</script>
+		<script type="text/javascript" src="../../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="prettyPrint(); setupDdox();">
+		<nav id="main-nav"><!-- using block navigation in layout.dt-->
+						<ul>
+						<li>
+							<a href="../../../tharsis/entity/componentbuffer.html">tharsis.entity.componentbuffer</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/componenttypeinfo.html">tharsis.entity.componenttypeinfo</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/componenttypemanager.html">tharsis.entity.componenttypemanager</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/descriptors.html">tharsis.entity.descriptors</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entity.html">tharsis.entity.entity</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entityid.html">tharsis.entity.entityid</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entitymanager.html">tharsis.entity.entitymanager</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entitypolicy.html">tharsis.entity.entitypolicy</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entityprototype.html">tharsis.entity.entityprototype</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entityrange.html">tharsis.entity.entityrange</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/lifecomponent.html">tharsis.entity.lifecomponent</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/processtypeinfo.html">tharsis.entity.processtypeinfo</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/processwrapper.html">tharsis.entity.processwrapper</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/prototypemanager.html">tharsis.entity.prototypemanager</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/resourcemanager.html">tharsis.entity.resourcemanager</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/source.html">tharsis.entity.source</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/alloc.html">tharsis.util.alloc</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/array.html">tharsis.util.array</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/bitmanip.html">tharsis.util.bitmanip</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/debughacks.html">tharsis.util.debughacks</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/interfaces.html">tharsis.util.interfaces</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/mallocarray.html">tharsis.util.mallocarray</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/math.html">tharsis.util.math</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/noncopyable.html">tharsis.util.noncopyable</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/pagedarray.html">tharsis.util.pagedarray</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/qualifierhacks.html">tharsis.util.qualifierhacks</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/stackbuffer.html">tharsis.util.stackbuffer</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/testing.html">tharsis.util.testing</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/traits.html">tharsis.util.traits</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/typecons.html">tharsis.util.typecons</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/typetuple.html">tharsis.util.typetuple</a>
+						</li>
+						</ul>
+				<noscript>
+					<p style="color: red">The search functionality needs JavaScript enabled</p>
+				</noscript>
+				<div id="symbolSearchPane" style="display: none">
+					<p>
+						<input id="symbolSearch" type="text" placeholder="Search for symbols" onchange="performSymbolSearch(24);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+					</p>
+	<ul id="symbolSearchResults" style="display: none"></ul>
+	<script type="application/javascript" src="../../../symbols.js"></script>
+	<script type="application/javascript">
+var symbolSearchRootDir = "../../../";
+$('#symbolSearchPane').show();
+	</script>
+				</div>
+				<script type="text/javascript" src="../../../scripts/mousetrap.js"></script>
+				<script type="text/javascript">
+$(document).ready(function() {
+	Mousetrap.bind('s', function(e) {
+		$("#symbolSearch").focus();
+		return false;
+	});
+});
+				</script>
+		</nav>
+		<div id="main-contents">
+			<h1>Class EntityManager</h1><!-- using block body in layout.dt--><!-- Default block ddox.description in ddox.layout.dt--><!-- Default block ddox.sections in ddox.layout.dt--><!-- using block ddox.members in ddox.layout.dt-->
+			<section>
+				<p>The central, "World" object of Tharsis.
+</p>
+<section>
+
+
+<p><code class="prettyprint lang-d">EntityManager</code> fullfills multiple roles:
+</p>
+
+
+
+<p>* Registers processes and resource managers.
+</p>
+
+<p>* Creates entities from entity prototypes.
+</p>
+
+<p>* Executes processes.
+</p>
+
+<p>* Manages past and future entities and components.
+</p>
+
+
+</section>
+
+					<section>
+						<h3>Inherits from</h3>
+						<ul>
+							<li>
+								<code class="prettyprint lang-d"><code class="prettyprint lang-d">Object</code></code>
+ (base class)
+							</li>
+						</ul>
+					</section>
+					<section>
+						<h3>Constructors</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entitymanager/EntityManager.this.html" class="public">
+										<code>this</code>
+									</a>
+								</td>
+								<td>Construct an <a href="../../../tharsis/entity/entitymanager/EntityManager.html"><code class="prettyprint lang-d">EntityManager</code></a> using component types registered with passed
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Fields</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entitymanager/EntityManager.allocMult_.html" class="public"><code>allocMult_</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d">double</code></td>
+								<td>Multiplier to apply when preallocating buffers.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entitymanager/EntityManager.componentTypeManager_.html" class="public"><code>componentTypeManager_</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../tharsis/entity/componenttypemanager/AbstractComponentTypeManager.html">AbstractComponentTypeManager</a></code></td>
+								<td>Component type manager, including type info about registered component types.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entitymanager/EntityManager.entitiesToAdd_.html" class="public"><code>entitiesToAdd_</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d">shared(<a href="../../../tharsis/entity/entitymanager/EntityManager.EntitiesToAdd.html">EntityManager.<wbr/>EntitiesToAdd</a>)</code></td>
+								<td>Entities to add when the next frame starts.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entitymanager/EntityManager.future_.html" class="public"><code>future_</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../tharsis/entity/entitymanager/EntityManager.GameState.html">EntityManager.<wbr/>GameState</a>*</code></td>
+								<td>Game state in the current frame. Stores entities and their components, including
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entitymanager/EntityManager.past_.html" class="public"><code>past_</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d">immutable(<a href="../../../tharsis/entity/entitymanager/EntityManager.GameState.html">EntityManager.<wbr/>GameState</a>)*</code></td>
+								<td>Game state from the previous frame. Stores entities and their components,
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entitymanager/EntityManager.processes_.html" class="public"><code>processes_</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../tharsis/entity/processwrapper/AbstractProcessWrapper.html">AbstractProcessWrapper</a>!Policy[]</code></td>
+								<td>Wrappers that execute registered processes.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entitymanager/EntityManager.resourceManagers_.html" class="public"><code>resourceManagers_</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../tharsis/entity/resourcemanager/AbstractResourceManager.html">AbstractResourceManager</a>[]</code></td>
+								<td>Registered resource managers.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entitymanager/EntityManager.stateStorage_.html" class="public"><code>stateStorage_</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../tharsis/entity/entitymanager/EntityManager.GameState.html">EntityManager.<wbr/>GameState</a>[2]</code></td>
+								<td>Stores both past and future game states.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entitymanager/EntityManager.writtenComponentTypes_.html" class="public"><code>writtenComponentTypes_</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d">bool[maxComponentTypes!Policy]</code></td>
+								<td>If <code class="prettyprint lang-d">writtenComponentTypes_</code>[i] is true, there is a process that writes components
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Methods</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entitymanager/EntityManager.addEntity.html" class="public">
+										<code>addEntity</code>
+									</a>
+								</td>
+								<td>Add a new entity, using components from specified <a href="../../../tharsis/entity/entitymanager/EntityManager.addEntity.html#prototype"><code class="prettyprint lang-d">prototype</code></a>.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entitymanager/EntityManager.addNewEntities.html" class="public">
+										<code>addNewEntities</code>
+									</a>
+								</td>
+								<td>Add newly created entities (from the <a href="../../../tharsis/entity/entitymanager/EntityManager.entitiesToAdd_.html"><code class="prettyprint lang-d">entitiesToAdd_</code></a> data member).
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entitymanager/EntityManager.allocMult.html" class="public">
+										<code>allocMult</code>
+									</a>
+								</td>
+								<td>Can be set to force more or less preallocation.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entitymanager/EntityManager.componentTypeInfo.html" class="public">
+										<code>componentTypeInfo</code>
+									</a>
+								</td>
+								<td>A shortcut to access component type information.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entitymanager/EntityManager.copyLiveEntitiesToFuture.html" class="public">
+										<code>copyLiveEntitiesToFuture</code>
+									</a>
+								</td>
+								<td>Copy the surviving entities from <a href="../../../tharsis/entity/entitymanager/EntityManager.copyLiveEntitiesToFuture.html#past"><code class="prettyprint lang-d">past</code></a> to <a href="../../../tharsis/entity/entitymanager/EntityManager.copyLiveEntitiesToFuture.html#future"><code class="prettyprint lang-d">future</code></a> entity buffer.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entitymanager/EntityManager.destroy.html" class="public">
+										<code>destroy</code>
+									</a>
+								</td>
+								<td>Destroy the <a href="../../../tharsis/entity/entitymanager/EntityManager.html"><code class="prettyprint lang-d">EntityManager</code></a>.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entitymanager/EntityManager.executeFrame.html" class="public">
+										<code>executeFrame</code>
+									</a>
+								</td>
+								<td>Execute a single frame/tick/time step of the game/simulation.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entitymanager/EntityManager.frameDebug.html" class="public">
+										<code>frameDebug</code>
+									</a>
+								</td>
+								<td>BEGIN CODE CALLED BY execute_frame() ///
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entitymanager/EntityManager.preallocateComponents.html" class="public">
+										<code>preallocateComponents</code>
+									</a>
+								</td>
+								<td>Preallocate space in component buffers.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entitymanager/EntityManager.rawResourceHandle.html" class="public">
+										<code>rawResourceHandle</code>
+									</a>
+								</td>
+								<td>Get a resource handle without compile-time <a href="../../../tharsis/entity/entitymanager/EntityManager.rawResourceHandle.html#type"><code class="prettyprint lang-d">type</code></a> information.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entitymanager/EntityManager.updateResourceManagers.html" class="public">
+										<code>updateResourceManagers</code>
+									</a>
+								</td>
+								<td>Update every resource manager, allowing them to load resources.
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Inner classes</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entitymanager/EntityManager.EntitiesToAdd.html" class="public">
+										<code>EntitiesToAdd</code>
+									</a>
+								</td>
+								<td>A simple class wrapper over entities to add when the next frame starts.
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Inner structs</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entitymanager/EntityManager.ComponentState.html" class="public">
+										<code>ComponentState</code>
+									</a>
+								</td>
+								<td>Stores components of all entities (either past or future).
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entitymanager/EntityManager.ComponentTypeState.html" class="public">
+										<code>ComponentTypeState</code>
+									</a>
+								</td>
+								<td>All state belonging to one component type.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entitymanager/EntityManager.GameState.html" class="public">
+										<code>GameState</code>
+									</a>
+								</td>
+								<td>Stores all game state (<a href="../../../tharsis/entity/entitymanager/EntityManager.GameState.entities.html"><code class="prettyprint lang-d">entities</code></a> and <a href="../../../tharsis/entity/entitymanager/EntityManager.GameState.components.html"><code class="prettyprint lang-d">components</code></a>).
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Aliases</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entitymanager/EntityManager.ComponentCount.html" class="public">
+										<code>ComponentCount</code>
+									</a>
+								</td>
+								<td>Shortcut alias.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entitymanager/EntityManager.Context.html" class="public">
+										<code>Context</code>
+									</a>
+								</td>
+								<td>When used as an argument for a process() method of a Process, provides access to
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entitymanager/EntityManager.EntityPolicy.html" class="public">
+										<code>EntityPolicy</code>
+									</a>
+								</td>
+								<td>Allows EntityRange to access the policy.
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Templates</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entitymanager/EntityManager.callProcessMethod.html" class="public">
+										<code>callProcessMethod</code>
+									</a>
+								</td>
+								<td>Calls specified process() method of a Process.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entitymanager/EntityManager.registerProcess.html" class="public">
+										<code>registerProcess</code>
+									</a>
+								</td>
+								<td>Register a Process.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entitymanager/EntityManager.registerResourceManager.html" class="public">
+										<code>registerResourceManager</code>
+									</a>
+								</td>
+								<td>Register specified resource manager.
+</td>
+							</tr>
+						</table>
+					</section>
+<section><h3>Parameters</h3>
+<table><col class="caption"><tr><th>Name</th><th>Description</th></tr>
+<tr><td id="Policy">Policy</td><td> A struct with enum members specifying various compile-time
+
+parameters and hints. See entitypolicy.d for an example.
+
+
+
+TODO usage example once stable.</td></tr>
+</table>
+</section>
+
+			</section>
+			<section>
+				<h2>Authors</h2><!-- using block ddox.authors in ddox.layout.dt-->
+
+			</section>
+			<section>
+				<h2>Copyright</h2><!-- using block ddox.copyright in ddox.layout.dt-->
+
+			</section>
+			<section>
+				<h2>License</h2><!-- using block ddox.license in ddox.layout.dt-->
+
+			</section>
+		</div>
+	</body>
+</html>

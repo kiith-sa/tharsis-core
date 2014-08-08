@@ -1,0 +1,438 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/><!-- using block title in layout.dt--><!-- using block ddox.defs in ddox.layout.dt--><!-- using block ddox.title in ddox.layout.dt-->
+		<title>Struct EntityRange</title>
+		<link rel="stylesheet" type="text/css" href="../../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../../scripts/jquery.js">/**/</script>
+		<script type="text/javascript" src="../../../prettify/prettify.js">/**/</script>
+		<script type="text/javascript" src="../../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="prettyPrint(); setupDdox();">
+		<nav id="main-nav"><!-- using block navigation in layout.dt-->
+						<ul>
+						<li>
+							<a href="../../../tharsis/entity/componentbuffer.html">tharsis.entity.componentbuffer</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/componenttypeinfo.html">tharsis.entity.componenttypeinfo</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/componenttypemanager.html">tharsis.entity.componenttypemanager</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/descriptors.html">tharsis.entity.descriptors</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entity.html">tharsis.entity.entity</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entityid.html">tharsis.entity.entityid</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entitymanager.html">tharsis.entity.entitymanager</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entitypolicy.html">tharsis.entity.entitypolicy</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entityprototype.html">tharsis.entity.entityprototype</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entityrange.html">tharsis.entity.entityrange</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/lifecomponent.html">tharsis.entity.lifecomponent</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/processtypeinfo.html">tharsis.entity.processtypeinfo</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/processwrapper.html">tharsis.entity.processwrapper</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/prototypemanager.html">tharsis.entity.prototypemanager</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/resourcemanager.html">tharsis.entity.resourcemanager</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/source.html">tharsis.entity.source</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/alloc.html">tharsis.util.alloc</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/array.html">tharsis.util.array</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/bitmanip.html">tharsis.util.bitmanip</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/debughacks.html">tharsis.util.debughacks</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/interfaces.html">tharsis.util.interfaces</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/mallocarray.html">tharsis.util.mallocarray</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/math.html">tharsis.util.math</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/noncopyable.html">tharsis.util.noncopyable</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/pagedarray.html">tharsis.util.pagedarray</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/qualifierhacks.html">tharsis.util.qualifierhacks</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/stackbuffer.html">tharsis.util.stackbuffer</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/testing.html">tharsis.util.testing</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/traits.html">tharsis.util.traits</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/typecons.html">tharsis.util.typecons</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/typetuple.html">tharsis.util.typetuple</a>
+						</li>
+						</ul>
+				<noscript>
+					<p style="color: red">The search functionality needs JavaScript enabled</p>
+				</noscript>
+				<div id="symbolSearchPane" style="display: none">
+					<p>
+						<input id="symbolSearch" type="text" placeholder="Search for symbols" onchange="performSymbolSearch(24);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+					</p>
+	<ul id="symbolSearchResults" style="display: none"></ul>
+	<script type="application/javascript" src="../../../symbols.js"></script>
+	<script type="application/javascript">
+var symbolSearchRootDir = "../../../";
+$('#symbolSearchPane').show();
+	</script>
+				</div>
+				<script type="text/javascript" src="../../../scripts/mousetrap.js"></script>
+				<script type="text/javascript">
+$(document).ready(function() {
+	Mousetrap.bind('s', function(e) {
+		$("#symbolSearch").focus();
+		return false;
+	});
+});
+				</script>
+		</nav>
+		<div id="main-contents">
+			<h1>Struct EntityRange</h1><!-- using block body in layout.dt--><!-- Default block ddox.description in ddox.layout.dt--><!-- Default block ddox.sections in ddox.layout.dt--><!-- using block ddox.members in ddox.layout.dt-->
+			<section>
+				<p>A range used to iterate over entities and their components in EntityManager.
+</p>
+<section>
+
+
+<p>Used when executing process Process to read past entities/components and to provide
+</p>
+
+<p>space for future components. Iterates over all_ past entities; <a href="../../../tharsis/entity/entityrange/EntityRange.matchComponents.html"><code class="prettyprint lang-d">matchComponents</code></a>()
+</p>
+
+<p>determines if the current entity has components required by any process() method.
+</p>
+</section>
+
+					<section>
+						<h3>Constructors</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityrange/EntityRange.this.html" class="public">
+										<code>this</code>
+									</a>
+								</td>
+								<td>No default construction or copying.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityrange/EntityRange.this.html" class="public">
+										<code>this</code>
+									</a>
+								</td>
+								<td>Construct an <a href="../../../tharsis/entity/entityrange/EntityRange.html"><code class="prettyprint lang-d">EntityRange</code></a> to iterate over past entities of passed entity manager.
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Fields</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityrange/EntityRange.componentOffsets_.html" class="public"><code>componentOffsets_</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d">size_t[maxComponentTypes!Policy]</code></td>
+								<td>Indices to components of current entity in past component buffers. Only the
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityrange/EntityRange.entityAccess_.html" class="public"><code>entityAccess_</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../tharsis/entity/entityrange/EntityAccess.html">EntityAccess</a>!EntityManager</code></td>
+								<td>Stores the slice and index for past entities.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityrange/EntityRange.futureEntities_.html" class="public"><code>futureEntities_</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d">const(<a href="../../../tharsis/entity/entity/Entity.html">Entity</a>[])</code></td>
+								<td>Future entities in the entity manager.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityrange/EntityRange.futureEntityIndex_.html" class="public"><code>futureEntityIndex_</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d">size_t</code></td>
+								<td>Index of the future entity we're currently writing to.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityrange/EntityRange.noFuture.html" class="public"><code>noFuture</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d">void</code></td>
+								<td>True if the Process does not write to any future component. Usually such
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Methods</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityrange/EntityRange.empty.html" class="public">
+										<code>empty</code>
+									</a>
+								</td>
+								<td>True if we've processed all alive past entities.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityrange/EntityRange.entityAccess.html" class="public">
+										<code>entityAccess</code>
+									</a>
+								</td>
+								<td>Get the <a href="../../../tharsis/entity/entityrange/EntityAccess.html"><code class="prettyprint lang-d">EntityAccess</code></a> data member to pass it to a process() method.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityrange/EntityRange.front.html" class="public">
+										<code>front</code>
+									</a>
+								</td>
+								<td>Get the current past entity.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityrange/EntityRange.nextFutureEntity.html" class="public">
+										<code>nextFutureEntity</code>
+									</a>
+								</td>
+								<td>Move to the next future entity.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityrange/EntityRange.nextPastEntity.html" class="public">
+										<code>nextPastEntity</code>
+									</a>
+								</td>
+								<td>Move to the next past entity and its components.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityrange/EntityRange.pastComponentBuffers.html" class="public">
+										<code>pastComponentBuffers</code>
+									</a>
+								</td>
+								<td>(CTFE) For each processed past component type, generate 2 data members:
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityrange/EntityRange.popFront.html" class="public">
+										<code>popFront</code>
+									</a>
+								</td>
+								<td>Move to the next alive past entity (end the range if no alive entities left).
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityrange/EntityRange.printComponentCounts.html" class="public">
+										<code>printComponentCounts</code>
+									</a>
+								</td>
+								<td>A debug method to print the component counts of processed component types in the
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityrange/EntityRange.skipDeadEntities.html" class="public">
+										<code>skipDeadEntities</code>
+									</a>
+								</td>
+								<td>Skip (past) dead entities until an alive entity is reached.
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Aliases</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityrange/EntityRange.ComponentCount.html" class="public">
+										<code>ComponentCount</code>
+									</a>
+								</td>
+								<td>Data type used to store component counts (16 bit uint by default).
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityrange/EntityRange.InComponents.html" class="public">
+										<code>InComponents</code>
+									</a>
+								</td>
+								<td>Past component types read by all_ process() methods of Process.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityrange/EntityRange.Policy.html" class="public">
+										<code>Policy</code>
+									</a>
+								</td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityrange/EntityRange.ProcessedComponents.html" class="public">
+										<code>ProcessedComponents</code>
+									</a>
+								</td>
+								<td>All processed component types.
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Templates</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityrange/EntityRange.bufferName.html" class="public">
+										<code>bufferName</code>
+									</a>
+								</td>
+								<td>(CTFE) Get name of component buffer for specified component type.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityrange/EntityRange.countsName.html" class="public">
+										<code>countsName</code>
+									</a>
+								</td>
+								<td>(CTFE) Get name of component count buffer for specified component type.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityrange/EntityRange.matchComponents.html" class="public">
+										<code>matchComponents</code>
+									</a>
+								</td>
+								<td>Determine if the current entity contains specified component types.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityrange/EntityRange.pastComponent.html" class="public">
+										<code>pastComponent</code>
+									</a>
+								</td>
+								<td>Access a past (non-multi) component in the current entity.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityrange/EntityRange.pastComponent.html" class="public">
+										<code>pastComponent</code>
+									</a>
+								</td>
+								<td>Access past multi components of one type in the current entity.
+</td>
+							</tr>
+						</table>
+					</section>
+
+			</section>
+			<section>
+				<h2>Authors</h2><!-- using block ddox.authors in ddox.layout.dt-->
+
+			</section>
+			<section>
+				<h2>Copyright</h2><!-- using block ddox.copyright in ddox.layout.dt-->
+
+			</section>
+			<section>
+				<h2>License</h2><!-- using block ddox.license in ddox.layout.dt-->
+
+			</section>
+		</div>
+	</body>
+</html>

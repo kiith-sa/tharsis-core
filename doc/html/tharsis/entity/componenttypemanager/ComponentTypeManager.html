@@ -1,0 +1,667 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/><!-- using block title in layout.dt--><!-- using block ddox.defs in ddox.layout.dt--><!-- using block ddox.title in ddox.layout.dt-->
+		<title>Class ComponentTypeManager</title>
+		<link rel="stylesheet" type="text/css" href="../../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../../scripts/jquery.js">/**/</script>
+		<script type="text/javascript" src="../../../prettify/prettify.js">/**/</script>
+		<script type="text/javascript" src="../../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="prettyPrint(); setupDdox();">
+		<nav id="main-nav"><!-- using block navigation in layout.dt-->
+						<ul>
+						<li>
+							<a href="../../../tharsis/entity/componentbuffer.html">tharsis.entity.componentbuffer</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/componenttypeinfo.html">tharsis.entity.componenttypeinfo</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/componenttypemanager.html">tharsis.entity.componenttypemanager</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/descriptors.html">tharsis.entity.descriptors</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entity.html">tharsis.entity.entity</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entityid.html">tharsis.entity.entityid</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entitymanager.html">tharsis.entity.entitymanager</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entitypolicy.html">tharsis.entity.entitypolicy</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entityprototype.html">tharsis.entity.entityprototype</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entityrange.html">tharsis.entity.entityrange</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/lifecomponent.html">tharsis.entity.lifecomponent</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/processtypeinfo.html">tharsis.entity.processtypeinfo</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/processwrapper.html">tharsis.entity.processwrapper</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/prototypemanager.html">tharsis.entity.prototypemanager</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/resourcemanager.html">tharsis.entity.resourcemanager</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/source.html">tharsis.entity.source</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/alloc.html">tharsis.util.alloc</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/array.html">tharsis.util.array</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/bitmanip.html">tharsis.util.bitmanip</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/debughacks.html">tharsis.util.debughacks</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/interfaces.html">tharsis.util.interfaces</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/mallocarray.html">tharsis.util.mallocarray</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/math.html">tharsis.util.math</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/noncopyable.html">tharsis.util.noncopyable</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/pagedarray.html">tharsis.util.pagedarray</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/qualifierhacks.html">tharsis.util.qualifierhacks</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/stackbuffer.html">tharsis.util.stackbuffer</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/testing.html">tharsis.util.testing</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/traits.html">tharsis.util.traits</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/typecons.html">tharsis.util.typecons</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/typetuple.html">tharsis.util.typetuple</a>
+						</li>
+						</ul>
+				<noscript>
+					<p style="color: red">The search functionality needs JavaScript enabled</p>
+				</noscript>
+				<div id="symbolSearchPane" style="display: none">
+					<p>
+						<input id="symbolSearch" type="text" placeholder="Search for symbols" onchange="performSymbolSearch(24);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+					</p>
+	<ul id="symbolSearchResults" style="display: none"></ul>
+	<script type="application/javascript" src="../../../symbols.js"></script>
+	<script type="application/javascript">
+var symbolSearchRootDir = "../../../";
+$('#symbolSearchPane').show();
+	</script>
+				</div>
+				<script type="text/javascript" src="../../../scripts/mousetrap.js"></script>
+				<script type="text/javascript">
+$(document).ready(function() {
+	Mousetrap.bind('s', function(e) {
+		$("#symbolSearch").focus();
+		return false;
+	});
+});
+				</script>
+		</nav>
+		<div id="main-contents">
+			<h1>Class ComponentTypeManager</h1><!-- using block body in layout.dt--><!-- Default block ddox.description in ddox.layout.dt--><!-- Default block ddox.sections in ddox.layout.dt--><!-- using block ddox.members in ddox.layout.dt-->
+			<section>
+				<p>Manages component type information and loading.
+</p>
+<section>
+
+
+<p>Before creating an EntityManager, all component types must be registered with a
+</p>
+
+<p><code class="prettyprint lang-d">ComponentTypeManager</code> that will be passed to the constructor of an EntityManager.
+</p>
+
+
+</section>
+
+					<section>
+						<h3>Inherits from</h3>
+						<ul>
+							<li>
+								<code class="prettyprint lang-d"><code class="prettyprint lang-d">Object</code></code>
+ (base class)
+							</li>
+						</ul>
+					</section>
+					<section>
+						<h3>Constructors</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/componenttypemanager/ComponentTypeManager.this.html" class="public">
+										<code>this</code>
+									</a>
+								</td>
+								<td>Construct a <a href="../../../tharsis/entity/componenttypemanager/ComponentTypeManager.html"><code class="prettyprint lang-d">ComponentTypeManager</code></a>.
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Fields</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/componenttypemanager/ComponentTypeManager.builtinRegistered_.html" class="public"><code>builtinRegistered_</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d">bool</code></td>
+								<td>Set to true after all builtin component types are registered.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/componenttypemanager/ComponentTypeManager.componentTypeInfoStorage_.html" class="public"><code>componentTypeInfoStorage_</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../tharsis/entity/componenttypeinfo/ComponentTypeInfo.html">ComponentTypeInfo</a>[maxComponentTypes!Policy]</code></td>
+								<td>Type information for all registered component types.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/componenttypemanager/ComponentTypeManager.sourceLoader.html" class="public"><code>sourceLoader</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d">Source.<wbr/>Loader</code></td>
+								<td>Loads the Source objects from which entities are loaded.
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Methods</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/componenttypemanager/ComponentTypeManager.componentTypeInfoStorage.html" class="public">
+										<code>componentTypeInfoStorage</code>
+									</a>
+								</td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/componenttypemanager/ComponentTypeManager.loadSource.html" class="public">
+										<code>loadSource</code>
+									</a>
+								</td>
+								<td>Load a Source struct to read components from.
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Templates</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/componenttypemanager/ComponentTypeManager.registerComponentTypes.html" class="public">
+										<code>registerComponentTypes</code>
+									</a>
+								</td>
+								<td>Register specified component types.
+</td>
+							</tr>
+						</table>
+					</section>
+<section><h3>Parameters</h3>
+<table><col class="caption"><tr><th>Name</th><th>Description</th></tr>
+<tr><td id="Source">Source</td><td> A struct type to read components from. This may be for example a
+
+wrapped YAML or XML node, or an INI section. See below.
+</td></tr>
+<tr><td id="Policy">Policy</td><td> Specifies compile-time parameters such as the maximum number of
+
+component types. See tharsis.entity.entitypolicy.d for the default
+
+Policy type.
+
+</td></tr>
+</table>
+</section>
+<section><h3>Example</h3>
+
+<pre class="code prettyprint lang-d">
+// struct SomeSource
+
+// SomeSource.Loader loader
+
+// AComponent, BComponent, CComponent
+
+
+
+// Construct the component type manager
+
+auto componentTypes = new ComponentTypeManager!SomeSource(loader);
+
+// Register a component type
+
+componentTypes.registerComponentTypes!AComponent();
+
+// Register 2 component types at the same time
+
+componentTypes.registerComponentTypes!(BComponent, CComponent);
+
+// Lock to disallow further component type changes.
+
+// Must be called before passing to EntityManager.
+
+componentTypes.lock();
+
+// Construct the entity manager.
+
+auto entityManager = new EntityManager(componentTypes);
+
+</pre>
+
+
+
+<p>Limitations of a Source struct:
+</p>
+
+
+
+<p>sizeof of a Source struct can be at most <a href="../../../tharsis/entity/componenttypemanager/maxSourceBytes.html"><code class="prettyprint lang-d">maxSourceBytes</code></a> (currently set to 512).
+</p>
+
+<p>A Source struct must be copyable; if it includes nested data
+</p>
+
+<p>(such as JSON/XML/YAML subnodes), copying a Source must either also copy this nested
+</p>
+
+<p>data or share it by using e.g. reference counting or garbage collector managed
+</p>
+
+<p>storage.
+</p>
+
+
+
+<p>Skeleton of a Source struct:
+</p>
+
+<pre class="code prettyprint lang-d">
+// Note that some manual casting might be required to ensure that methods of
+
+// a Source struct have required attributes (such as pure, nothrow, etc.).
+
+//
+
+// This can be done safely by ensuring that the method indeed obeys the attribute
+
+// (e.g. ensuring that all exceptions are caught) and manually casting any functions
+
+// that don't obey the attribute.
+
+//
+
+// For example:
+
+//
+
+// (cast(void delegate(int, int) @safe nothrow)&methodThatDoesntThrow)()
+
+struct Source
+
+{
+
+public:
+
+/// Handles loading of Sources.
+
+struct Loader
+
+{
+
+public:
+
+/// Load a Source with specified name (e.g. entity file name).
+
+///
+
+///
+
+/// Params: name      = Name to identify the source by (e.g. a file name).
+
+///         logErrors = If true, errors generated during the use of the Source
+
+///                     (such as loading errors, conversion errors etc.)
+
+///                     should be logged, accessible through the errorLog()
+
+///                     method of Source.
+
+///
+
+/// There is no requirement to load from actual files; this may be
+
+/// implemented by loading from some archive file or from memory.
+
+TestSource <a href="../../../tharsis/entity/componenttypemanager/ComponentTypeManager.loadSource.html">loadSource</a>(string name, bool logErrors) @safe nothrow
+
+{
+
+assert(false);
+
+}
+
+}
+
+
+
+/// If true, the Source is 'null' and doesn't store anything.
+
+///
+
+/// A null Source may be returned when loading a Source fails, e.g. from
+
+/// Loader.loadSource().
+
+bool isNull() @safe nothrow const
+
+{
+
+assert(false);
+
+}
+
+
+
+/// If logging is enabled, returns errors logged during construction and use
+
+/// of this Source. Otherwise returns a warning message.
+
+string errorLog() @safe pure nothrow const
+
+{
+
+assert(false);
+
+}
+
+
+
+/// Read a value of type T to target.
+
+///
+
+/// Returns: true if the value was successfully read.
+
+///          false if the Source isn't convertible to specified type.
+
+bool readTo(T)(out T target) @safe nothrow
+
+{
+
+assert(false);
+
+}
+
+
+
+/// Get a nested Source from a 'sequence' Source.
+
+///
+
+/// (Get a value from a Source that represents an array of Sources)
+
+///
+
+/// Params:  index  = Index of the Source to get in the sequence.
+
+///          target = Target to read the Source to.
+
+///
+
+/// Returns: true on success, false on failure. E.g. if this Source is
+
+///          a not a sequence, or the index is out of range.
+
+bool getSequenceValue(size_t index, out TestSource target) @safe nothrow
+
+{
+
+assert(false);
+
+}
+
+
+
+/// Get a nested Source from a 'mapping' Source.
+
+///
+
+/// (Get a value from a Source that maps strings to Sources)
+
+///
+
+/// Params:  key    = Key identifying the nested Source.
+
+///          target = Target to read the nested Source to.
+
+///
+
+/// Returns: true on success, false on failure. E.g. if this Source is
+
+///          a not a mapping, or if there is no such key.
+
+bool getMappingValue(string key, out TestSource target) @safe nothrow
+
+{
+
+assert(false);
+
+}
+
+}
+
+</pre>
+
+<p>Format of components in a Source struct:
+</p>
+
+
+
+<p>A Source to load an entity from must be a mapping where keys are lower-case names of
+</p>
+
+<p>component types without the "Component" suffix. The values corresponding to these
+</p>
+
+<p>keys must be mappings containing the component's properties.
+</p>
+
+
+
+<p>E.g. to load an int property "awesomeness" of an ExampleComponent, Tharsis will use
+</p>
+
+<p>the Source API roughly in the following way:
+</p>
+
+
+
+<pre class="code prettyprint lang-d">
+bool getAwesomeness(ref const(Source) components, out int awesomeness)
+
+{
+
+if(components.isNull())
+
+{
+
+writeln("components is null");
+
+return false;
+
+}
+
+Source exampleComponent;
+
+if(!component.getMappingValue("example", exampleComponent))
+
+{
+
+writeln("could not find ExampleComponent in components");
+
+return false;
+
+}
+
+Source awesomenessSource;
+
+if(!exampleComponent.getMappingValue("awesomeness", awesomenessSource))
+
+{
+
+writeln("could not find awesomeness in ExampleComponent");
+
+return false;
+
+}
+
+if(!awesomenessSource.readTo(awesomeness))
+
+{
+
+writeln("awesomeness could not be read to int");
+
+return false;
+
+}
+
+return true;
+
+}
+
+</pre>
+
+
+
+<p>Example Policy type:
+</p>
+
+<pre class="code prettyprint lang-d">
+struct Policy
+
+{
+
+/// Maximum possible number of user-defined component types.
+
+enum maxUserComponentTypes = 128;
+
+
+
+/// Maximum entities added during one frame.
+
+enum maxNewEntitiesPerFrame = 4096;
+
+
+
+/// Minimum size of component buffers (in components) for every
+
+/// component type to preallocate.
+
+enum minComponentPrealloc = 1024;
+
+
+
+/// The multiplier to increase allocated size during an emergency reallocation.
+
+enum reallocMult = 2.5;
+
+
+
+/// Minimum relative size of component buffers (in components) for every
+
+/// component type compared to entity count.
+
+enum minComponentPerEntityPrealloc = 0.05;
+
+
+
+/// Data type used internally for component counts in an entity.
+
+///
+
+/// The max number of components of one type in an entity is ComponentCount.max.
+
+/// Using data types such as uint or ulong will increase memory usage.
+
+alias ushort ComponentCount;
+
+}
+
+</pre>
+</section>
+
+			</section>
+			<section>
+				<h2>Authors</h2><!-- using block ddox.authors in ddox.layout.dt-->
+
+			</section>
+			<section>
+				<h2>Copyright</h2><!-- using block ddox.copyright in ddox.layout.dt-->
+
+			</section>
+			<section>
+				<h2>License</h2><!-- using block ddox.license in ddox.layout.dt-->
+
+			</section>
+		</div>
+	</body>
+</html>

@@ -1,0 +1,348 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/><!-- using block title in layout.dt--><!-- using block ddox.defs in ddox.layout.dt--><!-- using block ddox.title in ddox.layout.dt-->
+		<title>Struct EntityPrototype</title>
+		<link rel="stylesheet" type="text/css" href="../../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../../scripts/jquery.js">/**/</script>
+		<script type="text/javascript" src="../../../prettify/prettify.js">/**/</script>
+		<script type="text/javascript" src="../../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="prettyPrint(); setupDdox();">
+		<nav id="main-nav"><!-- using block navigation in layout.dt-->
+						<ul>
+						<li>
+							<a href="../../../tharsis/entity/componentbuffer.html">tharsis.entity.componentbuffer</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/componenttypeinfo.html">tharsis.entity.componenttypeinfo</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/componenttypemanager.html">tharsis.entity.componenttypemanager</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/descriptors.html">tharsis.entity.descriptors</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entity.html">tharsis.entity.entity</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entityid.html">tharsis.entity.entityid</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entitymanager.html">tharsis.entity.entitymanager</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entitypolicy.html">tharsis.entity.entitypolicy</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entityprototype.html">tharsis.entity.entityprototype</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/entityrange.html">tharsis.entity.entityrange</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/lifecomponent.html">tharsis.entity.lifecomponent</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/processtypeinfo.html">tharsis.entity.processtypeinfo</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/processwrapper.html">tharsis.entity.processwrapper</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/prototypemanager.html">tharsis.entity.prototypemanager</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/resourcemanager.html">tharsis.entity.resourcemanager</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/entity/source.html">tharsis.entity.source</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/alloc.html">tharsis.util.alloc</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/array.html">tharsis.util.array</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/bitmanip.html">tharsis.util.bitmanip</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/debughacks.html">tharsis.util.debughacks</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/interfaces.html">tharsis.util.interfaces</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/mallocarray.html">tharsis.util.mallocarray</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/math.html">tharsis.util.math</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/noncopyable.html">tharsis.util.noncopyable</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/pagedarray.html">tharsis.util.pagedarray</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/qualifierhacks.html">tharsis.util.qualifierhacks</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/stackbuffer.html">tharsis.util.stackbuffer</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/testing.html">tharsis.util.testing</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/traits.html">tharsis.util.traits</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/typecons.html">tharsis.util.typecons</a>
+						</li>
+						<li>
+							<a href="../../../tharsis/util/typetuple.html">tharsis.util.typetuple</a>
+						</li>
+						</ul>
+				<noscript>
+					<p style="color: red">The search functionality needs JavaScript enabled</p>
+				</noscript>
+				<div id="symbolSearchPane" style="display: none">
+					<p>
+						<input id="symbolSearch" type="text" placeholder="Search for symbols" onchange="performSymbolSearch(24);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+					</p>
+	<ul id="symbolSearchResults" style="display: none"></ul>
+	<script type="application/javascript" src="../../../symbols.js"></script>
+	<script type="application/javascript">
+var symbolSearchRootDir = "../../../";
+$('#symbolSearchPane').show();
+	</script>
+				</div>
+				<script type="text/javascript" src="../../../scripts/mousetrap.js"></script>
+				<script type="text/javascript">
+$(document).ready(function() {
+	Mousetrap.bind('s', function(e) {
+		$("#symbolSearch").focus();
+		return false;
+	});
+});
+				</script>
+		</nav>
+		<div id="main-contents">
+			<h1>Struct EntityPrototype</h1><!-- using block body in layout.dt--><!-- Default block ddox.description in ddox.layout.dt--><!-- Default block ddox.sections in ddox.layout.dt--><!-- using block ddox.members in ddox.layout.dt-->
+			<section>
+				<p>Stores data to create an entity from.
+</p>
+<section>
+
+
+<p>An EntityPrototoype stores components that can be copied to create an entity.
+</p>
+
+<p>Components can be loaded from a file once, and then used many times to create
+</p>
+
+<p>entities without loading again.
+</p>
+
+
+
+<p>An <code class="prettyprint lang-d">EntityPrototype</code> is usually used through PrototypeManager. Code that creates an
+</p>
+
+<p><code class="prettyprint lang-d">EntityPrototype</code> must provide it with memory as well as the components it should
+</p>
+
+<p>store.
+</p>
+
+
+
+<p>An <code class="prettyprint lang-d">EntityPrototype</code> can't contain builtin components at the moment. This restriction
+</p>
+
+<p>may be relaxed in future if needed.
+</p>
+</section>
+
+					<section>
+						<h3>Fields</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityprototype/EntityPrototype.components_.html" class="private"><code>components_</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d">ubyte[]</code></td>
+								<td>Part of <a href="../../../tharsis/entity/entityprototype/EntityPrototype.storage_.html"><code class="prettyprint lang-d">storage_</code></a> used to store components. Starts at the beginning of <a href="../../../tharsis/entity/entityprototype/EntityPrototype.storage_.html"><code class="prettyprint lang-d">storage_</code></a>.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityprototype/EntityPrototype.componentTypeIDs_.html" class="private"><code>componentTypeIDs_</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d">ushort[]</code></td>
+								<td>Part of <a href="../../../tharsis/entity/entityprototype/EntityPrototype.storage_.html"><code class="prettyprint lang-d">storage_</code></a> used to store type IDs.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityprototype/EntityPrototype.locked_.html" class="private"><code>locked_</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d">bool</code></td>
+								<td>Set to true by <a href="../../../tharsis/entity/entityprototype/EntityPrototype.lockAndTrimMemory.html"><code class="prettyprint lang-d">lockAndTrimMemory</code></a>(), after which no more components can be added.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityprototype/EntityPrototype.storage_.html" class="private"><code>storage_</code></a>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d">ubyte[]</code></td>
+								<td>Storage provided to the <a href="../../../tharsis/entity/entityprototype/EntityPrototype.html"><code class="prettyprint lang-d">EntityPrototype</code></a> by its owner.
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Methods</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityprototype/EntityPrototype.allocateComponent.html" class="public">
+										<code>allocateComponent</code>
+									</a>
+								</td>
+								<td>Allocate space for a component in the prototype.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityprototype/EntityPrototype.componentRange.html" class="public">
+										<code>componentRange</code>
+									</a>
+								</td>
+								<td>Get a range to iterate over components in the prototype as RawComponents.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityprototype/EntityPrototype.componentRange.html" class="public">
+										<code>componentRange</code>
+									</a>
+								</td>
+								<td>Get a range to iterate over components in the prototype as RawComponents.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityprototype/EntityPrototype.constComponentRange.html" class="public">
+										<code>constComponentRange</code>
+									</a>
+								</td>
+								<td>Ditto.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityprototype/EntityPrototype.lockAndTrimMemory.html" class="public">
+										<code>lockAndTrimMemory</code>
+									</a>
+								</td>
+								<td>Lock the prototype disallowing any future changes.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityprototype/EntityPrototype.maxPrototypeBytes.html" class="public">
+										<code>maxPrototypeBytes</code>
+									</a>
+								</td>
+								<td>Get the maximum number of bytes any entity prototype might need.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityprototype/EntityPrototype.useMemory.html" class="public">
+										<code>useMemory</code>
+									</a>
+								</td>
+								<td>Provide <a href="../../../tharsis/entity/entityprototype/EntityPrototype.useMemory.html#memory"><code class="prettyprint lang-d">memory</code></a> for the prototype to use.
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Inner structs</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityprototype/EntityPrototype.GenericComponentRange.html" class="public">
+										<code>GenericComponentRange</code>
+									</a>
+								</td>
+								<td>A range to iterate over components in an <a href="../../../tharsis/entity/entityprototype/EntityPrototype.html"><code class="prettyprint lang-d">EntityPrototype</code></a>.
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Aliases</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityprototype/EntityPrototype.ComponentRange.html" class="public">
+										<code>ComponentRange</code>
+									</a>
+								</td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../tharsis/entity/entityprototype/EntityPrototype.ConstComponentRange.html" class="public">
+										<code>ConstComponentRange</code>
+									</a>
+								</td>
+								<td></td>
+							</tr>
+						</table>
+					</section>
+
+			</section>
+			<section>
+				<h2>Authors</h2><!-- using block ddox.authors in ddox.layout.dt-->
+
+			</section>
+			<section>
+				<h2>Copyright</h2><!-- using block ddox.copyright in ddox.layout.dt-->
+
+			</section>
+			<section>
+				<h2>License</h2><!-- using block ddox.license in ddox.layout.dt-->
+
+			</section>
+		</div>
+	</body>
+</html>
