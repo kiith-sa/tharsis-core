@@ -1,0 +1,11 @@
+physics:
+    x: 2.0
+    y: 2.0
+    z: 3.0
+testMulti:
+    - value: false 
+    - value: true 
+    - value: false 
+    - value: false 
+    - value: true 
+    - value: false 

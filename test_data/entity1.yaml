@@ -1,0 +1,40 @@
+physics:
+    x: 1.0
+    y: 2.0
+    z: 3.0
+spawnerMulti:
+    - spawn:     test_data/entity1.yaml
+      spawnerID: 1
+      override:
+        spawnerMulti:
+        - spawn:     test_data/entity1.yaml
+          spawnerID: 1
+          override:
+            physics:
+                x: 42.0
+                y: 42.0
+                z: 42.0
+        - spawn:     test_data/entity2.yaml
+          spawnerID: 2
+          override:
+              physics:
+                  x: 50.0
+                  y: 50.0
+                  z: 50.0
+    - spawn:     test_data/entity2.yaml
+      spawnerID: 2
+      override:
+          physics:
+              x: 50.0
+              y: 50.0
+              z: 50.0
+
+timedSpawnConditionMulti:
+    - time:      0.03
+      timeLeft:  0.03
+      periodic:  true
+      spawnerID: 1
+    - time:      1.03
+      timeLeft:  0.03
+      periodic:  false
+      spawnerID: 2

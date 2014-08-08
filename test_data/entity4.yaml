@@ -1,0 +1,9 @@
+physics:
+    x: 10.0
+    y: -2.0
+    z: -3.0
+timeout:
+    removeIn: 2
+    killEntityIn: 3
+testMulti:
+    - value: false 
