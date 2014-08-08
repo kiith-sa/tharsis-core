@@ -45,8 +45,7 @@ import tharsis.util.noncopyable;
 struct PagedArray(T)
     if(!hasElaborateDestructor!T && (is(T == struct) || isScalarType(T)))
 {
-    /// Flags specifying mutability of each item (more flags may be added later,
-    /// if needed).
+    /// Flags specifying mutability of each item (more flags may be added later if needed).
     struct ItemFlags 
     {
         /// Is this item mutable?

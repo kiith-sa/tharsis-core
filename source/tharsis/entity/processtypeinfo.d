@@ -92,9 +92,10 @@ template pastComponentIDs(alias ProcessFunc)
     enum pastComponentIDs = componentIDs!(PastComponentTypes!ProcessFunc);
 }
 
-/// Get the raw (with any qualifiers, as a reference, pointer or slice, as
-/// specified in the signature) future component type written by a process()
-/// method
+/// Get the raw future component type written by a process() method
+///
+/// The raw type includes any qualifiers, ref/pointer/slice, as specified in the 
+/// signature
 template RawFutureComponentType(alias ProcessFunc)
 {
 private:
@@ -145,7 +146,7 @@ template hasFutureComponent(Process)
 
 /// Does a process() method write to a future component by pointer?
 ///
-/// (Writing by pointer allows to null the pointer, allowing to remove/not add
+/// Writing by pointer allows to null the pointer, allowing to remove/not add
 /// the component into the future entity.
 template futureComponentByPointer(alias ProcessFunc)
 {

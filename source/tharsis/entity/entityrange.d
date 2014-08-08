@@ -77,7 +77,7 @@ public:
     ///
     /// Params: typeID = Type ID of component to access. Must be an ID of a registered
     ///                  component type.
-    ///         Entity = ID of the entity to access. Must be an ID of an existing past
+    ///         entity = ID of the entity to access. Must be an ID of an existing past
     ///                  entity.
     ///
     /// Returns: A RawComponent representation of the past component if the entity
@@ -376,8 +376,8 @@ package:
     static if(!isMultiComponent!FutureComponent)
     {
 
-    /// Get a reference to write the future component for the current entity (process()
-    /// may still decide not to write it, though).
+    /// Get a reference to write the future component for the current entity 
+    /// (process() may still decide not to write it, though).
     ref FutureComponent futureComponent() @trusted nothrow
     {
         enum neededSpace = maxComponentsPerEntity!(FutureComponent);

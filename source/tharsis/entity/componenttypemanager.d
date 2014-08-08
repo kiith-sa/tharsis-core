@@ -162,7 +162,7 @@ enum maxSourceBytes = 512;
 /// // Register a component type
 /// componentTypes.registerComponentTypes!AComponent();
 /// // Register 2 component types at the same time
-/// componentTypes.registerComponentTypes!(BComponent, CComponent();
+/// componentTypes.registerComponentTypes!(BComponent, CComponent);
 /// // Lock to disallow further component type changes.
 /// // Must be called before passing to EntityManager.
 /// componentTypes.lock();
@@ -173,9 +173,10 @@ enum maxSourceBytes = 512;
 /// Limitations of a Source struct:
 ///
 /// sizeof of a Source struct can be at most maxSourceBytes (currently set to 512).
-/// A Source struct must be copyable; if it includes nested data (such as JSON/XML/YAML
-/// subnodes), copying a Source must either also copy this nested data or share it by
-/// using e.g. reference counting or garbage collector managed storage.
+/// A Source struct must be copyable; if it includes nested data 
+/// (such as JSON/XML/YAML subnodes), copying a Source must either also copy this nested
+/// data or share it by using e.g. reference counting or garbage collector managed
+/// storage.
 ///
 /// Skeleton of a Source struct:
 /// --------------------
@@ -200,10 +201,10 @@ enum maxSourceBytes = 512;
 ///         ///
 ///         ///
 ///         /// Params: name      = Name to identify the source by (e.g. a file name).
-///         ///         logErrors = If true, errors generated during the use of
-///         ///                     the Source (such as loading errors, conversion
-///         ///                     errors etc.) should be logged, accessible through
-///         ///                     the errorLog() method of Source.
+///         ///         logErrors = If true, errors generated during the use of the Source
+///         ///                     (such as loading errors, conversion errors etc.)
+///         ///                     should be logged, accessible through the errorLog()
+///         ///                     method of Source.
 ///         ///
 ///         /// There is no requirement to load from actual files; this may be
 ///         /// implemented by loading from some archive file or from memory.
@@ -245,8 +246,8 @@ enum maxSourceBytes = 512;
 ///     /// Params:  index  = Index of the Source to get in the sequence.
 ///     ///          target = Target to read the Source to.
 ///     ///
-///     /// Returns: true on success, false on failure. (e.g. if this Source is
-///     ///          a not a sequence, or the index is out of range).
+///     /// Returns: true on success, false on failure. E.g. if this Source is
+///     ///          a not a sequence, or the index is out of range.
 ///     bool getSequenceValue(size_t index, out TestSource target) @safe nothrow
 ///     {
 ///         assert(false);
@@ -259,8 +260,8 @@ enum maxSourceBytes = 512;
 ///     /// Params:  key    = Key identifying the nested Source.
 ///     ///          target = Target to read the nested Source to.
 ///     ///
-///     /// Returns: true on success, false on failure. (e.g. if this Source is
-///     ///          a not a mapping, or if there is no such key.)
+///     /// Returns: true on success, false on failure. E.g. if this Source is
+///     ///          a not a mapping, or if there is no such key.
 ///     bool getMappingValue(string key, out TestSource target) @safe nothrow
 ///     {
 ///         assert(false);

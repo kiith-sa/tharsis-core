@@ -250,7 +250,7 @@ public:
     ///
     /// Params: left  = The component to add to. Must be a component of the
     ///                 component type that has this property.
-    /// Params: right = The component to get the value to add from. Must be a
+    ///         right = The component to get the value to add from. Must be a
     ///                 component of the component type that has this property.
     void addRightToLeft(ref RawComponent left, ref const(RawComponent) right)
         @safe pure nothrow const
@@ -486,8 +486,8 @@ private:
     ComponentPropertyInfo[] properties_;
 
 public:
-    /// A range used to iterate over type information of properties (aka fields or
-    /// data members) of a Component type.
+    /// A range used to iterate over type information of properties 
+    /// (aka fields or data members) of a Component type.
     ///
     /// The range element type is ComponentPropertyInfo.
     //

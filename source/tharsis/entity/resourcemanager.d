@@ -71,8 +71,7 @@ package alias uint RawResourceHandle;
 ///                    in the resource type.
 ///
 /// Returns: A raw handle to the resource.
-package alias RawResourceHandle delegate(TypeInfo, void*) nothrow
-        GetResourceHandle;
+package alias RawResourceHandle delegate(TypeInfo, void*) nothrow GetResourceHandle;
 
 /// Resource handle.
 ///

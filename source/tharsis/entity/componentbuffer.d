@@ -181,7 +181,7 @@ public:
     /// components we need to add. Invalidates any slices returned by previous
     /// method calls.
     ///
-    /// Params: componentCounts = Number of components to allocate space for.
+    /// Params: componentCount = Number of components to allocate space for.
     void reserveComponentSpace(const size_t componentCount) @trusted nothrow
     {
         assert(enabled_,

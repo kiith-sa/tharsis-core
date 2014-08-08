@@ -97,7 +97,7 @@ void unPurifier() @trusted nothrow
 ///
 /// Params:  T           = The type (class or struct) that has the method.
 ///          method      = Name of the method.
-///          expectedAPI = A method with the signature we expect the validated method to 
+///          ExpectedAPI = A method with the signature we expect the validated method to 
 ///                        have.
 ///
 /// To use validateMethodAPI declare a dummy method with expected signature and call
