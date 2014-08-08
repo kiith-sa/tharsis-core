@@ -1,11 +1,10 @@
 {
-    "name": "tharsis",
-    "description": "Parallel Entity-Component System",
+    "name": "tharsis-core",
+    "description": "Parallel Entity-Component System (Core)",
     "authors": [ "Ferdinand Majerech" ],
     "libs": [],
     "importPaths": ["source"],
     "license": "Boost 1.0",
-    "dependencies": { "dyaml" : { "version" : "~>0.5.0" } },
     "homepage": "https://github.com/kiith-sa/Tharsis",
     "copyright": "Copyright © 2013-2014, Ferdinand Majerech",
 
