@@ -10,6 +10,7 @@ module tharsis.entity.componenttypeinfo;
 
 import std.algorithm;
 import std.array;
+import std.exception : assumeWontThrow;
 import std.stdio;
 import std.string;
 import std.traits;
@@ -268,7 +269,7 @@ private:
     ///          fieldName = Name of the field (property) in the component type.
     ///                      E.g. for PhysicsComponent.position this would be
     ///                      "position".
-    this(Source, Component, string fieldName)() @safe nothrow
+    this(Source, Component, string fieldName)() @safe pure nothrow @nogc
     {
         auto loadPropDg = &implementLoadProperty!(Source, Component, fieldName);
         // The cast adds the nothrow attribute (implementLoadProperty does not throw
@@ -637,7 +638,7 @@ private:
     ///
     /// Params:  Source    = Source the components will be loaded from (e.g. YAML).
     ///          Component = Component type to generate info about.
-    this(Source, Component)() @safe
+    this(Source, Component)() @safe pure nothrow
     {
         mixin validateComponent!Component;
         alias FieldNamesTuple!Component Fields;
@@ -648,7 +649,7 @@ private:
         size        = Component.sizeof;
         isMulti     = isMultiComponent!Component;
         name        = fullName[0 .. $ - "Component".length];
-        sourceName  = name[0 .. 1].toLower ~ name[1 .. $];
+        sourceName  = name[0 .. 1].toLower.assumeWontThrow ~ name[1 .. $];
 
         static if(hasMember!(Component, "minPrealloc"))
         {
