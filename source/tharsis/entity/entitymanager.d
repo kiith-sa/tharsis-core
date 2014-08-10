@@ -118,10 +118,11 @@ public:
     /// Params: componentTypeManager = Component type manager storing component type
     ///                                information. Must be locked.
     this(AbstractComponentTypeManager componentTypeManager)
+        @trusted nothrow
     {
         componentTypeManager_ = componentTypeManager;
-        // Needed as of DMD 2.056, may be redundant later.
-        stateStorage_[] = GameState.init;
+        // Explicit initialization is needed as of DMD 2.066, may be redundant later.
+        (stateStorage_[] = GameState.init).assumeWontThrow;
         foreach(ref info; componentTypeInfo)
         {
             if(info.isNull) { continue; }
