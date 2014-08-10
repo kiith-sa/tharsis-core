@@ -169,23 +169,28 @@ public:
     ///
     /// Returns: ID of the new entity on success. A null ID if we've added more than
     ///          Policy.maxNewEntitiesPerFrame new entities during one frame.
-    EntityID addEntity(ref immutable(EntityPrototype) prototype) @trusted
+    EntityID addEntity(ref immutable(EntityPrototype) prototype) @trusted nothrow
     {
         // This should be cheap, assuming most of the time only 1 thread adds entities
         // (SpawnerSystem). If slow, allow bulk adding through a struct that locks at
         // ctor/unlocks at dtor.
         auto entitiesToAdd = cast(EntitiesToAdd)&entitiesToAdd_;
-        synchronized(entitiesToAdd)
+        EntityID nothrowWrapper()
         {
-            if(entitiesToAdd.prototypes.length == entitiesToAdd.prototypes.capacity)
+            synchronized(entitiesToAdd)
             {
-                return EntityID.init;
-            }
+                if(entitiesToAdd.prototypes.length == entitiesToAdd.prototypes.capacity)
+                {
+                    return EntityID.init;
+                }
 
-            auto id = EntityID(entitiesToAdd.nextEntityID++);
-            entitiesToAdd.prototypes ~= tuple(&prototype, id);
-            return id;
+                auto id = EntityID(entitiesToAdd.nextEntityID++);
+                entitiesToAdd.prototypes ~= tuple(&prototype, id);
+                return id;
+            }
         }
+
+        return nothrowWrapper().assumeWontThrow();
     }
 
     /// Can be set to force more or less preallocation.
