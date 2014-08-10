@@ -9,6 +9,7 @@ module tharsis.entity.entityrange;
 
 import std.algorithm;
 import std.array;
+import std.exception: assumeWontThrow;
 import std.stdio;
 import std.string;
 import std.typetuple;
@@ -316,7 +317,7 @@ package:
     ///
     /// Also moves to the next future entity (which is the same as the next alive past
     /// entity) and moves to the components of the next entity.
-    void popFront() @trusted
+    void popFront() @trusted nothrow
     {
         assert(!empty, "Trying to advance an empty entity range");
         const past   = front().id;
@@ -325,7 +326,7 @@ package:
                "The past (%s) and future (%s) entity is not the same. Maybe we forgot "
                "to skip a dead past entity, or we copied a dead entity into future "
                "entities, or we inserted a new entity elsewhere than the end of future "
-               "entities.".format(past, future));
+               "entities.".format(past, future).assumeWontThrow);
         assert(pastComponent!LifeComponent().alive,
                "Current entity is dead. Likely a bug when calling skipDeadEntities?");
 
