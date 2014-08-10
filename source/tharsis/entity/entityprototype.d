@@ -353,7 +353,7 @@ public:
 ///          EntityPrototype.lockAndTrimMemory().
 EntityPrototype mergePrototypesOverride
     (ref const(EntityPrototype) base, ref const(EntityPrototype) over,
-     ubyte[] memory, const(ComponentTypeInfo)[] componentTypes)
+     ubyte[] memory, const(ComponentTypeInfo)[] componentTypes) nothrow
 {
     EntityPrototype result;
     result.useMemory(memory);
@@ -380,7 +380,7 @@ EntityPrototype mergePrototypesOverride
             (ref EntityPrototype result,
              ref const ComponentTypeInfo type,
              ref EntityPrototype.ConstComponentRange usedRange,
-             ref EntityPrototype.ConstComponentRange ignoredRange)
+             ref EntityPrototype.ConstComponentRange ignoredRange) nothrow
         {
             const typeID = usedRange.front.typeID;
             const size   = type.size;
