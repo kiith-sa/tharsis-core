@@ -34,6 +34,10 @@ import tharsis.util.mallocarray;
 import tharsis.util.noncopyable;
 
 
+/// A shortcut alias for EntityManager with the default entity policy.
+alias DefaultEntityManager = EntityManager!DefaultEntityPolicy;
+
+
 /// The central, "World" object of Tharsis.
 ///
 /// EntityManager fullfills multiple roles:
