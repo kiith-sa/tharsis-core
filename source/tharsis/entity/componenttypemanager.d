@@ -130,7 +130,7 @@ protected:
 
 private:
     /// AbstracComponentTypeManager constructor, called only by ComponentTypeManager.
-    this()
+    this() @safe pure nothrow
     {
         componentTypeInfo_ = componentTypeInfoStorage();
     }
@@ -356,7 +356,7 @@ private:
 
 public:
     /// Construct a ComponentTypeManager.
-    this(Source.Loader sourceLoader)
+    this(Source.Loader sourceLoader) @safe pure nothrow
     {
         registerComponentTypes!BuiltinComponents;
         builtinRegistered_ = true;
@@ -378,7 +378,7 @@ public:
     /// // struct HealthComponent, struct PhysicsComponent
     /// componentTypes.registerComponentTypes!(HealthComponent, PhysicsComponent);
     /// --------------------
-    void registerComponentTypes(Types ...)() @trusted
+    void registerComponentTypes(Types ...)() @safe pure nothrow
     {
         assert(!locked, "Can't register new component types with locked "
                         "ComponentTypeManager");
