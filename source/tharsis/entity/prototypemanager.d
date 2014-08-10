@@ -120,14 +120,16 @@ public:
         (ComponentTypeManager!(Source, Policy) componentTypeManager,
          EntityManager!Policy entityManager,
          Source delegate(ref Descriptor) nothrow getPrototypeSource)
+        @trusted nothrow
     {
         resourcesToAdd_ = new shared(Class!(MallocArray!Resource))();
         indicesToLoad_  = new shared(Class!(MallocArray!uint))();
 
+        alias PREFER_WRITERS = ReadWriteMutex.Policy.PREFER_WRITERS;
         // Write access should be very rare, but if it happens, give it a priority to
         // ensure it ends ASAP
-        resourcesToAddMutex_ = new ReadWriteMutex(ReadWriteMutex.Policy.PREFER_WRITERS);
-        indicesToLoadMutex_  = new ReadWriteMutex(ReadWriteMutex.Policy.PREFER_WRITERS);
+        resourcesToAddMutex_ = new ReadWriteMutex(PREFER_WRITERS).assumeWontThrow;
+        indicesToLoadMutex_  = new ReadWriteMutex(PREFER_WRITERS).assumeWontThrow;
 
         /// Load a component of type componentType from componentSource to prototype.
         ///
@@ -494,7 +496,7 @@ public:
     ///         entityManager        = The entity manager.
     this(Source, Policy)
         (ComponentTypeManager!(Source, Policy) componentTypeManager,
-         EntityManager!Policy entityManager)
+         EntityManager!Policy entityManager) @safe nothrow
     {
         // An EntityPrototypeResource descriptor contains the file name where the
         // prototype is defined. The prototype manager gets the prototype source by
