@@ -211,7 +211,7 @@ public:
     ///
     /// This includes updating resource managers, swapping past/future state, forgetting
     /// dead entities, creating entities added by addEntity, preallocation, etc.
-    void executeFrame()
+    void executeFrame() @trusted nothrow
     {
         frameDebug();
         updateResourceManagers();
@@ -514,7 +514,7 @@ private:
         // Specific overloads have precedence over more general. For example, if there
         // are overloads process(A) and process(A, B), and an entity has components A
         // and B, the latter overload is called.
-        static void runProcess(EntityManager self, P process)
+        static void runProcess(EntityManager self, P process) nothrow
         {
             // If the process has a 'preProcess' method, call it before processing any
             // entities.
@@ -573,6 +573,7 @@ private:
     ///         process     = Process with the process() method.
     ///         entityRange = Entity range to get the components to pass from.
     static void callProcessMethod(alias F, P, ERange)(P process, ref ERange entityRange)
+        nothrow
     {
         // True if the Process does not write to any future component. Usually these
         // processes read past components and produce some kind of output.

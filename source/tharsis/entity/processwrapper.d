@@ -19,9 +19,9 @@ import tharsis.entity.entitymanager;
 class AbstractProcessWrapper(Policy)
 {
     /// Runs the process on all matching entities from specified entity manager.
-    void run(EntityManager!Policy entities)
+    void run(EntityManager!Policy entities) nothrow
     {
-        assert(false, "DMD bug workaround - should never happen");
+        assert(false, "DMD (2065) bug workaround - should never happen");
     }
 }
 
@@ -43,7 +43,7 @@ public:
     /// called.
     ///
     /// Can be changed into delegate if needed, but try to keep it a function.
-    alias void function(EntityManager!Policy, Process) ProcessFunction;
+    alias void function(EntityManager!Policy, Process) nothrow ProcessFunction;
 
     /// Construct a ProcessWrapper.
     ///
@@ -52,13 +52,13 @@ public:
     ///                      process, will run the process on all entities with
     ///                      components matching the process() method/s of the
     ///                      process.
-    this(Process process, ProcessFunction runProcess)
+    this(Process process, ProcessFunction runProcess) nothrow
     {
         process_    = process;
         runProcess_ = runProcess;
     }
 
-    override void run(EntityManager!Policy entities)
+    override void run(EntityManager!Policy entities) nothrow
     {
         runProcess_(entities, process_);
     }
