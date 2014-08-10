@@ -9,6 +9,7 @@ module tharsis.entity.entitymanager;
 import std.algorithm;
 import std.array;
 import std.conv;
+import std.exception: assumeWontThrow;
 import std.stdio;
 import std.string;
 import std.traits;
@@ -469,7 +470,7 @@ private:
     ///                   EntityManager's constructor.
     ///
     /// TODO link to an process.rst once it exists
-    void registerProcess(P)(P process) @trusted
+    void registerProcess(P)(P process) @trusted nothrow
     {
         mixin validateProcess!P;
         // True if the Process does not write to any future component. Usually processes
@@ -479,8 +480,6 @@ private:
         // All overloads of the process() method in the process.
         alias overloads     = processOverloads!P;
 
-        writef("Registering process %s: %s overloads reading past components %s ", 
-               P.stringof, overloads.length, componentIDs!(AllPastComponentTypes!P));
         static if(!noFuture)
         {
             assert(!writtenComponentTypes_[P.FutureComponent.ComponentTypeID],
@@ -491,12 +490,9 @@ private:
 
             // This future component is now taken; no other process can write to it.
             writtenComponentTypes_[P.FutureComponent.ComponentTypeID] = true;
-            writefln(" and writing future component %s",
-                     componentIDs!(P.FutureComponent));
         }
         else
         {
-            writefln("");
         }
 
         // A function executing the process during one frame.
