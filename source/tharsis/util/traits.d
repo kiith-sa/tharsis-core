@@ -21,13 +21,13 @@ template FieldNamesTuple(S)
     /// Determine if a member with specified name is a field of S.
     template isField(string memberName)
     {
-        // For some reason, checking if 'S.this.offsetof' compiles is a compiler 
+        // For some reason, checking if 'S.this.offsetof' compiles is a compiler
         // error.
         static if(memberName == "this")
         {
             enum bool isField = false;
         }
-        else 
+        else
         {
             mixin(q{enum bool isField = __traits(compiles, S.%s.offsetof);}
                   .format(memberName));
@@ -38,7 +38,7 @@ template FieldNamesTuple(S)
 }
 unittest
 {
-    struct Test 
+    struct Test
     {
         int fieldA;
         string fieldB;
@@ -97,14 +97,14 @@ void unPurifier() @trusted nothrow
 ///
 /// Params:  T           = The type (class or struct) that has the method.
 ///          method      = Name of the method.
-///          ExpectedAPI = A method with the signature we expect the validated method to 
+///          ExpectedAPI = A method with the signature we expect the validated method to
 ///                        have.
 ///
 /// To use validateMethodAPI declare a dummy method with expected signature and call
 /// validateMethodAPI with the type/method we're validating and the dummy method.
 /// This is usually useful when validating complex concepts such as Source or Process
 /// which use compile-time polymorphism instead of interfaces and virtual methods.
-/// 
+///
 /// validateMethodAPI checks that the method has the same return type and parameters
 /// as the reference method. It also checks the storage classes of the parameters and
 /// attributes of the method. These may not be exactly the same in the validated method
@@ -128,9 +128,9 @@ void unPurifier() @trusted nothrow
 ///
 /// Template methods:
 ///
-/// At this moment, validateMethodAPI doesn't handle template methods. To validate at 
+/// At this moment, validateMethodAPI doesn't handle template methods. To validate at
 /// least the non-template aspects of a template method, use a concrete instantiation
-/// as the $(D method) parameter, e.g. 
+/// as the $(D method) parameter, e.g.
 /// validateMethodAPI(MyStruct, "doStuff!int", doStuffReference);
 ///
 /// Purity:
@@ -176,12 +176,12 @@ string validateMethodAPI(T, string method, alias ExpectedAPI)()
 
         // Lazy might evaluate when not expected so we strictly want the API to match.
         auto isLazy = expected & STC.lazy_;
-        // If we expect scope, the method must use scope as otherwise it may escape 
+        // If we expect scope, the method must use scope as otherwise it may escape
         // references.
         auto isScope = expected & STC.scope_;
         // If we expect out or ref, it's OK to not use them; the method might not want
         // to overwrite the caller's values. But if we _don't_ expect them, we must
-        // enforce they are not used as the method might unexpectedly modify the 
+        // enforce they are not used as the method might unexpectedly modify the
         // caller's values.
         auto isOut  = expected & STC.out_;
         auto isRef  = expected & STC.ref_;
