@@ -197,27 +197,29 @@ enum maxSourceBytes = 512;
 ///     struct Loader
 ///     {
 ///     public:
-///         /// Load a Source with specified name (e.g. entity file name).
-///         ///
-///         ///
-///         /// Params: name      = Name to identify the source by (e.g. a file name).
-///         ///         logErrors = If true, errors generated during the use of the Source
-///         ///                     (such as loading errors, conversion errors etc.)
-///         ///                     should be logged, accessible through the errorLog()
-///         ///                     method of Source.
-///         ///
-///         /// There is no requirement to load from actual files; this may be
-///         /// implemented by loading from some archive file or from memory.
+///         /** Load a Source with specified name (e.g. entity file name).
+///          *
+///          *
+///          * Params: name      = Name to identify the source by (e.g. a file name).
+///          *         logErrors = If true, errors generated during the use of the Source
+///          *                     (such as loading errors, conversion errors etc.)
+///          *                     should be logged, accessible through the errorLog()
+///          *                     method of Source.
+///          *
+///          * There is no requirement to load from actual files; this may be
+///          * implemented by loading from some archive file or from memory.
+///          */
 ///         TestSource loadSource(string name, bool logErrors) @safe nothrow
 ///         {
 ///             assert(false);
 ///         }
 ///     }
 ///
-///     /// If true, the Source is 'null' and doesn't store anything.
-///     ///
-///     /// A null Source may be returned when loading a Source fails, e.g. from 
-///     /// Loader.loadSource().
+///     /** If true, the Source is 'null' and doesn't store anything.
+///      *
+///      * A null Source may be returned when loading a Source fails, e.g. from 
+///      * Loader.loadSource().
+///      */
 ///     bool isNull() @safe nothrow const
 ///     {
 ///         assert(false);
@@ -230,38 +232,41 @@ enum maxSourceBytes = 512;
 ///         assert(false);
 ///     }
 ///
-///     /// Read a value of type T to target.
-///     ///
-///     /// Returns: true if the value was successfully read.
-///     ///          false if the Source isn't convertible to specified type.
+///     /** Read a value of type T to target.
+///      *
+///      * Returns: true if the value was successfully read.
+///      *          false if the Source isn't convertible to specified type.
+///      */
 ///     bool readTo(T)(out T target) @safe nothrow
 ///     {
 ///         assert(false);
 ///     }
 ///
-///     /// Get a nested Source from a 'sequence' Source.
-///     ///
-///     /// (Get a value from a Source that represents an array of Sources)
-///     ///
-///     /// Params:  index  = Index of the Source to get in the sequence.
-///     ///          target = Target to read the Source to.
-///     ///
-///     /// Returns: true on success, false on failure. E.g. if this Source is
-///     ///          a not a sequence, or the index is out of range.
+///     /** Get a nested Source from a 'sequence' Source.
+///      *
+///      * (Get a value from a Source that represents an array of Sources)
+///      *
+///      * Params:  index  = Index of the Source to get in the sequence.
+///      *          target = Target to read the Source to.
+///      *
+///      * Returns: true on success, false on failure. E.g. if this Source is
+///      *          a not a sequence, or the index is out of range.
+///      */
 ///     bool getSequenceValue(size_t index, out TestSource target) @safe nothrow
 ///     {
 ///         assert(false);
 ///     }
 ///
-///     /// Get a nested Source from a 'mapping' Source.
-///     ///
-///     /// (Get a value from a Source that maps strings to Sources)
-///     ///
-///     /// Params:  key    = Key identifying the nested Source.
-///     ///          target = Target to read the nested Source to.
-///     ///
-///     /// Returns: true on success, false on failure. E.g. if this Source is
-///     ///          a not a mapping, or if there is no such key.
+///     /** Get a nested Source from a 'mapping' Source.
+///      *
+///      * (Get a value from a Source that maps strings to Sources)
+///      *
+///      * Params:  key    = Key identifying the nested Source.
+///      *          target = Target to read the nested Source to.
+///      *
+///      * Returns: true on success, false on failure. E.g. if this Source is
+///      *          a not a mapping, or if there is no such key.
+///      */
 ///     bool getMappingValue(string key, out TestSource target) @safe nothrow
 ///     {
 ///         assert(false);
