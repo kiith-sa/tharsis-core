@@ -31,13 +31,15 @@ mixin template validateSource(Source)
     string errorLogAPI() @safe pure nothrow const { assert(false); }
     bool readToAPI(out uint target) @safe nothrow { assert(false); }
     bool getMappingValueAPI(string key, out Source target) @safe nothrow { assert(false); }
+    bool isScalarAPI() @safe nothrow const { unPurifier(); assert(false); }
 
     // Get a string with all API errors
     enum errors = validateMethodAPI!(Loader, "loadSource",      loadSourceAPI) ~
                   validateMethodAPI!(Source, "isNull",          isNullAPI) ~
                   validateMethodAPI!(Source, "errorLog",        errorLogAPI) ~
                   validateMethodAPI!(Source, "readTo!uint",     readToAPI) ~
-                  validateMethodAPI!(Source, "getMappingValue", getMappingValueAPI); 
+                  validateMethodAPI!(Source, "getMappingValue", getMappingValueAPI) ~
+                  validateMethodAPI!(Source, "isScalar",        isScalarAPI); 
 
     static assert(errors.empty, errors);
 }

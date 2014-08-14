@@ -146,7 +146,9 @@ enum maxSourceBytes = 512;
 /// ComponentTypeManager that will be passed to the constructor of an EntityManager.
 ///
 /// Params: Source = A struct type to read components from. This may be for example a
-///                  wrapped YAML or XML node, or an INI section. See below.
+///                  wrapped YAML or XML node, or an INI section. $(B tharsis-full) 
+///                  provides a Source implementation based on YAML. See below if you
+///                  need to create your own implementation.
 ///         Policy = Specifies compile-time parameters such as the maximum number of
 ///                  component types. See tharsis.entity.entitypolicy.d for the default
 ///                  Policy type.
@@ -268,6 +270,12 @@ enum maxSourceBytes = 512;
 ///      *          a not a mapping, or if there is no such key.
 ///      */
 ///     bool getMappingValue(string key, out TestSource target) @safe nothrow
+///     {
+///         assert(false);
+///     }
+///
+///     /// Is this a scalar source? A scalar is any source that is not a sequence or a mapping.
+///     bool isScalar() @safe nothrow const
 ///     {
 ///         assert(false);
 ///     }
