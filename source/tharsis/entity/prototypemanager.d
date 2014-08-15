@@ -25,14 +25,12 @@ import tharsis.util.typecons;
 // TODO: Add a method to specify resources to preload at start instead of always
 //       loading on demand. Try to find a generic way to do this for all or most
 //       (e.g. only with StringDescriptors-files) resources/resourcemanagers.
-// TODO: Try creating an universal Prototype resource and turning
-//       BasePrototypeManager into PrototypeManager.
 
 /// Base class for resource managers managing entity prototypes.
 ///
-/// There may be various entity prototype resource types (e.g. defined in a file or
-/// directly in a Source); these should be managed by separate resource managers derived
-/// from BasePrototypeManager templated with the resource type.
+/// A project may need multiple entity prototype resource types; these should be managed
+/// by separate resource managers derived from BasePrototypeManager templated with the
+/// resource type.
 ///
 /// The Resource type should define following members in addition to the Descriptor type
 /// required by ResourceManager:
@@ -480,20 +478,20 @@ private:
     }
 }
 
-
-/// Manages entity prototypes defined in files, with filename descriptors.
+/// Manages entity prototypes defined in files or inline in a Source.
 class PrototypeManager: BasePrototypeManager!EntityPrototypeResource
 {
 public:
-    /// Construct a PrototypeManager.
-    ///
-    /// Params: Source               = Type of source to load prototypes from (e.g.
-    ///                                YAMLSource)
-    ///         Policy               = Policy used with the entity manager, specifying
-    ///                                compile-time tweakables.
-    ///         componentTypeManager = Component type manager where all used component
-    ///                                types are registered.
-    ///         entityManager        = The entity manager.
+    /** Construct a PrototypeManager.
+     *
+     * Params: Source               = Type of source to load prototypes from (e.g.
+     *                                YAMLSource)
+     *         Policy               = Policy used with the entity manager, specifying
+     *                                compile-time tweakables.
+     *         componentTypeManager = Component type manager where all used component
+     *                                types are registered.
+     *         entityManager        = The entity manager.
+     */
     this(Source, Policy)
         (ComponentTypeManager!(Source, Policy) componentTypeManager,
          EntityManager!Policy entityManager) @safe nothrow
@@ -502,7 +500,7 @@ public:
         // prototype is defined. The prototype manager gets the prototype source by
         // loading source from that file.
         super(componentTypeManager, entityManager,
-              (ref Descriptor d) => componentTypeManager.loadSource(d.fileName));
+              (ref Descriptor d) => d.source(componentTypeManager));
     }
 }
 unittest

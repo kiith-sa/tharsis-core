@@ -407,12 +407,12 @@ EntityPrototype mergePrototypesOverride
     return result;
 }
 
-
 /// A resource wrapping an EntityPrototype. Managed by PrototypeManager.
 struct EntityPrototypeResource
 {
-    /// Described by the prototype filename, which is a string.
-    alias StringDescriptor!EntityPrototypeResource Descriptor;
+    /// Described either by prototype filename or a prototype written directly in
+    /// a Source.
+    alias DefaultDescriptor!EntityPrototypeResource Descriptor;
 
     /// No default construction.
     @disable this();
