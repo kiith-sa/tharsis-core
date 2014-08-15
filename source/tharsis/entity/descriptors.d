@@ -146,3 +146,130 @@ public:
     }
 }
 
+/**
+ * A resource descriptor that can store either a filename to load a resource from or a
+ * Source to load the resource directly.
+ *
+ * Used when a resource may be defined directly in a subnode of a source (e.g. YAML)
+ * file, but we also want to be able to define it in a separate file and just use
+ * a filename to it.
+ *
+ * Params: Resource = Resource type described by the descriptor. Templating by resource
+ *                    type avoids accidental assignments between descriptors of
+ *                    different resource types.
+ */
+struct CombinedDescriptor(Resource)
+{
+private:
+    // Descriptor type, specifying whether the resource is described in a separate file
+    // or in a Source within the descriptor.
+    enum Type
+    {
+        // The descriptor stores a filename of a file to load the resource from.
+        String,
+        // The descriptor stores a Source load the resource from directly.
+        SourceWrapper
+    }
+
+    // Used if type_ is String. Stores filename to load a Source from.
+    StringDescriptor!Resource stringBackend_;
+    // Used if type_ is SourceWrapper. Stores a Source directly.
+    SourceWrapperDescriptor!Resource sourceBackend_;
+
+    // Descriptor type.
+    Type type_;
+
+public:
+    /** Construct a CombinedDescriptor describing resource in specified file.
+     *
+     * Params:
+     *
+     * fileName = Name of file to load the resource from.
+     */
+    this(string fileName) @safe pure nothrow @nogc
+    {
+        type_          = Type.String;
+        stringBackend_ = StringDescriptor!Resource(fileName);
+    }
+
+    string fileName() @safe pure nothrow const @nogc
+    {
+        return type_ == Type.String ? stringBackend_.fileName : "<inline resource>";
+    }
+
+    /** Load a descriptor from a Source such as YAML.
+     *
+     * Params:  source = Source to load from.
+     *          result = The descriptor will be written here, if loaded
+     *                   succesfully.
+     *
+     * Returns: true if succesfully loaded, false otherwise.
+     */
+    static bool load(Source)(ref Source source, out CombinedDescriptor result)
+        @safe nothrow
+    {
+        // Assume that a single scalar is a filename descriptor, while anything
+        // not scalar is an inline source descriptor.
+        if(source.isScalar)
+        {
+            result.type_ = Type.String;
+            return StringDescriptor!Resource.load(source, result.stringBackend_);
+        }
+        else
+        {
+            result.type_ = Type.SourceWrapper;
+            return SourceWrapperDescriptor!Resource.load(source, result.sourceBackend_);
+        }
+    }
+
+    //XXX @nogc
+    /** Determine if this descriptor maps to the same resource handle as another descriptor.
+     *
+     * Usually, this returns true if two descriptors describe the same resource
+     * (e.g. if the descriptors are equal).
+     *
+     * The resource manager uses this when a resource handle is requested to
+     * decide whether to load a new resource or to reuse an existing one
+     * (if a descriptor maps to the same handle as a descriptor of already
+     * existing resource).
+     */
+    bool mapsToSameHandle(ref const(CombinedDescriptor) rhs) @safe pure nothrow const
+    {
+        if(type_ != rhs.type_) { return false; }
+        with(Type) final switch(type_)
+        {
+            case String:        return stringBackend_.mapsToSameHandle(rhs.stringBackend_);
+            case SourceWrapper: return sourceBackend_.mapsToSameHandle(rhs.sourceBackend_);
+        }
+    }
+
+    import tharsis.entity.componenttypemanager;
+    /** Access the wrapped source.
+     *
+     * This should be used to initialize the resource described by this
+     * descriptor.
+     */
+    Source source(Source, Policy)(ComponentTypeManager!(Source, Policy) componentTypeManager)
+        @safe nothrow
+    {
+        with(Type) final switch(type_)
+        {
+            case String:        return componentTypeManager.loadSource(stringBackend_.fileName);
+            case SourceWrapper: return sourceBackend_.source!Source;
+        }
+    }
+}
+
+// Ensure we are notified of any size increases
+import tharsis.entity.entityprototype;
+static assert(CombinedDescriptor!EntityPrototypeResource.sizeof <= 32,
+              "CombinedDescriptor struct is unexpectedly large");
+
+/// The default descriptor type used by builtin resource managers.
+///
+/// Resources using this descriptor can be loaded both from separate files and from
+/// inline Source nodes (e.g. YAML mappings with YAMLSource).
+template DefaultDescriptor(Resource)
+{
+    alias DefaultDescriptor = CombinedDescriptor!Resource;
+}
