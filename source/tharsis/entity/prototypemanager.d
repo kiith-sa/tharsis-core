@@ -26,28 +26,29 @@ import tharsis.util.typecons;
 //       loading on demand. Try to find a generic way to do this for all or most
 //       (e.g. only with StringDescriptors-files) resources/resourcemanagers.
 
-/// Base class for resource managers managing entity prototypes.
-///
-/// A project may need multiple entity prototype resource types; these should be managed
-/// by separate resource managers derived from BasePrototypeManager templated with the
-/// resource type.
-///
-/// The Resource type should define following members in addition to the Descriptor type
-/// required by ResourceManager:
-///
-/// -------------------------------
-/// // Constructor from descriptor.
-/// this(ref Descriptor);
-/// // The prototype stored by the resource (once loaded)
-/// EntityPrototype prototype;
-/// // Descriptor describing this resource.
-/// Descriptor descriptor;
-/// // The current resource state.
-/// ResourceState state;
-/// -------------------------------
-///
-/// For an example Resource type, see
-/// tharsis.entity.entityprototype.EntityPrototypeResource .
+/** Base class for resource managers managing entity prototypes.
+ *
+ * A project may need multiple entity prototype resource types; these should be managed
+ * by separate resource managers derived from BasePrototypeManager templated with the
+ * resource type.
+ *
+ * The Resource type should define following members in addition to the Descriptor type
+ * required by ResourceManager:
+ *
+ * -------------------------------
+ * // Constructor from descriptor.
+ * this(ref Descriptor);
+ * // The prototype stored by the resource (once loaded)
+ * EntityPrototype prototype;
+ * // Descriptor describing this resource.
+ * Descriptor descriptor;
+ * // The current resource state.
+ * ResourceState state;
+ * -------------------------------
+ *
+ * For an example Resource type, see
+ * tharsis.entity.entityprototype.EntityPrototypeResource .
+ */
 class BasePrototypeManager(Resource) : ResourceManager!Resource
 {
     /// Loads a resource, setting its state to Loaded on success or LoadFailed on
