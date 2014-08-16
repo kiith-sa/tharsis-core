@@ -44,7 +44,7 @@ struct StringDescriptor(Resource)
     /// decide whether to load a new resource or to reuse an existing one
     /// (if a descriptor maps to the same handle as a descriptor of already
     /// existing resource).
-    bool mapsToSameHandle(ref const(StringDescriptor) rhs) @safe pure nothrow const
+    bool mapsToSameHandle(ref const(StringDescriptor) rhs) @safe pure nothrow const @nogc
     {
         return fileName == rhs.fileName;
     }
@@ -128,7 +128,7 @@ public:
     /// (if a descriptor maps to the same handle as a descriptor of already
     /// existing resource).
     bool mapsToSameHandle(ref const(SourceWrapperDescriptor) rhs)
-        @safe pure nothrow const
+        @safe pure nothrow const @nogc
     {
         // Handles to resources using SourceWrapperDescriptors are initialized
         // as members of components where those resources are defined inline.
@@ -222,7 +222,6 @@ public:
         }
     }
 
-    //XXX @nogc
     /** Determine if this descriptor maps to the same resource handle as another descriptor.
      *
      * Usually, this returns true if two descriptors describe the same resource
@@ -233,7 +232,7 @@ public:
      * (if a descriptor maps to the same handle as a descriptor of already
      * existing resource).
      */
-    bool mapsToSameHandle(ref const(CombinedDescriptor) rhs) @safe pure nothrow const
+    bool mapsToSameHandle(ref const(CombinedDescriptor) rhs) @safe pure nothrow const @nogc
     {
         if(type_ != rhs.type_) { return false; }
         with(Type) final switch(type_)
