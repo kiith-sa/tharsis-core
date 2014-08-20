@@ -253,7 +253,8 @@ template validateProcessMethod(alias Function)
             assert(Info.isSlice ||
                    (Info.isPtr && Info.isRef) || (!Info.isPtr && Info.isOut),
                    "Future non-multi component of a process() method must be 'out' or "
-                   "a 'ref' pointer (" ~ Info.ParamTypeName ~ ")");
+                   "a 'ref' pointer (" ~ Info.ParamTypeName ~ ") - or maybe this "
+                   "is not supposed to be a future component but you forgot 'const'?");
         }
 
         void testPastComponent(alias Info)()
@@ -276,8 +277,21 @@ template validateProcessMethod(alias Function)
             // Remember this past component to check for duplicates.
             pastIDs[Info.Component.ComponentTypeID] = true;
         }
+        
+        alias paramInfo = processMethodParamInfo!Function;
+        size_t countMutable;
+        foreach(Info; paramInfo) static if(Info.isComponent)
+        {
+            static if(isMutable!(Info.Component))
+            {
+                ++countMutable;
+            }
+        }
+        assert(countMutable <= 1,
+               "More than 1 mutable Component parameter in a process() method; only "
+               "one parameter (the future component) may be mutable");
 
-        foreach(Info; processMethodParamInfo!Function)
+        foreach(Info; paramInfo)
         {
             static if(Info.isEntityAccess)
             {
