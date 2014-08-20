@@ -158,6 +158,13 @@ public:
         }
     }
 
+
+    /// Get the number of entities in past state.
+    size_t pastEntityCount() @safe pure nothrow const @nogc
+    {
+        return past_.entities.length;
+    }
+
     /// Add a new entity, using components from specified prototype.
     ///
     /// The new entity will be added at the beginning of the next frame.
