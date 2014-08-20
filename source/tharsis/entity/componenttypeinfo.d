@@ -661,6 +661,8 @@ private:
         }
         maxPerEntity = maxComponentsPerEntity!Component();
 
+        // Property information contains a generated loadProperty function that can load
+        // that property from a Source.
         properties_.length = Fields.length;
         // Compile-time foreach.
         foreach(i, fieldName; Fields)
