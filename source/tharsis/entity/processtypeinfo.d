@@ -98,13 +98,17 @@ template pastComponentIDs(alias ProcessFunc)
 /// signature
 template RawFutureComponentType(alias ProcessFunc)
 {
-private:
-    enum paramIndex = futureComponentIndex!ProcessFunc();
-    static assert(paramIndex != size_t.max,
-                  "Can't get future component type of a process() method "
-                  "writing no future component.");
-public:
-    alias RawFutureComponentType = ParameterTypeTuple!ProcessFunc[paramIndex];
+    static if(futureComponentIndex!ProcessFunc != size_t.max)
+    {
+        enum paramIndex = futureComponentIndex!ProcessFunc;
+        alias RawFutureComponentType = ParameterTypeTuple!ProcessFunc[paramIndex];
+    }
+    else
+    {
+        pragma(msg, "Can't get future component type of a process() method "
+                    "writing no future component: ", typeof(ProcessFunc).stringof);
+        static assert(false);
+    }
 }
 
 /// Get the future component type written by a process() method.
