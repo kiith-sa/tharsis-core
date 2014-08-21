@@ -30,7 +30,7 @@ template tupleIndices(Head, Tail ...)
     {
         alias tupleIndices = TypeTuple!(0);
     }
-    else 
+    else
     {
         alias tailResult   = tupleIndices!Tail;
         alias tupleIndices = TypeTuple!(tailResult, tailResult[$ - 1] + 1);

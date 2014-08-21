@@ -70,8 +70,7 @@ template PastComponentTypes(alias ProcessFunc)
     // Get the actual component type (Param may be a slice).
     template BaseType(Param)
     {
-        static assert(!isPointer!Param,
-                      "Past components can't be passed by pointer");
+        static assert(!isPointer!Param, "Past components can't be passed by pointer");
         static if(isArray!Param) { alias BaseType = typeof(Param.init[0]); }
         else                     { alias BaseType = Param; }
     }
@@ -295,8 +294,7 @@ template validateProcessMethod(alias Function)
         {
             static if(Info.isEntityAccess)
             {
-                assert(!isMutable!(Info.Param),
-                       "Context parameter of process() must be const");
+                assert(!isMutable!(Info.Param), "Context parameter of process() must be const");
             }
             else static if(Info.isComponent)
             {

@@ -402,8 +402,7 @@ public:
             alias attributes = TypeTuple!(__traits(getAttributes, Component));
             static if(staticIndexOf!("defaultsComponent", attributes) != -1)
             {
-                const endDefaults =
-                    maxBuiltinComponentTypes + maxDefaultsComponentTypes;
+                const endDefaults = maxBuiltinComponentTypes + maxDefaultsComponentTypes;
                 assert(id >= maxBuiltinComponentTypes && id <= endDefaults,
                        "A 'defaults' component type with ID out of range.");
             }

@@ -29,8 +29,7 @@ template FieldNamesTuple(S)
         }
         else
         {
-            mixin(q{enum bool isField = __traits(compiles, S.%s.offsetof);}
-                  .format(memberName));
+            mixin(q{enum bool isField = __traits(compiles, S.%s.offsetof);}.format(memberName));
         }
     }
 
