@@ -662,7 +662,7 @@ private:
         else static if(futureComponentByPointer!F)
         {
             // Pass pointer by reference; allows process() to set this to null.
-            P.FutureComponent* future = &entityRange.futureComponent();
+            P.FutureComponent* future = entityRange.futureComponent();
             mixin(q{ process.process(%s); }.format(processArgs!"future"()));
             // If set to null, the future component was not written.
             if(future !is null) { entityRange.setFutureComponentCount(1); }
@@ -671,7 +671,7 @@ private:
         else
         {
             mixin(q{process.process(%s);}
-                  .format(processArgs!"entityRange.futureComponent"()));
+                  .format(processArgs!"*entityRange.futureComponent"()));
             entityRange.setFutureComponentCount(1);
         }
     }

@@ -369,41 +369,28 @@ package:
         }.format(countsName!id, bufferName!Component));
     }
 
-    // Only access the future component if the process writes any.
+    /** Get referemce/slice to memory to write future component/s of the current entity to.
+     *
+     * If FutureComponent is not a MultiComponent, returns a reference. Otherwise
+     * returns a slice $(B at least) FutureComponent.maxComponentsPerEntity long.
+     *
+     * Note that process() may still decide not to write a future component, but we need
+     * to provide it with memory to write it if it wants.
+     */
     static if(!noFuture)
-    {
-
-    // Non-multi future component.
-    static if(!isMultiComponent!FutureComponent)
-    {
-
-    /// Get a reference to write the future component for the current entity 
-    /// (process() may still decide not to write it, though).
-    ref FutureComponent futureComponent() @trusted nothrow
-    {
-        enum neededSpace = maxComponentsPerEntity!(FutureComponent);
-        // Ensures the needed space is allocated.
-        ubyte[] unused =
-            futureComponents_.buffer.forceUncommittedComponentSpace(neededSpace);
-        return *cast(FutureComponent*)(unused.ptr);
-    }
-
-    }
-    // Multi future component.
-    else
-    {
-
-    /// Get a slice to write future multicomponents for the current entity to. The slice
-    /// is at least FutureComponent.maxComponentsPerEntity long.
-    FutureComponent[] futureComponent() @trusted nothrow
+    auto futureComponent() @trusted nothrow
     {
         enum maxComponents = maxComponentsPerEntity!(FutureComponent);
         // Ensures the needed space is allocated.
-        ubyte[] unused =
-            futureComponents_.buffer.forceUncommittedComponentSpace(maxComponents);
-        return (cast(FutureComponent*)(unused.ptr))[0 .. maxComponents];
-    }
-
+        ubyte[] unused = futureComponents_.buffer.forceUncommittedComponentSpace(maxComponents);
+        static if(!isMultiComponent!FutureComponent)
+        {
+            return cast(FutureComponent*)(unused.ptr);
+        }
+        else
+        {
+            return (cast(FutureComponent*)(unused.ptr))[0 .. maxComponents];
+        }
     }
 
     /// Specify the number of future components written for the current entity.
@@ -413,13 +400,12 @@ package:
     ///
     /// Params: count = Number of components written. Must be 0 or 1 for non-multi
     ///                 components.
+    static if(!noFuture)
     void setFutureComponentCount(const ComponentCount count) @safe pure nothrow
     {
         assert(isMultiComponent!FutureComponent || count <= 1,
                "Component count for a non-multi component can be at most 1");
         futureComponentCount_ = count;
-    }
-
     }
 
     /// Determine if the current entity contains specified component types.
