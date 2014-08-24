@@ -30,16 +30,22 @@ mixin template validateSource(Source)
     bool isNullAPI() @safe nothrow const          { unPurifier(); return false;}
     string errorLogAPI() @safe pure nothrow const { assert(false); }
     bool readToAPI(out uint target) @safe nothrow { assert(false); }
+    bool getSequenceValueAPI(size_t index, out Source target) @safe nothrow { assert(false); }
     bool getMappingValueAPI(string key, out Source target) @safe nothrow { assert(false); }
     bool isScalarAPI() @safe nothrow const { unPurifier(); assert(false); }
+    bool isSequenceAPI() @safe nothrow const { unPurifier(); assert(false); }
+    bool isMappingAPI() @safe nothrow const { unPurifier(); assert(false); }
 
     // Get a string with all API errors
-    enum errors = validateMethodAPI!(Loader, "loadSource",      loadSourceAPI) ~
-                  validateMethodAPI!(Source, "isNull",          isNullAPI) ~
-                  validateMethodAPI!(Source, "errorLog",        errorLogAPI) ~
-                  validateMethodAPI!(Source, "readTo!uint",     readToAPI) ~
-                  validateMethodAPI!(Source, "getMappingValue", getMappingValueAPI) ~
-                  validateMethodAPI!(Source, "isScalar",        isScalarAPI); 
+    enum errors = validateMethodAPI!(Loader, "loadSource",       loadSourceAPI) ~
+                  validateMethodAPI!(Source, "isNull",           isNullAPI) ~
+                  validateMethodAPI!(Source, "errorLog",         errorLogAPI) ~
+                  validateMethodAPI!(Source, "readTo!uint",      readToAPI) ~
+                  validateMethodAPI!(Source, "getSequenceValue", getSequenceValueAPI) ~
+                  validateMethodAPI!(Source, "getMappingValue",  getMappingValueAPI) ~
+                  validateMethodAPI!(Source, "isScalar",         isScalarAPI) ~
+                  validateMethodAPI!(Source, "isSequence",       isSequenceAPI) ~
+                  validateMethodAPI!(Source, "isMapping",        isMappingAPI);
 
     static assert(errors.empty, errors);
 }

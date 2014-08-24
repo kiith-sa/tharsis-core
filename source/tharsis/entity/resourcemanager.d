@@ -149,7 +149,7 @@ public:
     /// This method is not const to allow for non-const internal operations
     /// (such as mutex locking), but it should be logically const from the
     /// user's point of view.
-    ResourceState state(const Handle handle) @safe pure nothrow;
+    ResourceState state(const Handle handle) @safe nothrow;
 
     /// Request the resource with specified handle to be loaded by the manager.
     ///
@@ -171,7 +171,7 @@ public:
     /// This method is not const to allow for non-const internal operations
     /// (such as mutex locking), but it should be logically const from the
     /// user's point of view.
-    ref immutable(Resource) resource(const Handle handle) @safe pure nothrow;
+    ref immutable(Resource) resource(const Handle handle) @safe nothrow;
 
     /// Access descriptors of all resources that failed to load.
     ///
@@ -183,6 +183,291 @@ public:
     ///
     /// Used for debugging.
     string errorLog() @safe pure nothrow const;
+}
+
+
+
+/** Base class for resource managers storing resources in manually allocated memory.
+ *
+ * Resources created during a game update are temporarily stored in a mutex-protected
+ * array, loaded when ResourceManager.update() is called and moved into permanent,
+ * immutable storage (consisting of manually allocated pages that are never moved).
+ *
+ * Resources are loaded by a delegate passed to MallocResourceManager constructor.
+ */
+abstract class MallocResourceManager(Resource) : ResourceManager!Resource 
+{
+private:
+    // Loads a resource, setting its state to Loaded on success, LoadFailed on failure.
+    //
+    // Using a deleg allows loadResource_ to be defined in a templated ctor without
+    // adding template parameters to the class (avoiding e.g. templating the prototype
+    // manager with Source).
+    LoadResource loadResource_;
+
+    import tharsis.util.pagedarray;
+    // Resources are stored here.
+    //
+    // When a handle for any single descriptor is first requested, an empty resource
+    // with that descriptor is added to resourcesToAdd_. Between game updates, those
+    // resources are moved to resources_. This allows us to avoid locking every read
+    // from resources_, instead only locking resourcesToAdd_ when read/written. State of
+    // added resources is ResourceState.New. Once in resources_, resource manager can
+    // load (modify) the resources (even asynchronously). After loading, resource state
+    // is changed to ResourceState.Loaded on success or ResourceState.LoadFailed if
+    // loading failed. Once loaded, a resource is immutable and may not be modified,
+    // allowing lock-less reading from multiple threads.
+    PagedArray!Resource resources_;
+
+    import core.sync.rwmutex;
+    import tharsis.util.mallocarray;
+    import tharsis.util.qualifierhacks;
+    import tharsis.util.typecons;
+    // Resources are staged here from creation in a handle() call with a new descriptor
+    // until the game update ends. Then they are moved to resources_. Shared; may be
+    // written/read by multiple threads. Class wrapper is used since dtors can't destroy
+    // shared struct members as of DMD 2.054.
+    //
+    // See_Also: resources_
+    shared(Class!(MallocArray!Resource)) resourcesToAdd_;
+    // Mutex used to lock resourcesToAdd_.
+    ReadWriteMutex resourcesToAddMutex_;
+
+    // Indices of resources requested to be loaded by the user.
+    //
+    // May contain duplicates or indices of already loaded resources; these will be
+    // ignored. Shared; may be written/read by multiple threads. Class wrapper is used
+    // since dtors can't destroy shared struct members as of DMD 2.054.
+    shared(Class!(MallocArray!uint)) indicesToLoad_;
+    // Mutex used to lock indicesToLoad_.
+    ReadWriteMutex indicesToLoadMutex_;
+
+protected:
+    // Any loading errors are written here.
+    string errorLog_;
+
+public:
+    /// Delegate type that loads a Resource (or sets its state to LoadFailed on failure.)
+    alias LoadResource = void delegate(ref Resource, ref string) @safe nothrow;
+
+    /// Construct a MallocResourceManager using specified delegate to load resources.
+    this(LoadResource loadDeleg) @trusted nothrow
+    {
+        resourcesToAdd_ = new shared(Class!(MallocArray!Resource))();
+        indicesToLoad_  = new shared(Class!(MallocArray!uint))();
+
+        alias PREFER_WRITERS = ReadWriteMutex.Policy.PREFER_WRITERS;
+        // Write access should be very rare, but if it happens, give it a priority to
+        // ensure it ends ASAP
+        resourcesToAddMutex_ = new ReadWriteMutex(PREFER_WRITERS).assumeWontThrow;
+        indicesToLoadMutex_  = new ReadWriteMutex(PREFER_WRITERS).assumeWontThrow;
+
+        loadResource_ = loadDeleg;
+
+        // 4 kiB won't kill us and it's likely that we won't load this many new
+        // resources during one game update.
+        indicesToLoad_.assumeUnshared.reserve(1024);
+    }
+
+    /** Deallocate all resource arrays.
+     *
+     * Must be called by clear() of any derived class.
+     */
+    override void clear() @trusted
+    {
+        // These are class objects, so they need to be destroyed manually.
+        destroy(resourcesToAdd_.assumeUnshared.self_);
+        destroy(indicesToLoad_.assumeUnshared.self_);
+        destroy(resources_);
+    }
+
+    // Lock-free unless requesting a handle to an unknown resource (first time a handle
+    // is requested for any given descriptor), or requesting a handle to a resource that
+    // became known only during the current game update.
+    //
+    // May be used outside of a Process directly by the user.
+    override Handle handle(ref Descriptor descriptor) @trusted nothrow
+    {
+        // If the resource already exists, return a handle to it.
+        foreach(idx; 0 .. resources_.length)
+        {
+            if(resources_.atConst(idx).descriptor.mapsToSameHandle(descriptor))
+            {
+                return Handle(cast(RawResourceHandle)idx);
+            }
+        }
+
+        // The descriptor may have been used to create a new resource earlier during
+        // this game update, so we need to check if it's already in resourcesToAdd.
+        // This should happen very rarely.
+        return
+        {
+            auto resourcesToAdd = resourcesToAdd_.assumeUnshared;
+            auto mutex          = resourcesToAddMutex_;
+
+            synchronized(mutex.reader) foreach(idx; 0 .. resourcesToAdd.length)
+            {
+                if(resourcesToAdd[idx].descriptor.mapsToSameHandle(descriptor))
+                {
+                    return Handle(cast(RawResourceHandle)(resources_.length + idx));
+                }
+            }
+
+            // New resource is being added. This should happen rarely (relative to the
+            // total number of handle() calls).
+            synchronized(mutex.writer)
+            {
+                resourcesToAdd ~= Resource(descriptor);
+                // Will be at this index once contents of resourcesToAdd_ are appended
+                // to resources_ when the next game update starts.
+                return Handle(cast(RawResourceHandle)(resourceCount - 1));
+            }
+        }().assumeWontThrow;
+    }
+
+    // Always lock-free in the release build. Locks in the debug build to run an assert.
+    final override ResourceState state(const Handle handle) @trusted nothrow
+    {
+        const rawHandle = handle.rawHandle;
+        // Usually the handle points to a resource created before the current game
+        // update, which would be in resources_ by now instead of resourcesToAdd_.
+        if(rawHandle < resources_.length) { return resources_.atConst(rawHandle).state; }
+
+        // This can only happen with a newly added resource that's still in
+        // resourcesToAdd_, meaning it's New at least until the next game update starts.
+        delegate
+        {
+            synchronized(resourcesToAddMutex_.reader)
+            {
+                assert(rawHandle < resourceCount, "Resource handle out of range");
+            }
+        }().assumeWontThrow;
+
+        return ResourceState.New;
+    }
+
+    // Lock-free if the resource is already loaded. Locks otherwise.
+    override void requestLoad(const Handle handle) @trusted nothrow
+    {
+        const rawHandle = handle.rawHandle;
+        // If resource already loaded, loading or failed to load, do nothing.
+        if(rawHandle < resources_.length &&
+           resources_.atConst(rawHandle).state != ResourceState.New)
+        {
+            return;
+        }
+
+        // May or may not be loaded. Assume not loaded.
+        delegate
+        {
+            synchronized(indicesToLoadMutex_.writer)
+            {
+                indicesToLoad_.assumeUnshared ~= rawHandle;
+            }
+        }().assumeWontThrow;
+    }
+
+    // Lock-free.
+    final override ref immutable(Resource) resource(const Handle handle) @trusted nothrow
+    {
+        // A resource only becomes immutable once it is loaded successfully.
+        assert(state(handle) == ResourceState.Loaded,
+               "Can't directly access a resource that is not loaded");
+
+        // A Loaded resource is in resources_. (New resources are in resourcesToAdd_.)
+        return resources_.atImmutable(handle.rawHandle);
+    }
+
+    override Foreachable!(const(Descriptor)) loadFailedDescriptors()
+        @safe pure nothrow const
+    {
+        class FailedDescriptors: Foreachable!(const(Descriptor))
+        {
+        private:
+            const(MallocResourceManager) manager_;
+
+        public:
+            this(const(MallocResourceManager) manager) @safe pure nothrow
+            {
+                manager_ = manager;
+            }
+
+            // Iterates over all resources in resources_ (which are immutable) filtering
+            // down to descriptors of resources that failed to load.
+            int opApply(int delegate(ref const(Descriptor)) dg)
+            {
+                int result = 0;
+                foreach(r; 0 .. manager_.resources_.length)
+                {
+                    auto resource = &resources_.atConst(r);
+                    if(resource.state != ResourceState.LoadFailed) { continue; }
+                    result = dg(resource.descriptor);
+                    if(result) { break; }
+                }
+                return result;
+            }
+        }
+
+        return new FailedDescriptors(this);
+    }
+
+    override string errorLog() @safe pure nothrow const @nogc
+    {
+        return errorLog_;
+    }
+
+protected:
+    override void update_() @trusted nothrow
+    {
+        // No need for synchronization here; this runs between game updates when process
+        // threads don't run.
+
+        // Need to add resources repeatedly; newly loaded resources (e.g. prototypes)
+        // may contain handles adding new resources to resourcesToAdd_.
+        //
+        // Even if there are no newly added resources, there may be resources requested
+        // to be loaded (indicesToLoad_).
+        while(!resourcesToAdd_.assumeUnshared.empty || !indicesToLoad_.assumeUnshared.empty)
+        {
+            foreach(ref resource; resourcesToAdd_.assumeUnshared)
+            {
+                resources_ ~= resource;
+            }
+            // We've loaded these now, so clear them.
+            resourcesToAdd_.assumeUnshared.clear();
+
+            // DMD (as of DMD 2.053) breaks the release build if we don't iterate by
+            // reference here.
+            // foreach(index; indicesToLoad_)
+
+            // Load resources at indices from indicesToLoad_ (if not loaded already).
+            // May add new resources to resourcesToAdd_.
+            foreach(ref index; indicesToLoad_.assumeUnshared)
+            {
+                const resource = &resources_.atConst(index);
+                if(resource.state != ResourceState.New) { continue; }
+
+                auto resourceMutable = &resources_.atMutable(index);
+                resourceMutable.state = ResourceState.Loading;
+                loadResource_(*resourceMutable, errorLog_);
+                if(resourceMutable.state == ResourceState.Loaded)
+                {
+                    resources_.markImmutable(index);
+                }
+            }
+            indicesToLoad_.assumeUnshared.clear();
+        }
+    }
+
+private:
+    // Get the total number of resources, loaded or not.
+    //
+    // Note: Reads resourcesToAdd_ which may be read/modified by multiple threads. Any
+    //       use of this method should be synchronized.
+    size_t resourceCount() @trusted pure nothrow const
+    {
+        return resources_.length + resourcesToAdd_.assumeUnshared.length;
+    }
 }
 
 

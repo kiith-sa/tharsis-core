@@ -378,19 +378,27 @@ private:
         assert(componentBuffer.length == Component.sizeof,
                "Size of component buffer doesn't match its type");
 
+        enum string componentName = Component.stringof;
+
         // The component is stored in a mapping; the property is stored in a
         // Source that is one of the values in that mapping.
         Source fieldSource;
         Source* source = cast(Source*)sourceVoid;
+        import std.exception;
+        if(!source.isMapping)
+        {
+            errorLog ~= "'%s' failed to load: Component source is not a mapping\n\n"
+                        .format(componentName).assumeWontThrow;
+            return false;
+        }
 
-        enum string componentName = Component.stringof;
         // The property name used when loading from the Source. May be different
         // from the name of the Component's property.
         enum string fieldName = fieldNameSource!(Component, fieldNameInternal);
         if(!source.getMappingValue(fieldName, fieldSource))
         {
-            errorLog ~= "'" ~ componentName ~ "' falied to load: Property '" ~
-                        fieldName ~ "' not found\n\n";
+            errorLog ~= "'%s' falied to load: Property '%s' not found\n\n"
+                        .format(componentName, fieldName).assumeWontThrow;
             return false;
         }
 
@@ -596,22 +604,24 @@ public:
     /// Is this ComponentTypeInfo null (i.e. doesn't describe any type)?
     bool isNull() @safe pure nothrow const { return id == nullComponentTypeID; }
 
-    /// Load a component of this component type.
-    ///
-    /// Params:  Source        = Type of the Source (e.g. YAML node) to load from. Must
-    ///                          be the same Source type that was used when the type
-    ///                          info was initialized (i.e. the Source parameter of
-    ///                          ComponentTypeManager).
-    ///          componentData = Component to load into, as a raw bytes buffer.
-    ///          source        = Source to load the component from (e.g. a YAML
-    ///                          definition of the component).
-    ///          getHandle     = A delegate that, given a resource type ID and
-    ///                          descriptor, returns a raw resource handle. Used
-    ///                          to initialize properties that are resource handles.
-    ///          errorLog      = A string to write any loading errors to.
-    ///                          If there are no errors, this is not touched.
-    bool loadComponent(Source)(ubyte[] componentData, ref Source source,
-                               GetResourceHandle getHandle, ref string errorLog)
+    import tharsis.entity.entitymanager;
+    /** Load a component of this component type.
+     *
+     * Params:  
+     *
+     * Source        = Type of Source (e.g. YAML node) to load from. Must be the same
+     *                 Source type that was used when the type info was initialized 
+     *                 (i.e. the Source parameter of ComponentTypeManager).
+     * componentData = Component to load into, as a byte array.
+     * source        = Source to load the component from (e.g. a component stored as YAML).
+     * entityManager = Entity manager (needed to get access to resource management -
+     *                 to initialize any resource handles in the component).
+     * errorLog      = A string to write any loading errors to. If there are no errors,
+     *                 this is not touched.
+     */
+    bool loadComponent(Source, Policy)(ubyte[] componentData, ref Source source,
+                                       EntityManager!Policy entityManager,
+                                       ref string errorLog)
         @trusted nothrow const
     {
         assert(typeid(Source) is sourceType_,
@@ -624,7 +634,8 @@ public:
         // loading fails.
         foreach(ref p; properties_)
         {
-            if(!p.loadProperty(componentData, cast(void*)&source, getHandle, errorLog))
+            if(!p.loadProperty(componentData, cast(void*)&source, 
+                               &entityManager.rawResourceHandle, errorLog))
             {
                 return false;
             }

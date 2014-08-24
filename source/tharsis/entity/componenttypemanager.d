@@ -247,11 +247,12 @@ enum maxSourceBytes = 512;
 ///      *
 ///      * (Get a value from a Source that represents an array of Sources)
 ///      *
+///      * Can only be called on if the Source is a sequence (see isSequence()).
+///      *
 ///      * Params:  index  = Index of the Source to get in the sequence.
 ///      *          target = Target to read the Source to.
 ///      *
-///      * Returns: true on success, false on failure. E.g. if this Source is
-///      *          a not a sequence, or the index is out of range.
+///      * Returns: true on success, false if index is out of range.
 ///      */
 ///     bool getSequenceValue(size_t index, out TestSource target) @safe nothrow
 ///     {
@@ -263,11 +264,12 @@ enum maxSourceBytes = 512;
 ///      *
 ///      * (Get a value from a Source that maps strings to Sources)
 ///      *
-///      * Params:  key    = Key identifying the nested Source.
-///      *          target = Target to read the nested Source to.
+///      * Can only be called on if the Source is a mapping (see isMapping()).
 ///      *
-///      * Returns: true on success, false on failure. E.g. if this Source is
-///      *          a not a mapping, or if there is no such key.
+///      * Params: key    = Key identifying the nested source..
+///      *         target = Target to read the nested source to.
+///      *
+///      * Returns: true on success, false if there is no such key in the mapping.
 ///      */
 ///     bool getMappingValue(string key, out TestSource target) @safe nothrow
 ///     {
@@ -278,6 +280,18 @@ enum maxSourceBytes = 512;
 ///     bool isScalar() @safe nothrow const
 ///     {
 ///         assert(false);
+///     }
+///
+///     /// Is this a sequence source? A sequence acts as an array of values of various types.
+///     bool isSequence() @safe nothrow const
+///     {
+///         return yaml_.isSequence();
+///     }
+///
+///     /// Is this a mapping source? A mapping acts as an associative array of various types.
+///     bool isMapping() @safe nothrow const
+///     {
+///         return yaml_.isMapping();
 ///     }
 /// }
 /// --------------------
@@ -362,17 +376,18 @@ private:
     ComponentTypeInfo[maxComponentTypes!Policy] componentTypeInfoStorage_;
 
     /// Loads the Source objects from which entities are loaded.
-    Source.Loader sourceLoader;
+    Source.Loader sourceLoader_;
 
     /// Set to true after all builtin component types are registered.
     bool builtinRegistered_ = false;
 
 public:
     /// Construct a ComponentTypeManager.
-    this(Source.Loader sourceLoader) @safe pure nothrow
+    this(Source.Loader loader) @safe pure nothrow
     {
         registerComponentTypes!BuiltinComponents;
         builtinRegistered_ = true;
+        sourceLoader_      = loader;
     }
 
     /// Register specified component types.
@@ -428,11 +443,6 @@ public:
         }
     }
 
-    /// Load a Source struct to read components from.
-    Source loadSource(const string name) @safe nothrow
-    {
-        return sourceLoader.loadSource(name);
-    }
     /** Get the Source loader used to load components from Sources.
      *
      * Note that while it is possible to modify the loader, doing so will be at your own
