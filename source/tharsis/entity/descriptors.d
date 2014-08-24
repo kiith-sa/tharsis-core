@@ -248,12 +248,11 @@ public:
      * This should be used to initialize the resource described by this
      * descriptor.
      */
-    Source source(Source, Policy)(ComponentTypeManager!(Source, Policy) componentTypeManager)
-        @safe nothrow
+    Source source(Source)(ref Source.Loader loader) @safe nothrow
     {
         with(Type) final switch(type_)
         {
-            case String:        return componentTypeManager.loadSource(stringBackend_.fileName);
+            case String:        return loader.loadSource(stringBackend_.fileName);
             case SourceWrapper: return sourceBackend_.source!Source;
         }
     }

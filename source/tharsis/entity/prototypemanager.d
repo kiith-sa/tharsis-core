@@ -501,7 +501,7 @@ public:
         // prototype is defined. The prototype manager gets the prototype source by
         // loading source from that file.
         super(componentTypeManager, entityManager,
-              (ref Descriptor d) => d.source(componentTypeManager));
+              (ref Descriptor d) => d.source!Source(componentTypeManager.sourceLoader));
     }
 }
 unittest

@@ -433,6 +433,13 @@ public:
     {
         return sourceLoader.loadSource(name);
     }
+    /** Get the Source loader used to load components from Sources.
+     *
+     * Note that while it is possible to modify the loader, doing so will be at your own
+     * risk; ComponentTypeManager doesn't expect the loader to change.
+     */
+    ref Source.Loader sourceLoader() @safe nothrow @nogc { return sourceLoader_; }
+
 
 protected:
     final override ComponentTypeInfo[] componentTypeInfoStorage()
