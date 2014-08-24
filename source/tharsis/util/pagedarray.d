@@ -346,6 +346,19 @@ public:
         return result;
     }
 
+    /// Gets a slice of exactly the specified size.
+    ///
+    /// If the current page doesn't have enough bytes, adds a new page and
+    /// returns a slice to it.
+    ///
+    /// Params: bytes = Size of the slice to get in bytes.
+    ///
+    /// Note: The slice must be locked by lockBytes() before another call to getBytes().
+    ubyte[] getBytesExactly(const size_t bytes) @safe nothrow
+    {
+        return getBytes(bytes)[0 .. bytes];
+    }
+
     /// Lock (mark as immutable) a slice returned by getBytes().
     ///
     /// After writing data, this can be used to mark that data immutable.
