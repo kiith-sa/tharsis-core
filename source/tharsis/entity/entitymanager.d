@@ -285,15 +285,17 @@ public:
     alias Context = EntityAccess!(typeof(this));
 
 package:
-    /// Get a resource handle without compile-time type information.
-    ///
-    /// Params: type       = Type of the resource. There must be a resource manager 
-    ///                      managing resources of this type.
-    ///         descriptor = A void pointer to the descriptor of the resource. The 
-    ///                      actual type of the descriptor must be the Descriptor type
-    ///                      of the resource type.
-    ///
-    /// Returns: A raw handle to the resource.
+    /** Get a resource handle without compile-time type information.
+     *
+     * Params: 
+     *
+     * type       = Type of the resource. There must be a resource manager managing
+     *              resources of this type.
+     * descriptor = A void pointer to the descriptor of the resource. The actual type of
+     *              the descriptor must be the Descriptor type of the resource type.
+     *
+     * Returns: A raw handle to the resource.
+     */
     RawResourceHandle rawResourceHandle(TypeInfo type, void* descriptor) nothrow
     {
         foreach(manager; resourceManagers_) if(manager.managedResourceType is type)

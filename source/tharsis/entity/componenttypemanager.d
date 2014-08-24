@@ -117,8 +117,8 @@ protected:
     ///
     /// This is used because the derived class (e.g. ComponentTypeManager) will
     /// allocate the component type info storage by itself depending on its
-    /// parameters (e.g. Policy). (We could just make componentTypeInfo_ 
-    /// protected, but that would allow ComponentTypeManagers that don't 
+    /// parameters (e.g. Policy). (We could just make componentTypeInfo_
+    /// protected, but that would allow ComponentTypeManagers that don't
     /// initialize it).
     ComponentTypeInfo[] componentTypeInfoStorage() @safe pure nothrow
     {
@@ -146,7 +146,7 @@ enum maxSourceBytes = 512;
 /// ComponentTypeManager that will be passed to the constructor of an EntityManager.
 ///
 /// Params: Source = A struct type to read components from. This may be for example a
-///                  wrapped YAML or XML node, or an INI section. $(B tharsis-full) 
+///                  wrapped YAML or XML node, or an INI section. $(B tharsis-full)
 ///                  provides a Source implementation based on YAML. See below if you
 ///                  need to create your own implementation.
 ///         Policy = Specifies compile-time parameters such as the maximum number of
@@ -174,11 +174,10 @@ enum maxSourceBytes = 512;
 ///
 /// Limitations of a Source struct:
 ///
-/// sizeof of a Source struct can be at most maxSourceBytes (currently set to 512).
-/// A Source struct must be copyable; if it includes nested data 
-/// (such as JSON/XML/YAML subnodes), copying a Source must either also copy this nested
-/// data or share it by using e.g. reference counting or garbage collector managed
-/// storage.
+/// sizeof of a Source can be at most maxSourceBytes (512 at the moment). A Source must
+/// be copyable; if it includes nested data (such as JSON/XML/YAML subnodes), copying a
+/// Source must either also copy this nested data or share it by using e.g. reference
+/// counting or garbage collector managed storage.
 ///
 /// Skeleton of a Source struct:
 /// --------------------
@@ -219,7 +218,7 @@ enum maxSourceBytes = 512;
 ///
 ///     /** If true, the Source is 'null' and doesn't store anything.
 ///      *
-///      * A null Source may be returned when loading a Source fails, e.g. from 
+///      * A null Source may be returned when loading a Source fails, e.g. from
 ///      * Loader.loadSource().
 ///      */
 ///     bool isNull() @safe nothrow const
@@ -258,6 +257,7 @@ enum maxSourceBytes = 512;
 ///     {
 ///         assert(false);
 ///     }
+///
 ///
 ///     /** Get a nested Source from a 'mapping' Source.
 ///      *
@@ -435,7 +435,7 @@ public:
     }
 
 protected:
-    final override ComponentTypeInfo[] componentTypeInfoStorage() 
+    final override ComponentTypeInfo[] componentTypeInfoStorage()
         @safe pure nothrow
     {
         return componentTypeInfoStorage_[];

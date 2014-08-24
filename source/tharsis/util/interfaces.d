@@ -7,11 +7,10 @@
 module tharsis.util.interfaces;
 
 
-/// Any class implementing this interface supports foreach through the opApply()
-/// method.
+/// Any class implementing this interface supports foreach through the opApply() method.
 interface Foreachable(Item)
 {
-    public:
-        /// The opApply (foreach) method to implement.
-        int opApply(int delegate(ref Item) dg);
+public:
+    /// The opApply (foreach) method to implement.
+    int opApply(int delegate(ref Item) dg);
 }

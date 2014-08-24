@@ -211,8 +211,7 @@ public:
         assert(!locked_, "Providing memory to a locked EntityPrototype");
         assert(storage_ == null,
                "Trying to provide memory to an EntityPrototype that already has memory");
-        assert(memory.length % 16 == 0,
-               "EntityPrototype memory must be divisible by 16");
+        assert(memory.length % 16 == 0, "EntityPrototype memory must be divisible by 16");
 
         storage_          = memory;
         components_       = memory[0 .. 0];
@@ -412,7 +411,7 @@ struct EntityPrototypeResource
 {
     /// Described either by prototype filename or a prototype written directly in
     /// a Source.
-    alias DefaultDescriptor!EntityPrototypeResource Descriptor;
+    alias Descriptor = DefaultDescriptor!EntityPrototypeResource;
 
     /// No default construction.
     @disable this();
@@ -428,7 +427,7 @@ struct EntityPrototypeResource
     /// The stored prototype.
     EntityPrototype prototype;
 
-    /// Descriptor of the prototype (i.e. its file name).
+    /// Descriptor of the prototype (e.g. its file name).
     Descriptor descriptor;
 
     /// Current state of the resource,

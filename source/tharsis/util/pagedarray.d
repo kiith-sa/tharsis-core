@@ -320,7 +320,7 @@ public:
     /// If the current page doesn't have enough bytes, adds a new page and
     /// returns a slice to it.
     ///
-    /// Params: minBytes = Minimum size of the returned slice in bytes.
+    /// Params: minBytes = Minimum size of the slice to get in bytes.
     ///
     /// Note: The slice must be locked by lockBytes() before another call to
     ///       getBytes().
