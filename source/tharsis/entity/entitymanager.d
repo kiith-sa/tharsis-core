@@ -497,7 +497,7 @@ private:
         enum noFuture = !hasFutureComponent!P;
 
         // All overloads of the process() method in the process.
-        alias overloads     = processOverloads!P;
+        alias overloads = processOverloads!P;
 
         static if(!noFuture)
         {
@@ -517,16 +517,15 @@ private:
         // A function executing the process during one frame.
         //
         // Iterate past entities. If an entity has all past components in a signature of
-        // any P.process() overload, call that overload, passing refs to those 
-        // components and a ref/ptr to a future component of type P.FutureComponent.
+        // any P.process() overload, call that overload, passing refs to those components
+        // and a ref/ptr to a future component of type P.FutureComponent.
         //
-        // Specific overloads have precedence over more general. For example, if there
-        // are overloads process(A) and process(A, B), and an entity has components A
-        // and B, the latter overload is called.
+        // Specific overloads have precedence over more general. For example, if there are
+        // overloads process(A) and process(A, B), and an entity has components A and B,
+        // the latter overload is called.
         static void runProcess(EntityManager self, P process) nothrow
         {
-            // If the process has a 'preProcess' method, call it before processing any
-            // entities.
+            // If the process has a 'preProcess' method, call it before processing any entities.
             static if(hasMember!(P, "preProcess")) { process.preProcess(); }
 
             // Iterate over all alive entities, executing the process on those that
@@ -552,8 +551,7 @@ private:
                 }.format(p[0], p[1])).join("else ").outdent);
             }
 
-            // If the process has a 'postProcess' method, call it after processing
-            // entities.
+            // If the process has a 'postProcess' method, call it after processing entities.
             static if(hasMember!(P, "postProcess")) { process.postProcess(); }
         }
 
