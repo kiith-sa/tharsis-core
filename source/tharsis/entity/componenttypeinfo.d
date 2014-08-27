@@ -32,19 +32,20 @@ package enum ushort maxBuiltinComponentTypes = 8;
 /// Maximum possible number of component types in the 'defaults' package.
 package enum ushort maxDefaultsComponentTypes = 24;
 
-/// Number of component type IDs reserved for Tharsis builtins and the defaults package.
-///
-/// Component type IDs of user-defined components should use userComponentTypeID to
-/// avoid collisions with builtin components.
-enum ushort maxReservedComponentTypes =
-    maxBuiltinComponentTypes + maxDefaultsComponentTypes;
+/** Number of component type IDs reserved for Tharsis builtins and the defaults package.
+ *
+ * Component type IDs of user-defined components should use userComponentTypeID to
+ * avoid collisions with builtin components.
+ */
+enum ushort maxReservedComponentTypes = maxBuiltinComponentTypes + maxDefaultsComponentTypes;
 
-/// Generate a component type ID for a user-defined component type.
-///
-/// Params: base = The base component type ID specified by the user. Must be different
-///                for every user-defined component type and must be less than the
-///                maxUserComponentTypes enum in the Policy parameter of the
-///                EntityManager; by default, this is 64.
+/** Generate a component type ID for a user-defined component type.
+ *
+ * Params: base = The base component type ID specified by the user. Must be different
+ *                for every user-defined component type and must be less than the
+ *                maxUserComponentTypes enum in the Policy parameter of EntityManager;
+ *                by default, this is 64.
+ */
 enum userComponentTypeID(ushort base) = maxBuiltinComponentTypes +
                                         maxDefaultsComponentTypes + base;
 
@@ -110,55 +111,58 @@ mixin template validateComponent(Component)
                   "future with a special annotation, but this is not implemented yet");
 }
 
-/// Used as an user-defined attribute for component properties to override the
-/// name of the property in the Source it's loaded from (e.g. YAML).
+/** Used as an user-defined attribute for component properties to override the
+ * name of the property in the Source it's loaded from (e.g. YAML).
+ */
 struct PropertyName
 {
     /// The name of the property in a Source such as YAML.
     string name;
 }
 
-/// Stores a component of any component type as raw data.
-///
-/// This is a dumb struct. The code that constructs a RawComponent must make
-/// sure the type and data used actually makes sense (also e.g. that data size
-/// matches the type).
+/** Stores a component of any component type as raw data.
+ *
+ * This is a dumb struct. The code that constructs a RawComponent must make sure the
+ * type and data used actually makes sense (also e.g. that data size matches the type).
+ */
 struct RawComponent
 {
 private:
     /// Type ID of the component.
     ushort typeID_ = nullComponentTypeID;
-    /// Slice containing untyped raw data.
-    ///
-    /// The slice should point to memory owned externally, e.g. to memory of an
-    /// EntityPrototype.
+    /** Slice containing untyped raw data.
+     *
+     * The slice should point to memory owned externally, e.g. to memory of an EntityPrototype.
+     */
     ubyte[] componentData_;
 
 public:
+    @safe pure nothrow @nogc:
+
     /// Get an ID specifying type of the component
-    ushort typeID() @safe const pure nothrow {return typeID_;}
+    ushort typeID() const { return typeID_; }
 
     /// Get the component as raw data.
-    inout(ubyte)[] componentData() @safe pure nothrow inout
-    {
-        return componentData_;
-    }
+    inout(ubyte)[] componentData() inout { return componentData_; }
 
-    /// Is this a null component?
-    ///
-    /// Some functions may return a null component on error or if no component
-    /// was found.
-    bool isNull() @safe const pure nothrow
     {
         return typeID_ == nullComponentTypeID;
     }
+
+    /** Is this a null component?
+     *
+     * Some functions may return a null component on error or if no component was found.
+     */
+    bool isNull() const { return typeID_ == nullComponentTypeID; }
 }
 
-/// An immutable equivalent of RawComponent.
-///
-/// Must be a separate type to avoid construction issues.
-///
-/// See_Also: RawComponent
+/**
+ * An immutable equivalent of RawComponent.
+ *
+ * Must be a separate type to avoid construction issues.
+ *
+ * See_Also: RawComponent
+ */
 struct ImmutableRawComponent
 {
 public:
@@ -181,32 +185,31 @@ struct ComponentPropertyInfo
     mixin(NonCopyable);
 
 private:
-    /// A function type to load the property from a source (e.g. YAML).
-    ///
-    /// Params: ubyte[]:          Component to load the property into, passed as a raw
-    ///                           byte array.
-    ///         void*:            Data source to load the property from, e.g. a YAML
-    ///                           node defining the component. Although we use a void
-    ///                           pointer, the source must match the type of the source
-    ///                           used with the construct() function that created this
-    ///                           ComponentPropertyInfo.
-    ///         GetResourceHandle A delegate that, given a resource type ID and
-    ///                           descriptor, returns a raw resource handle. Used to
-    ///                           initialize properties that are resource handles.
-    ///                           Always passed but not every property will use this.
-    ///         string            A string to write any loading errors to. If there are
-    ///                           no errors, this is not touched.
-    ///
-    /// Returns: true if the property was successfully loaded, false otherwise.
-    alias LoadProperty =
-        bool function(ubyte[], void*, GetResourceHandle, ref string) nothrow;
+    /** A function type to load the property from a source (e.g. YAML).
+     *
+     * Params:
+     *
+     * ubyte[]:          Component with the property to load, as a raw byte array.
+     * void*:            Source to load the property from, e.g. a YAML node defining the
+     *                   component. Although we use a void pointer, the source must 
+     *                   match the type of the source used with the construct() function
+     *                   that created this ComponentPropertyInfo.
+     * GetResourceHandle A deleg that, given a resource type ID and descriptor, returns
+     *                   a raw resource handle. Used to initialize properties that are
+     *                   resource handles. Always passed but not every property will use
+     *                   this.
+     * string            A string to write any loading errors to. If there are no 
+     *                   errors, this is not touched.
+     *
+     * Returns: true if the property was successfully loaded, false otherwise.
+     */
+    alias LoadProperty = bool function(ubyte[], void*, GetResourceHandle, ref string) nothrow;
 
     /// A function type to add the value of this property in right to the value in left.
     ///
     /// See_Also: addRightToLeft
-    alias AddRightToLeft =
-        void function(ref RawComponent left, ref const(RawComponent) right)
-            @safe pure nothrow;
+    alias AddRightToLeft = void function(ref RawComponent left, ref const(RawComponent) right)
+                           @safe pure nothrow;
 
 
     /// The function to load the property.
@@ -495,10 +498,11 @@ private:
     ComponentPropertyInfo[] properties_;
 
 public:
-    /// A range used to iterate over type information of properties 
-    /// (aka fields or data members) of a Component type.
-    ///
-    /// The range element type is ComponentPropertyInfo.
+    /** A range used to iterate over type information of properties (aka fields or data
+     * members) of a Component type.
+     *
+     * The range element type is ComponentPropertyInfo.
+     */
     //
     // Currently this works as a filter that iterates only over entities with
     // a specified attribute.
@@ -511,10 +515,11 @@ public:
         /// A slice of all properties of the component type.
         const(ComponentPropertyInfo)[] properties_;
 
-        /// We only iterate over properties that have a this user-defined attribute.
-        ///
-        /// E.g. if filterAttribute_ is "relative", the range will iterate over
-        /// '@("relative") float x' but not over 'float x'
+        /** We only iterate over properties that have a this user-defined attribute.
+         *
+         * E.g. if filterAttribute_ is "relative", the range will iterate over
+         * '@("relative") float x' but not over 'float x'
+         */
         string filterAttribute_;
 
     public:
@@ -537,12 +542,12 @@ public:
         bool empty() @safe pure nothrow const { return properties_.empty(); }
 
     private:
-        /// Construct a ComponentProperty iterating over properties with specified
-        /// attribute.
-        ///
-        /// Params: properties = A slice of all properties of the component type.
-        ///         attribute  = Only the properties with this user-defined attribute
-        ///                      will be iterated by the range.
+        /** Construct a ComponentProperty iterating over properties with specified attrib.
+         *
+         * Params: properties = A slice of all properties of the component type.
+         *         attribute  = Only the properties with this user-defined attribute
+         *                      will be iterated by the range.
+         */
         this(const(ComponentPropertyInfo)[] properties, string attribute)
             @safe pure nothrow
         {
@@ -551,8 +556,8 @@ public:
             skipToNextMatch();
         }
 
-        /// Skip to the next property with user-defined attribute filterAttribute_
-        /// or to the end of the range.
+        /// Skip to the next property with user-defined attribute filterAttribute_ or to
+        /// the end of the range.
         void skipToNextMatch() @safe pure nothrow
         {
             while(!properties_.empty &&
@@ -563,41 +568,41 @@ public:
         }
     }
 
-    /// Get a range of all properties in the component type with specified user-defined
-    /// attribute.
-    ///
-    /// Example:
-    /// --------------------
-    /// struct PhysicsComponent
-    /// {
-    ///     enum ushort ComponentTypeID = userComponentTypeID!2;
-    ///
-    ///     float mass;
-    ///     @("relative") float x;
-    ///     @("relative") float y;
-    ///     @("relative") float z;
-    /// }
-    ///
-    /// // ComponentTypeInfo info; // type info about PhysicsComponent
-    ///
-    /// foreach(ref propertyInfo; info.properties("relative"))
-    /// {
-    ///     // Will iterate over ComponentPropertyInfo for 'float x', 'float y' and
-    ///     // 'float z'
-    /// }
-    ///
-    /// --------------------
+   /** Get a range of all properties in the component type with specified user-defined
+    * attribute.
+    *
+    * Example:
+    * --------------------
+    * struct PhysicsComponent
+    * {
+    *     enum ushort ComponentTypeID = userComponentTypeID!2;
+    *
+    *     float mass;
+    *     @("relative") float x;
+    *     @("relative") float y;
+    *     @("relative") float z;
+    * }
+    *
+    * // ComponentTypeInfo info; // type info about PhysicsComponent
+    *
+    * foreach(ref propertyInfo; info.properties("relative"))
+    * {
+    *     // Will iterate over ComponentPropertyInfo for 'float x', 'float y' and
+    *     // 'float z'
+    * }
+    *
+    * --------------------
+    */
     ComponentPropertyRange properties(string attribute)()
         @safe pure nothrow const
     {
-        //TODO we may build a range wrapping an array of properties with specified
-        //     attribute, and cache this range for reuse between calls. This would be
-        //     faster but more memory-intensive than the current ComponentPropertyRange
-        //     which filters on-the-fly. To avoid issues between threads we can use a
-        //     static buffer (static is per-thread and this is a template method so
-        //     there'd be a separate buffer per attribute - but we'd need separate
-        //     entries for every component type. We may evebuild all these arrays at
-        //     startup since we know which attributes are being used at compile-time).
+        //TODO Maybe build a range storing an array of properties with specified attrib,
+        //     and cache the range between calls. Would be faster but use more memory
+        //     than ComponentPropertyRange, which filters on-the-fly. To avoid threading
+        //     issues we can use a static array (static is per-thread and this is a
+        //     template func so there'd be a separate array per attrib - but we'd need
+        //     separate entries per component type. We may even build all these arrays
+        //     at startup since we know which attribs are being used at compile-time).
         return ComponentPropertyRange(properties_, attribute);
     }
 
@@ -607,7 +612,7 @@ public:
     import tharsis.entity.entitymanager;
     /** Load a component of this component type.
      *
-     * Params:  
+     * Params:
      *
      * Source        = Type of Source (e.g. YAML node) to load from. Must be the same
      *                 Source type that was used when the type info was initialized 
@@ -620,8 +625,7 @@ public:
      *                 this is not touched.
      */
     bool loadComponent(Source, Policy)(ubyte[] componentData, ref Source source,
-                                       EntityManager!Policy entityManager,
-                                       ref string errorLog)
+                                       EntityManager!Policy entityManager, ref string errorLog)
         @trusted nothrow const
     {
         assert(typeid(Source) is sourceType_,
@@ -630,12 +634,12 @@ public:
 
         assert(componentData.length == size,
                "Size of component to load doesn't match its component type");
+        auto getHandle = &entityManager.rawResourceHandle;
         // Try to load all the properties. If we fail to load any single property,
         // loading fails.
         foreach(ref p; properties_)
         {
-            if(!p.loadProperty(componentData, cast(void*)&source, 
-                               &entityManager.rawResourceHandle, errorLog))
+            if(!p.loadProperty(componentData, cast(void*)&source, getHandle, errorLog))
             {
                 return false;
             }
@@ -645,10 +649,11 @@ public:
     }
 
 private:
-    /// Construct component type information for specified component type.
-    ///
-    /// Params:  Source    = Source the components will be loaded from (e.g. YAML).
-    ///          Component = Component type to generate info about.
+    /** Construct component type information for specified component type.
+     *
+     * Params:  Source    = Source the components will be loaded from (e.g. YAML).
+     *          Component = Component type to generate info about.
+     */
     this(Source, Component)() @safe pure nothrow
     {
         mixin validateComponent!Component;
@@ -685,13 +690,14 @@ private:
 
 private:
 
-/// Is Component.property a resource handle?
-///
-/// Params: Component = A Component type.
-///         property  = Name of a property (data member) of Component.
-///
-/// Returns: true if the property of Component with specified name is a resource handle,
-///          false otherwise.
+/** Is Component.property a resource handle?
+ *
+ * Params: Component = A Component type.
+ *         property  = Name of a property (data member) of Component.
+ *
+ * Returns: true if the property of Component with specified name is a resource handle,
+ *          false otherwise.
+ */
 bool isResourceHandle(Component, string property)()
 {
     mixin(q{
