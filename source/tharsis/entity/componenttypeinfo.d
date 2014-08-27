@@ -386,23 +386,23 @@ private:
     /// See_Also: LoadProperty
     static bool implementLoadProperty
         (Source, Component, string fieldNameInternal)
-        (ubyte[] componentBuffer, void* sourceVoid, GetResourceHandle getHandle,
+        (ubyte[] componentRaw, void* sourceRaw, GetResourceHandle getHandle,
          ref string errorLog) nothrow
     {
-        assert(componentBuffer.length == Component.sizeof,
+        assert(componentRaw.length == Component.sizeof,
                "Size of component buffer doesn't match its type");
 
-        enum string componentName = Component.stringof;
+        enum string compName = Component.stringof;
 
-        // The component is stored in a mapping; the property is stored in a
-        // Source that is one of the values in that mapping.
+        // The component is stored in a mapping; the property in a Source that is one of
+        // the values in that mapping.
         Source fieldSource;
-        Source* source = cast(Source*)sourceVoid;
+        Source* source = cast(Source*)sourceRaw;
         import std.exception;
         if(!source.isMapping)
         {
             errorLog ~= "'%s' failed to load: Component source is not a mapping\n\n"
-                        .format(componentName).assumeWontThrow;
+                        .format(compName).assumeWontThrow;
             return false;
         }
 
@@ -415,19 +415,23 @@ private:
                         .format(componentName, fieldName).assumeWontThrow;
             return false;
         }
+        // Is this property a resource handle?
+        enum isResource = isResourceHandle!(Component, fieldNameInternal);
 
         // Pointer to the field in the component.
         mixin(q{
-        auto fieldPtr = &((cast(Component*)componentBuffer.ptr).%s);
+        auto fieldPtr = &((cast(Component*)componentRaw.ptr).%s);
         }.format(fieldNameInternal));
 
         alias typeof(*fieldPtr) FieldType;
 
-        // If a component property is a resource handle, the Source contains
-        // a resource descriptor. We need to load the descriptor and then get
-        // the handle by getHandle(), which will create a resource with the
-        // correct resource manager and return a handle to it.
-        static if(isResourceHandle!(Component, fieldNameInternal))
+
+        enum failedToLoad = "'%s' failed to load: Property '%s'".format(compName, fieldName)
+                          ~ " does not have expected type '%s'\n\n";
+        // If a property is a resource handle, source contains a resource descriptor. We
+        // load the descriptor and init the handle by getHandle(), which will create a
+        // resource with the correct resource manager and return a handle to it.
+        static if(isResource)
         {
             alias Resource   = FieldType.Resource;
             alias Descriptor = Resource.Descriptor;
@@ -437,9 +441,7 @@ private:
             Descriptor desc;
             if(!Descriptor.load(fieldSource, desc))
             {
-                errorLog ~= "'" ~ componentName ~ "' failed to load: Property '" ~
-                            fieldName ~ "' does not have expected type '" ~
-                            Descriptor.stringof ~ "'\n\n";
+                errorLog ~= failedToLoad.format(Descriptor.stringof).assumeWontThrow;
                 return false;
             }
 
@@ -449,9 +451,7 @@ private:
         // By default, properties are stored in the Source directly as values.
         else if(!fieldSource.readTo(*fieldPtr))
         {
-            errorLog ~= "'" ~ componentName ~ "' failed to load: Property '" ~
-                        fieldName ~ "' does not have expected type '" ~
-                        FieldType.stringof ~ "'\n\n";
+            errorLog ~= failedToLoad.format(FieldType.stringof).assumeWontThrow;
             return false;
         }
 
