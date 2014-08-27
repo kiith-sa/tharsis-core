@@ -56,17 +56,17 @@ private:
     @disable this(this);
 
 public:
-    /// Access a past (non-multi) component in _any_ past entity.
-    ///
-    /// This is a relatively slow way to access components, but allows to access
-    /// components of any entity. Should only be used when necessary.
-    ///
-    /// Params: Component = Type of component to access.
-    ///         entity    = ID of the entity to access. Must be an ID of an existing
-    ///                     past entity.
-    ///
-    /// Returns: Pointer to the past component if the entity contains such a component;
-    ///          NULL otherwise.
+    /** Access a past (non-multi) component in _any_ past entity.
+     *
+     * This is a relatively slow way to access components, but allows to access components
+     * of any entity. Should only be used when necessary.
+     *
+     * Params: Component = Type of component to access.
+     *         entity    = ID of the entity to access. Must be an ID of an existing past entity.
+     *
+     * Returns: Pointer to the past component if the entity contains such a component;
+     *          NULL otherwise.
+     */
     immutable(Component)* pastComponent(Component)(const EntityID entity) nothrow const
         if(!isMultiComponent!Component)
     {
@@ -74,15 +74,16 @@ public:
         return raw.isNull ? null : cast(immutable(Component)*)raw.componentData.ptr;
     }
 
-    /// Access a past (non-multi) component in _any_ past entity as raw data.
-    ///
-    /// Params: typeID = Type ID of component to access. Must be an ID of a registered
-    ///                  component type.
-    ///         entity = ID of the entity to access. Must be an ID of an existing past
-    ///                  entity.
-    ///
-    /// Returns: A RawComponent representation of the past component if the entity
-    ///          contains such a component; NULL RawComponent otherwise.
+    /** Access a past (non-multi) component in _any_ past entity as raw data.
+     *
+     * Params:
+     *
+     * typeID = Type ID of component to access. Must be an ID of a registered component type.
+     * entity = ID of the entity to access. Must be an ID of an existing past entity.
+     *
+     * Returns: A RawComponent representation of the past component if the entity contains
+     *          such a component; NULL RawComponent otherwise.
+     */
     ImmutableRawComponent rawPastComponent(const ushort typeID, const EntityID entity)
         nothrow const
     {
@@ -133,10 +134,7 @@ public:
     }
 
     /// Get the entity ID of the entity currently being processed.
-    Entity currentEntity() @safe pure nothrow const
-    {
-        return pastEntities_[pastEntityIndex_];
-    }
+    Entity currentEntity() @safe pure nothrow const { return pastEntities_[pastEntityIndex_]; }
 
 package:
     /// Construct an EntityAccess for entities of specified entity manager.
@@ -217,8 +215,7 @@ private:
     ///
     /// NoDuplicates! is used to avoid having two elements for the same type if the
     /// process reads a builtin component type.
-    alias NoDuplicates!(TypeTuple!(InComponents, BuiltinComponents))
-        ProcessedComponents;
+    alias ProcessedComponents = NoDuplicates!(TypeTuple!(InComponents, BuiltinComponents));
 
     /// (CTFE) Get name of component buffer for specified component type.
     static string bufferName(C)() @trusted
