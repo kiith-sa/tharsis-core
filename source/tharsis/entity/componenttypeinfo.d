@@ -145,8 +145,19 @@ public:
     /// Get the component as raw data.
     inout(ubyte)[] componentData() inout { return componentData_; }
 
+    /** Read the component as a concrete component type.
+     *
+     * Params:
+     *
+     * Component = Component type to read the component as. Must be the actual type of
+     *             the RawComponent (i.e. its ComponentTypeID must match typeID of this
+     *             RawComponent).
+     */
+    ref Component as(Component)() @trusted pure nothrow @nogc 
     {
-        return typeID_ == nullComponentTypeID;
+        assert(typeID_ == Component.ComponentTypeID,
+               "Trying to read a RawComponent as the incorrect concrete component type");
+        return *cast(Component*)componentData_.ptr;
     }
 
     /** Is this a null component?
