@@ -369,8 +369,6 @@ private:
     }
 
 
-    // TODO if a property has an explicit default value, allow it to be unspecified
-    //      and set it to the default value here.
     /// This template generates an implementation of loadProperty loading property
     /// fieldNameInternal of component type Component from source type Source.
     ///
@@ -406,15 +404,6 @@ private:
             return false;
         }
 
-        // The property name used when loading from the Source. May be different
-        // from the name of the Component's property.
-        enum string fieldName = fieldNameSource!(Component, fieldNameInternal);
-        if(!source.getMappingValue(fieldName, fieldSource))
-        {
-            errorLog ~= "'%s' falied to load: Property '%s' not found\n\n"
-                        .format(componentName, fieldName).assumeWontThrow;
-            return false;
-        }
         // Is this property a resource handle?
         enum isResource = isResourceHandle!(Component, fieldNameInternal);
 
@@ -425,6 +414,28 @@ private:
 
         alias typeof(*fieldPtr) FieldType;
 
+        // Property name used when loading from the Source. May be different from the
+        // name of the Component's property.
+        enum string fieldName = fieldNameSource!(Component, fieldNameInternal);
+        if(!source.getMappingValue(fieldName, fieldSource))
+        {
+            static if(isResource)
+            {
+                errorLog ~= "'%s' falied to load: Property '%s' not found\n\n"
+                            .format(compName, fieldName).assumeWontThrow;
+                return false;
+            }
+            // If the property is not found in the Source, and the property is not a
+            // resource handle, default-initialize it.
+            else
+            {
+                import tharsis.util.debughacks;
+                mixin(q{
+                *fieldPtr = Component.init.%s;
+                }.format(fieldNameInternal));
+                return true;
+            }
+        }
 
         enum failedToLoad = "'%s' failed to load: Property '%s'".format(compName, fieldName)
                           ~ " does not have expected type '%s'\n\n";
