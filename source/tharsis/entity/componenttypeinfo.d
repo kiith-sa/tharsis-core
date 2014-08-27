@@ -182,7 +182,7 @@ public:
     alias self_ this;
 
     /// Construct an ImmutableRawComponent with specified type and data.
-    this(ushort typeID, immutable(ubyte)[] componentData) @safe pure nothrow
+    this(ushort typeID, immutable(ubyte)[] componentData) @safe pure nothrow @nogc
     {
         self_ = immutable(RawComponent)(typeID, componentData);
     }
