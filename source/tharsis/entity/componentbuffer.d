@@ -16,15 +16,13 @@ import tharsis.entity.componenttypeinfo;
 import tharsis.util.mallocarray;
 
 
-
-/// A buffer storing all (either past or future) components of one component
-/// type.
-///
-/// The components are stored as plain bytes. Components are written by
-/// accessing unused memory with unusedSpace(), writing the components, and
-/// "comitting" them with commitComponents(). If there's not enough space for
-/// new components, the buffer must be reallocated with
-/// reserveComponentSpace().
+/** A buffer storing all (either past or future) components of one component type.
+ *
+ * The components are stored as plain bytes. Components are written by accessing unused
+ * memory with unusedSpace(), writing the components, and "comitting" them with
+ * commitComponents(). If there's not enough space for new components, the buffer must be
+ * reallocated with reserveComponentSpace().
+ */
 struct ComponentBuffer(Policy)
 {
 private:
@@ -64,8 +62,8 @@ public:
     ///
     /// Params: componentTypeID = ID of the type of stored components.
     ///         componentSize   = Size of a single stored component.
-    void enable(const ushort componentTypeID,
-                const size_t componentSize) @safe pure nothrow
+    void enable(const ushort componentTypeID, const size_t componentSize)
+        @safe pure nothrow @nogc
     {
         assert(!enabled_, "Trying to enable a component buffer that's "
                           "already enabled. Maybe two components with "
@@ -79,7 +77,7 @@ public:
     ///
     /// Components can be written to this memory, and then committed using
     /// commitComponents().
-    ubyte[] uncommittedComponentSpace() pure nothrow @safe
+    ubyte[] uncommittedComponentSpace() pure nothrow @safe @nogc
     {
         assert(enabled_, "Can't get data of a buffer that is not enabled");
         return storage_[componentSize_ * committedComponents_ .. $];
@@ -87,14 +85,14 @@ public:
 
     /// Get the memory used for the _committed_ components, i.e. those that
     /// have been written and exist as a part of one or another entity.
-    const(ubyte)[] committedComponentSpace() const pure nothrow @safe
+    const(ubyte)[] committedComponentSpace() const pure nothrow @safe @nogc
     {
         assert(enabled_, "Can't get data of a buffer that is not enabled");
         return storage_[0 .. componentSize_ * committedComponents_];
     }
 
     /// Ditto.
-    immutable(ubyte)[] committedComponentSpace() immutable pure nothrow @safe
+    immutable(ubyte)[] committedComponentSpace() immutable pure nothrow @safe @nogc
     {
         assert(enabled_, "Can't get data of a buffer that is not enabled");
         return storage_[0 .. componentSize_ * committedComponents_];
@@ -106,7 +104,7 @@ public:
     /// some entity.
     ///
     /// Params:  count = Number of components to commit.
-    void commitComponents(const size_t count) @safe nothrow
+    void commitComponents(const size_t count) @safe nothrow @nogc
     {
         assert(enabled_,
                "Can't commit components to a buffer that's not enabled");
@@ -196,25 +194,26 @@ public:
     }
 
     /// Get the size of uncommitted (free) space in components.
-    @property size_t uncommittedSize() @safe const pure nothrow
+    size_t uncommittedSize() @safe const pure nothrow @nogc
     {
         // The length, not capacity, counts as allocated space for this API.
         return allocatedSize - committedComponents_;
     }
 
     /// Get the allocated space in components.
-    @property size_t allocatedSize() @safe const pure nothrow
+    size_t allocatedSize() @safe const pure nothrow @nogc
     {
         // The length, not capacity, counts as allocated space for this API.
         return allocatedComponents_;
     }
 
-    /// Clear a ComponentBuffer before use as a future component buffer to catch
-    /// any bugs with reading no longer used data.
-    ///
-    /// This exists only to catch bugs, and can be removed if the overhead is
-    /// too high.
-    void reset() @safe pure nothrow
+
+    /** Clear a ComponentBuffer before use as a future component buffer to catch any bugs
+     *  with reading no longer used data.
+     *
+     * This exists only to catch bugs, and can be removed if the overhead is too high.
+     */
+    void reset() @safe pure nothrow @nogc
     {
         assert(enabled_, "Can't reset a non-enabled buffer");
         storage_[]           = 0;
