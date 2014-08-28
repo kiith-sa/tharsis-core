@@ -286,7 +286,7 @@ public:
 package:
     /** Get a resource handle without compile-time type information.
      *
-     * Params: 
+     * Params:
      *
      * type       = Type of the resource. There must be a resource manager managing
      *              resources of this type.
@@ -483,8 +483,8 @@ private:
     /// Register a Process.
     ///
     /// Params: process = Process to register. For every component type there may be at
-    ///                   most 1 process writing it (specifying it as its 
-    ///                   FutureComponent). The FutureComponent of the process must be 
+    ///                   most 1 process writing it (specifying it as its
+    ///                   FutureComponent). The FutureComponent of the process must be
     ///                   registered with the ComponentTypeManager passed to the
     ///                   EntityManager's constructor.
     ///
@@ -795,7 +795,7 @@ private:
     ///                            previous frame; the next frame will see them as past
     ///                            state. Whether the components will also exist in the
     ///                            future is up to the processes that will process them.
-    ///          baseEntityCount = The number of past entities (before these entities 
+    ///          baseEntityCount = The number of past entities (before these entities
     ///                            are added).
     ///          targetPast      = Past entities to add the newly created entities to.
     ///                            Must have enough space to add all new entities from
@@ -807,7 +807,7 @@ private:
     ///                            Must have enough space to add all new entities from
     ///                            entitiesToAdd_.
     void addNewEntities(ref ComponentState target, const size_t baseEntityCount,
-                        Entity[] targetPast, Entity[] targetFuture) 
+                        Entity[] targetPast, Entity[] targetFuture)
         @trusted nothrow
     {
         auto entitiesToAdd = cast(EntitiesToAdd)entitiesToAdd_;
