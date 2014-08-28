@@ -71,7 +71,7 @@ package:
     GameState* future_;
 
     /// Component type manager, including type info about registered component types.
-    AbstractComponentTypeManager componentTypeManager_;
+    AbstractComponentTypeManager componentTypeMgr_;
 
 private:
     /// If writtenComponentTypes_[i] is true, there is a process that writes components
@@ -120,7 +120,7 @@ public:
     this(AbstractComponentTypeManager componentTypeManager)
         @trusted nothrow
     {
-        componentTypeManager_ = componentTypeManager;
+        componentTypeMgr_ = componentTypeManager;
         // Explicit initialization is needed as of DMD 2.066, may be redundant later.
         (stateStorage_[] = GameState.init).assumeWontThrow;
         foreach(ref info; componentTypeInfo)
@@ -178,12 +178,12 @@ public:
     ///          Policy.maxNewEntitiesPerFrame new entities during one frame.
     EntityID addEntity(ref immutable(EntityPrototype) prototype) @trusted nothrow
     {
-        // This should be cheap, assuming most of the time only 1 thread adds entities
-        // (SpawnerSystem). If slow, allow bulk adding through a struct that locks at
-        // ctor/unlocks at dtor.
-        auto entitiesToAdd = cast(EntitiesToAdd)&entitiesToAdd_;
         EntityID nothrowWrapper()
         {
+            // This should be cheap, assuming most of the time only 1 thread adds entities
+            // (SpawnerSystem). If slow, allow bulk adding through a struct that locks at
+            // ctor/unlocks at dtor.
+            auto entitiesToAdd = cast(EntitiesToAdd)entitiesToAdd_;
             synchronized(entitiesToAdd)
             {
                 if(entitiesToAdd.prototypes.length == entitiesToAdd.prototypes.capacity)
@@ -223,23 +223,22 @@ public:
         frameDebug();
         updateResourceManagers();
 
-        // Past entities from the previous frame may be longer or equal, but never
-        // shorter than the future entities from the previous frame. The reason is that
-        // any dead entities from past were not copied to future (any new entities were
-        // copied to both).
+        // Past entities from the previous frame may be longer or equal, but never shorter
+        // than the future entities from the previous frame. The reason is that any dead
+        // entities from past were not copied to future (any new entities were copied to
+        // both).
         assert(past_.entities.length >= future_.entities.length,
-               "Past entities from the previous frame shorter than future entities "
-               "from the previous frame. Past entities may be longer or equal, never "
-               "shorter than the future entities. The reason is that any dead "
-               "entities from past are not copied to future (newly added entities are "
-               "copied to both, so they don't affect relative lengths");
+               "Past entities from the previous frame shorter than future entities from "
+               "the previous frame. Past entities may be longer or equal, never shorter "
+               "than the future entities. The reason is that any dead entities from past "
+               "are not copied to future (newly added entities are copied to both, so "
+               "they don't affect relative lengths");
 
         // Get the past & future component/entity buffers for the new frame.
         GameState* newFuture = cast(GameState*)past_;
         GameState* newPast   = future_;
 
-        newFuture.entities =
-            cast(Entity[])newFuture.entities[0 .. newPast.entities.length];
+        newFuture.entities = cast(Entity[])newFuture.entities[0 .. newPast.entities.length];
         // Clear the future (former past) entities to help detect bugs.
         newFuture.entities[] = Entity.init;
 
@@ -247,8 +246,8 @@ public:
         auto entitiesToAdd     = cast(const(EntitiesToAdd))&entitiesToAdd_;
         const addedEntityCount = entitiesToAdd.prototypes.length;
 
-        // Copy alive past entities to future and create space for the newly
-        // added entities in future.
+        // Copy alive past entities to future and create space for the newly added
+        // entities in future.
         const futureEntityCount = copyLiveEntitiesToFuture(newPast, newFuture);
         newFuture.entities.length = futureEntityCount + addedEntityCount;
         newFuture.components.resetBuffers();
@@ -324,14 +323,15 @@ private:
         /// entity at entities[i] in entity storage).
         MallocArray!ComponentCount counts;
 
-        /// Offsets of the first component for every entity (offsets[i] is the index of
-        /// the first component for entity at entities[i] in entity storage).
-        ///
-        /// For entities that have zero components of this type, the offset is uint.max
-        /// (absurd value to detect bugs).
-        ///
-        /// Allows fast access to components of any past entity (if we know its index);
-        /// this enables direct component access through EntityAccess.
+        /** Offsets of the first component for every entity (offsets[i] is the index of
+         * the first component for entity at entities[i] in entity storage).
+         *
+         * For entities that have zero components of this type, the offset is uint.max
+         * (absurd value to detect bugs).
+         *
+         * Allows fast access to components of any past entity (if we know its index);
+         * this enables direct component access through EntityAccess.
+         */
         MallocArray!uint offsets;
 
     private:
@@ -503,7 +503,7 @@ private:
         {
             assert(!writtenComponentTypes_[P.FutureComponent.ComponentTypeID],
                    "Can't register 2 processes with one future component type");
-            assert(componentTypeManager_.areTypesRegistered!(P.FutureComponent),
+            assert(componentTypeMgr_.areTypesRegistered!(P.FutureComponent),
                    "Registering a process with unregistered future component type " ~
                    P.FutureComponent.stringof);
 
@@ -679,7 +679,7 @@ private:
     /// A shortcut to access component type information.
     const(ComponentTypeInfo[]) componentTypeInfo() @safe pure nothrow const
     {
-        return componentTypeManager_.componentTypeInfo;
+        return componentTypeMgr_.componentTypeInfo;
     }
 
     ////////////////////////////////////////////
@@ -811,8 +811,7 @@ private:
         @trusted nothrow
     {
         auto entitiesToAdd = cast(EntitiesToAdd)&entitiesToAdd_;
-        const(ComponentTypeInfo)[] compTypeInfo =
-            componentTypeManager_.componentTypeInfo;
+        const(ComponentTypeInfo)[] compTypeInfo = componentTypeMgr_.componentTypeInfo;
         foreach(index, pair; entitiesToAdd.prototypes)
         {
             immutable(EntityPrototype)* prototype = pair[0];
