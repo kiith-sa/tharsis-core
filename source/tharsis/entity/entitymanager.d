@@ -61,6 +61,10 @@ class EntityManager(Policy)
     /// Shortcut alias.
     alias Policy.ComponentCount ComponentCount;
 
+    import tharsis.entity.diagnostics;
+    /// Struct type to store diagnostics info in.
+    alias Diagnostics = EntityManagerDiagnostics!Policy;
+
 package:
     /// Game state from the previous frame. Stores entities and their components,
     /// including dead entities and entities that were added during the last frame.
@@ -110,6 +114,9 @@ private:
 
     /// Entities to add when the next frame starts.
     shared(EntitiesToAdd) entitiesToAdd_;
+
+    /// Diagnostics data (how many components of which type, etc).
+    Diagnostics diagnostics_;
 
 public:
     /// Construct an EntityManager using component types registered with passed
@@ -275,6 +282,37 @@ public:
 
         // Run the processes (sequentially so far).
         foreach(process; processes_) { process.run(this); }
+        diagnostics_ = Diagnostics.init;
+
+
+        diagnostics_.pastEntityCount = pastEntityCount;
+        diagnostics_.processCount   = processes_.length;
+
+        // Accumulate (past) component type diagnostics.
+        const(ComponentTypeInfo)[] compTypeInfo = componentTypeMgr_.componentTypeInfo;
+        foreach(ushort typeID; 0 .. cast(ushort)compTypeInfo.length)
+        {
+            if(compTypeInfo[typeID].isNull) { continue; }
+
+            // Get diagnostics for one component type.
+            with(past_.components[typeID]) with(diagnostics_.componentTypes[typeID])
+            {
+                name = compTypeInfo[typeID].name;
+                foreach(entity; 0 .. pastEntityCount)
+                {
+                    pastComponentCount += counts[entity];
+                }
+                const componentBytes = buffer.componentBytes;
+                const countBytes     = ComponentCount.sizeof;
+                const offsetBytes    = uint.sizeof;
+
+                pastMemoryAllocated = buffer.allocatedSize * componentBytes +
+                                        counts.capacity * countBytes +
+                                        offsets.capacity * offsetBytes;
+                pastMemoryUsed = pastComponentCount * componentBytes +
+                                    pastEntityCount * (countBytes + offsetBytes);
+            }
+        }
     }
 
     /// When used as an argument for a process() method of a Process, provides access to
