@@ -280,10 +280,13 @@ public:
         future_ = newFuture;
         past_   = cast(immutable(GameState*))(newPast);
 
-        // Run the processes (sequentially so far).
-        foreach(process; processes_) { process.run(this); }
         diagnostics_ = Diagnostics.init;
 
+        // Run the processes (sequentially for now).
+        foreach(idx, process; processes_)
+        {
+            (diagnostics_.processes[idx] = process.run(this)).assumeWontThrow;
+        }
 
         diagnostics_.pastEntityCount = pastEntityCount;
         diagnostics_.processCount   = processes_.length;
@@ -561,8 +564,11 @@ private:
         // Specific overloads have precedence over more general. For example, if there are
         // overloads process(A) and process(A, B), and an entity has components A and B,
         // the latter overload is called.
-        static void runProcess(EntityManager self, P process) nothrow
+        static Diagnostics.Process runProcess(EntityManager self, P process) nothrow
         {
+            Diagnostics.Process processDiagnostics;
+            processDiagnostics.name = P.stringof;
+            processDiagnostics.componentTypesRead = AllPastComponentTypes!P.length;
             // If the process has a 'preProcess' method, call it before processing any entities.
             static if(hasMember!(P, "preProcess")) { process.preProcess(); }
 
@@ -584,6 +590,7 @@ private:
                 mixin(prioritizeProcessOverloads!P.map!(p => q{
                     if(entityRange.matchComponents!(%s))
                     {
+                        ++processDiagnostics.processCalls;
                         self.callProcessMethod!(overloads[%s])(process, entityRange);
                     }
                 }.format(p[0], p[1])).join("else ").outdent);
@@ -591,6 +598,8 @@ private:
 
             // If the process has a 'postProcess' method, call it after processing entities.
             static if(hasMember!(P, "postProcess")) { process.postProcess(); }
+
+            return processDiagnostics;
         }
 
         // Add a wrapper for the process,

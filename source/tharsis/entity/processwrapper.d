@@ -15,15 +15,23 @@ import tharsis.entity.entitymanager;
 //       (default 0), as well as CPU overhead hints
 //       (using an enum (trivial, cheap, medium, expensive, bottleneck))
 
+
 /// Abstract parent class to allow storing all process wrappers in a single array.
 class AbstractProcessWrapper(Policy)
 {
-    /// Runs the process on all matching entities from specified entity manager.
-    void run(EntityManager!Policy entities) nothrow
 private:
     /// Name of the process.
     string name_;
 
+public:
+    /// Alias for diagnostics info about a process run.
+    alias ProcessDiagnostics = EntityManager!Policy.Diagnostics.Process;
+
+    /** Runs the process on all matching entities from specified entity manager.
+     *
+     * Returns diagnostics (e.g. benchmarking) info about the process run.
+     */
+    ProcessDiagnostics run(EntityManager!Policy entities) nothrow
     {
         assert(false, "DMD (2065) bug workaround - should never happen");
     }
@@ -50,7 +58,7 @@ public:
     /// called.
     ///
     /// Can be changed into delegate if needed, but try to keep it a function.
-    alias void function(EntityManager!Policy, Process) nothrow ProcessFunction;
+    alias ProcessDiagnostics function(EntityManager!Policy, Process) nothrow ProcessFunction;
 
     /// Construct a ProcessWrapper.
     ///
@@ -66,8 +74,8 @@ public:
         name_       = Process.stringof;
     }
 
-    override void run(EntityManager!Policy entities) nothrow
+    override ProcessDiagnostics run(EntityManager!Policy entities) nothrow
     {
-        runProcess_(entities, process_);
+        return runProcess_(entities, process_);
     }
 }
