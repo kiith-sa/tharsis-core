@@ -20,9 +20,16 @@ class AbstractProcessWrapper(Policy)
 {
     /// Runs the process on all matching entities from specified entity manager.
     void run(EntityManager!Policy entities) nothrow
+private:
+    /// Name of the process.
+    string name_;
+
     {
         assert(false, "DMD (2065) bug workaround - should never happen");
     }
+
+    /// Get name of the wrapped process.
+    string name() @safe pure nothrow const @nogc { return name_; }
 }
 
 /// Wraps a process of a concrete type.
@@ -56,6 +63,7 @@ public:
     {
         process_    = process;
         runProcess_ = runProcess;
+        name_       = Process.stringof;
     }
 
     override void run(EntityManager!Policy entities) nothrow
