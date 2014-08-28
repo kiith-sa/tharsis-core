@@ -49,7 +49,7 @@ private:
     immutable(EntityManager.ComponentState)* pastComponents_;
 
     /// Provides access to component type info.
-    AbstractComponentTypeManager componentTypeManager_;
+    AbstractComponentTypeManager componentTypeMgr_;
 
     /// No default construction or copying.
     @disable this();
@@ -87,7 +87,7 @@ public:
     ImmutableRawComponent rawPastComponent(const ushort typeID, const EntityID entity)
         nothrow const
     {
-        assert(!componentTypeManager_.componentTypeInfo[typeID].isMulti,
+        assert(!componentTypeMgr_.componentTypeInfo[typeID].isMulti,
                "rawPastComponent can't access components of MultiComponent types");
 
         // Get the component with type typeID of past entity at index index.
@@ -105,7 +105,7 @@ public:
             assert(offset != size_t.max, "Offset not set");
 
             auto raw           = pastComponents.buffer.committedComponentSpace;
-            auto componentSize = componentTypeManager_.componentTypeInfo[typeID].size;
+            auto componentSize = componentTypeMgr_.componentTypeInfo[typeID].size;
             auto byteOffset    = offset * componentSize;
             auto componentData = raw[byteOffset .. byteOffset + componentSize];
             return ImmutableRawComponent(typeID, componentData);
@@ -140,9 +140,9 @@ package:
     /// Construct an EntityAccess for entities of specified entity manager.
     this(EntityManager entityManager) @safe pure nothrow
     {
-        pastEntities_         = entityManager.past_.entities;
-        pastComponents_       = &entityManager.past_.components;
-        componentTypeManager_ = entityManager.componentTypeManager_;
+        pastEntities_     = entityManager.past_.entities;
+        pastComponents_   = &entityManager.past_.components;
+        componentTypeMgr_ = entityManager.componentTypeMgr_;
     }
 }
 
