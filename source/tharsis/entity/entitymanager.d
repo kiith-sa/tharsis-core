@@ -133,7 +133,7 @@ public:
         }
 
         entitiesToAdd_ = cast(shared(EntitiesToAdd))new EntitiesToAdd();
-        auto entitiesToAdd = cast(EntitiesToAdd)&entitiesToAdd_;
+        auto entitiesToAdd = cast(EntitiesToAdd)entitiesToAdd_;
         entitiesToAdd.prototypes.reserve(Policy.maxNewEntitiesPerFrame);
 
         past_   = cast(immutable(GameState*))&(stateStorage_[0]);
@@ -243,7 +243,7 @@ public:
         newFuture.entities[] = Entity.init;
 
         // Get the number of entities added this frame.
-        auto entitiesToAdd     = cast(const(EntitiesToAdd))&entitiesToAdd_;
+        auto entitiesToAdd     = cast(const(EntitiesToAdd))entitiesToAdd_;
         const addedEntityCount = entitiesToAdd.prototypes.length;
 
         // Copy alive past entities to future and create space for the newly added
@@ -810,7 +810,7 @@ private:
                         Entity[] targetPast, Entity[] targetFuture) 
         @trusted nothrow
     {
-        auto entitiesToAdd = cast(EntitiesToAdd)&entitiesToAdd_;
+        auto entitiesToAdd = cast(EntitiesToAdd)entitiesToAdd_;
         const(ComponentTypeInfo)[] compTypeInfo = componentTypeMgr_.componentTypeInfo;
         foreach(index, pair; entitiesToAdd.prototypes)
         {
