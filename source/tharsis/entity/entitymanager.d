@@ -166,11 +166,11 @@ public:
     }
 
 
-    /// Get the number of entities in past state.
-    size_t pastEntityCount() @safe pure nothrow const @nogc
-    {
-        return past_.entities.length;
-    }
+    /** Get a copy of diagnostics from the last game update.
+     *
+     * Calling this during an update will return incomplete data.
+     */
+    Diagnostics diagnostics() @safe pure nothrow const @nogc { return diagnostics_; }
 
     /// Add a new entity, using components from specified prototype.
     ///
