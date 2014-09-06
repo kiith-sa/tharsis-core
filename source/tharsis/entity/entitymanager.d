@@ -17,6 +17,8 @@ import std.typetuple;
 import std.typecons;
 import core.sync.mutex;
 
+import tharsis.prof;
+
 import tharsis.entity.componentbuffer;
 import tharsis.entity.componenttypeinfo;
 import tharsis.entity.componenttypemanager;
@@ -118,6 +120,12 @@ private:
     /// Diagnostics data (how many components of which type, etc).
     Diagnostics diagnostics_;
 
+    /// Frame profiler used to determine overhead of individual Processes.
+    Profiler processProfiler_;
+
+    /// Storage used by processProfiler_ to record profile data to.
+    ubyte[] processProfilerStorage_;
+
 public:
     /// Construct an EntityManager using component types registered with passed
     /// ComponentTypeManager.
@@ -127,6 +135,15 @@ public:
     this(AbstractComponentTypeManager componentTypeManager)
         @trusted nothrow
     {
+        import core.stdc.stdlib: malloc;
+        // For now, we'll just hope 256 kiB is enough for zones for all Processes.
+        // It should be OK as long as the user doesn't have thousands of Processes
+        // (note that running out of this space will not *break* Tharsis, but it will
+        // lead to inability to effectively schedule processes (but... any user with 
+        // 1000s of processes is pretty much asking for it))
+        processProfilerStorage_ = (cast(ubyte*)malloc(256 * 1024))[0 .. 256 * 1024];
+        processProfiler_ = new Profiler(processProfilerStorage_);
+
         componentTypeMgr_ = componentTypeManager;
         // Explicit initialization is needed as of DMD 2.066, may be redundant later.
         (stateStorage_[] = GameState.init).assumeWontThrow;
@@ -163,6 +180,10 @@ public:
         {
             manager.clear();
         }
+
+        import core.stdc.stdlib: free;
+        .destroy(processProfiler_);
+        free(processProfilerStorage_.ptr);
     }
 
 
@@ -282,9 +303,18 @@ public:
 
         diagnostics_ = Diagnostics.init;
 
+        // We reset the process profiler each frame to avoid running out of space
+        // (for now, we'll only use the profiling data from the last frame for
+        // scheduling).
+        processProfiler_.reset();
+
+        // If the process name is longer than this, it will be cut to this length.
+        enum nameCutoff = 80;
         // Run the processes (sequentially for now).
         foreach(idx, process; processes_)
         {
+            const name = process.name;
+            auto profZone = Zone(processProfiler_, name[0 .. min(nameCutoff, name.length)]);
             (diagnostics_.processes[idx] = process.run(this)).assumeWontThrow;
         }
 
