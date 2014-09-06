@@ -318,6 +318,20 @@ public:
             (diagnostics_.processes[idx] = process.run(this)).assumeWontThrow;
         }
 
+
+        // Get process execution durations for diagnostics.
+        foreach(zone; processProfiler_.profileData.zoneRange)
+        {
+            // Find the process (diagnostics) with name matching the zone info, and 
+            // set the furation.
+            foreach(ref process; diagnostics_.processes)
+            {
+                const name = process.name;
+                if(zone.info != name[0 .. min(nameCutoff, name.length)]) { continue; }
+                process.duration = zone.duration;
+            }
+        }
+
         diagnostics_.pastEntityCount = pastEntityCount;
         diagnostics_.processCount   = processes_.length;
 

@@ -61,6 +61,10 @@ struct EntityManagerDiagnostics(Policy)
          */
         size_t componentTypesRead;
 
+        /** Time this process spent executing this frame in hectonanoseconds.
+         */
+        ulong duration;
+
         /// Is this a 'null' struct that doesn't store valid data?
         bool isNull() @safe pure nothrow const @nogc { return name is null; }
     }
