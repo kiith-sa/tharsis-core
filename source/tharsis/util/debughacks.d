@@ -9,10 +9,10 @@ module tharsis.util.debughacks;
 
 /// A writeln wrapper that can be called in @safe/pure/nothrow without complains
 /// from the compiler. Should be used ONLY temporarily for fixing bugs.
-@trusted pure nothrow void writelnUnsafeThrowingImpureHACK(S ...)(S args) 
+@trusted pure nothrow @nogc void writelnUnsafeThrowingImpureHACK(S ...)(S args) 
 {
     import std.stdio;
-    (cast (void function(S) nothrow @safe pure) &writeln!S) (args);
+    (cast (void function(S) nothrow @safe pure @nogc) &writeln!S) (args);
 }
 unittest 
 {
