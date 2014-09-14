@@ -120,6 +120,15 @@ private:
     /// Diagnostics data (how many components of which type, etc).
     Diagnostics diagnostics_;
 
+    /** Profilers attached by $(D attachPerThreadProfilers())
+     *
+     * If no profilers are attached, this contains one null reference so we can pass
+     * externalProfilers_[0] to zones without complicating code.
+     *
+     * Used to profile Tharsis itself and Tharsis as a part of a bigger program.
+     */
+    Profiler[] externalProfilers_;
+
     /// Frame profiler used to determine overhead of individual Processes.
     Profiler processProfiler_;
 
@@ -143,6 +152,8 @@ public:
         // 1000s of processes is pretty much asking for it))
         processProfilerStorage_ = (cast(ubyte*)malloc(256 * 1024))[0 .. 256 * 1024];
         processProfiler_ = new Profiler(processProfilerStorage_);
+        // 1 null reference so we can easily use Zones in the main thread.
+        externalProfilers_ = [null];
 
         componentTypeMgr_ = componentTypeManager;
         // Explicit initialization is needed as of DMD 2.066, may be redundant later.
@@ -186,6 +197,23 @@ public:
         free(processProfilerStorage_.ptr);
     }
 
+    /** Attach multiple Profilers, each of which will profile a single thread.
+     *
+     * Can be used for to profile Tharsis execution as a part of a larger program.
+     * If there are not enough profilers for all threads, only profilers.length threads
+     * will be profiled. If there are more profilers than threads, the extra profilers
+     * will be unused.
+     *
+     * Params:
+     *
+     * profilers = A slice of profilers to attach. The slice must not be modified after
+     *             being passed. Profiler at profilers[0] will profile code running in
+     *             the main thread.
+     */
+    void attachPerThreadProfilers(Profiler[] profilers)
+    {
+        externalProfilers_ = profilers;
+    }
 
     /** Get a copy of diagnostics from the last game update.
      *
