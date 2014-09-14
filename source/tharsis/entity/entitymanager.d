@@ -186,6 +186,7 @@ public:
     void destroy(Flag!"ClearResources" clearResources = Yes.ClearResources)
         @trusted
     {
+        auto zoneDtor = Zone(externalProfilers_[0], "EntityManager.destroy");
         .destroy(cast(EntitiesToAdd)entitiesToAdd_);
         if(clearResources) foreach(manager; resourceManagers_)
         {
@@ -278,6 +279,7 @@ public:
     /// dead entities, creating entities added by addEntity, preallocation, etc.
     void executeFrame() @trusted nothrow
     {
+        auto zoneExecuteFrame = Zone(externalProfilers_[0], "EntityManager.executeFrame");
         frameDebug();
         updateResourceManagers();
 
@@ -304,9 +306,14 @@ public:
 
         // Copy alive past entities to future and create space for the newly added
         // entities in future.
-        const futureEntityCount = copyLiveEntitiesToFuture(newPast, newFuture);
-        newFuture.entities.length = futureEntityCount + addedEntityCount;
-        newFuture.components.resetBuffers();
+        size_t futureEntityCount;
+        {
+            auto zone = Zone(externalProfilers_[0], "copy/add entities for next frame");
+
+            futureEntityCount = copyLiveEntitiesToFuture(newPast, newFuture);
+            newFuture.entities.length = futureEntityCount + addedEntityCount;
+            newFuture.components.resetBuffers();
+        }
         auto addedFutureEntities = newFuture.entities[futureEntityCount .. $];
 
         // Create space for the newly added entities in past.
@@ -318,8 +325,11 @@ public:
         preallocateComponents(newFuture);
 
         // Inform the entity count buffers about a changed number of entities.
-        newPast.components.growEntityCount(newPast.entities.length);
-        newFuture.components.growEntityCount(newFuture.entities.length);
+        {
+            auto growZone = Zone(externalProfilers_[0], "growEntityCount");
+            newPast.components.growEntityCount(newPast.entities.length);
+            newFuture.components.growEntityCount(newFuture.entities.length);
+        }
 
         // Add the new entities into the reserved entity/component space.
         addNewEntities(newPast.components, pastEntityCount,
@@ -331,21 +341,27 @@ public:
 
         diagnostics_ = Diagnostics.init;
 
-        // We reset the process profiler each frame to avoid running out of space
-        // (for now, we'll only use the profiling data from the last frame for
-        // scheduling).
+        // We reset the process profiler each frame to avoid running out of space (for
+        // now, we'll only use the profiling data from the last frame for scheduling).
         processProfiler_.reset();
 
         // If the process name is longer than this, it will be cut to this length.
         enum nameCutoff = 80;
-        // Run the processes (sequentially for now).
-        foreach(idx, process; processes_)
         {
-            const name = process.name;
-            auto profZone = Zone(processProfiler_, name[0 .. min(nameCutoff, name.length)]);
-            (diagnostics_.processes[idx] = process.run(this)).assumeWontThrow;
+            auto totalProcZone = Zone(externalProfilers_[0], "all processes");
+            // Run the processes (sequentially for now).
+            foreach(idx, process; processes_)
+            {
+                const name = process.name;
+                const nameTruncated = name[0 .. min(nameCutoff, name.length)];
+
+                auto procZoneExternal = Zone(externalProfilers_[0], nameTruncated);
+                auto procZone = Zone(processProfiler_, nameTruncated);
+                (diagnostics_.processes[idx] = process.run(this)).assumeWontThrow;
+            }
         }
 
+        const diagZone = Zone(externalProfilers_[0], "most diagnostics");
 
         // Get process execution durations for diagnostics.
         foreach(zone; processProfiler_.profileData.zoneRange)
@@ -604,6 +620,8 @@ private:
     void registerProcess(P)(P process) @trusted nothrow
     {
         mixin validateProcess!P;
+
+        auto registerZone = Zone(externalProfilers_[0], "EntityManager.registerProcess");
         // True if the Process does not write to any future component. Usually processes
         // that only read past components and produce some kind of output.
         enum noFuture = !hasFutureComponent!P;
@@ -808,6 +826,7 @@ private:
     /// and check frame invariants.
     void frameDebug() @trusted nothrow
     {
+        auto debugZone = Zone(externalProfilers_[0], "frameDebug");
         static void implementation(EntityManager self)
         {with(self){
             foreach(id; 0 .. maxBuiltinComponentTypes)
@@ -839,6 +858,7 @@ private:
     /// Part of the code executed between frames in executeFrame().
     void updateResourceManagers() @safe nothrow
     {
+        auto debugZone = Zone(externalProfilers_[0], "updateResourceManagers");
         foreach(resManager; resourceManagers_) { resManager.update(); }
     }
 
@@ -882,6 +902,7 @@ private:
     /// Params: state = Game state (past or future) to preallocate space for.
     void preallocateComponents(GameState* state) @safe nothrow
     {
+        auto preallocZone = Zone(externalProfilers_[0], "preallocateComponents");
         // Preallocate space for components based on hints in the Policy and component
         // type info.
 
@@ -928,6 +949,8 @@ private:
                         Entity[] targetPast, Entity[] targetFuture)
         @trusted nothrow
     {
+        auto addZone = Zone(externalProfilers_[0], "addNewEntities");
+
         auto entitiesToAdd = cast(EntitiesToAdd)entitiesToAdd_;
         const(ComponentTypeInfo)[] compTypeInfo = componentTypeMgr_.componentTypeInfo;
         foreach(index, pair; entitiesToAdd.prototypes)
