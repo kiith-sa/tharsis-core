@@ -164,14 +164,14 @@ public:
         future_ = &(stateStorage_[1]);
     }
 
-    /// Destroy the EntityManager.
-    ///
-    /// Must be called after using the entity manager.
-    ///
-    /// Params: clearResources = Destroy all resources in the registered resource
-    ///                          managers? If this is false, the user must manually call
-    ///                          the clear() method of every resource manager to free
-    ///                          the resources.
+    /** Destroy the EntityManager.
+     *
+     * Must be called after using the entity manager.
+     *
+     * Params: clearResources = Destroy all resources in registered resource managers? If
+     *                          false, the user must manually call the clear() method of
+     *                          every resource manager to free the resources.
+     */
     void destroy(Flag!"ClearResources" clearResources = Yes.ClearResources)
         @trusted
     {
@@ -193,23 +193,25 @@ public:
      */
     Diagnostics diagnostics() @safe pure nothrow const @nogc { return diagnostics_; }
 
-    /// Add a new entity, using components from specified prototype.
-    ///
-    /// The new entity will be added at the beginning of the next frame.
-    ///
-    /// Params:  prototype = Prototype of the entity to add. Usually, the prototype will
-    ///                      have to be casted to immutable when passed here. Must exist
-    ///                      without changes until the beginning of the next update. It
-    ///                      can be safely deleted during the next update.
-    ///
-    /// Returns: ID of the new entity on success. A null ID if we've added more than
-    ///          Policy.maxNewEntitiesPerFrame new entities during one frame.
+    /** Add a new entity, using components from specified prototype.
+     *
+     * The new entity will be added at the beginning of the next frame.
+     *
+     * Params:
+     *
+     * prototype = Prototype of the entity to add. Usually, the prototype will have to be
+     *             casted to immutable before passed. Must exist without changes until the
+     *             beginning of the next update. Can be safely deleted afterwards.
+     *
+     * Returns: ID of the new entity on success. A null ID if we've added more than
+     *          Policy.maxNewEntitiesPerFrame new entities during one frame.
+     */
     EntityID addEntity(ref immutable(EntityPrototype) prototype) @trusted nothrow
     {
         EntityID nothrowWrapper()
         {
-            // This should be cheap, assuming most of the time only 1 thread adds entities
-            // (SpawnerSystem). If slow, allow bulk adding through a struct that locks at
+            // Should be fast, assuming most of the time only 1 thread (SpawnerProcess)
+            // adds entities. If slow, allow bulk adding with a struct that locks at
             // ctor/unlocks at dtor.
             auto entitiesToAdd = cast(EntitiesToAdd)entitiesToAdd_;
             synchronized(entitiesToAdd)
@@ -251,16 +253,14 @@ public:
         frameDebug();
         updateResourceManagers();
 
-        // Past entities from the previous frame may be longer or equal, but never shorter
-        // than the future entities from the previous frame. The reason is that any dead
-        // entities from past were not copied to future (any new entities were copied to
-        // both).
+        // Past entities from the previous frame may be longer or equal, but not shorter
+        // than future entities from the previous frame: any dead entities from past were
+        // not copied to future (any new entities were copied to both).
         assert(past_.entities.length >= future_.entities.length,
-               "Past entities from the previous frame shorter than future entities from "
-               "the previous frame. Past entities may be longer or equal, never shorter "
-               "than the future entities. The reason is that any dead entities from past "
-               "are not copied to future (newly added entities are copied to both, so "
-               "they don't affect relative lengths");
+               "Less past than future entities in the previous frame. Past entities may "
+               "be longer or equal, never shorter than future entities. The reason is "
+               "that any dead entities from past are not copied to future (newly added "
+               "entities are copied to both, so they don't affect relative lengths");
 
         // Get the past & future component/entity buffers for the new frame.
         GameState* newFuture = cast(GameState*)past_;
@@ -554,26 +554,25 @@ private:
         /// part at the end.
         Entity[] entities;
 
-        /* TODO: We may add a structure to access entities by entity IDs to speed up
-         * direct component access through EntityAccess (which currently uses binary
-         * search). We could use a hash map of some kind, or a multi-level bucket-sorted
-         * structure (?) (E.g. 65536 buckets for the first 16 bytes of the entity ID,
-         * and arrays/slices within those buckets)
+        /* TODO: May add a structure to access entities by entityID to speed up direct
+         * component access with EntityAccess (currently using binary search). Could use
+         * some hash map, or a multi-level bucket-sorted structure (?) (E.g. 65536 buckets
+         * for the first 16 bits of the entity ID, and arrays/slices in the buckets)
          *
          * Would have to be updated with the entity array between frames.
          */
     }
 
 
-    /// Register a Process.
-    ///
-    /// Params: process = Process to register. For every component type there may be at
-    ///                   most 1 process writing it (specifying it as its
-    ///                   FutureComponent). The FutureComponent of the process must be
-    ///                   registered with the ComponentTypeManager passed to the
-    ///                   EntityManager's constructor.
-    ///
-    /// TODO link to an process.rst once it exists
+    /** Register a Process.
+     *
+     * Params: process = Process to register. There may be at most 1 process writing any
+     *                   single component type (specifying it as its FutureComponent).
+     *                   The FutureComponent of the process must be registered with the
+     *                   ComponentTypeManager passed to the EntityManager's constructor.
+     *
+     * TODO link to an process.rst once it exists
+     */
     void registerProcess(P)(P process) @trusted nothrow
     {
         mixin validateProcess!P;
