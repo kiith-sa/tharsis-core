@@ -9,7 +9,7 @@
     "copyright": "Copyright © 2013-2014, Ferdinand Majerech",
     "dependencies":
     {
-        "tharsis-prof": "~>0.1.0",
+        "tharsis-prof": "~>0.1.2",
     },
     "buildTypes":
     {
