@@ -46,7 +46,7 @@ private:
     immutable(Entity[]) pastEntities_;
 
     /// Stores past components of all entities.
-    immutable(EntityManager.ComponentState)* pastComponents_;
+    immutable(EntityManager.ComponentStateT)* pastComponents_;
 
     /// Provides access to component type info.
     AbstractComponentTypeManager componentTypeMgr_;
@@ -195,14 +195,14 @@ private:
 
     /// Index of the first future component  for the current entity.
     ///
-    /// Used to update ComponentTypeState.offsets .
+    /// Used to update ComponentTypeStateT.offsets .
     uint futureComponentOffset_ = 0;
 
     /// Buffer and component count for future components written by Process.
     ///
     /// We can't keep a typed slice as the internal buffer may get reallocated; so we
     /// cast on every future component access.
-    EntityManager.ComponentTypeState* futureComponents_;
+    EntityManager.ComponentTypeStateT* futureComponents_;
 
     }
 
@@ -264,7 +264,7 @@ package:
         entityAccess_ = EntityAccess!EntityManager(entityManager);
         futureEntities_ = entityManager.future_.entities;
 
-        immutable(EntityManager.ComponentState)* pastComponents =
+        immutable(EntityManager.ComponentStateT)* pastComponents =
             &entityManager.past_.components;
         // Init component/component count buffers for processed past component types.
         foreach(index, Component; ProcessedComponents)
