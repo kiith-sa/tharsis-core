@@ -347,23 +347,7 @@ public:
         future_ = newFuture;
         past_   = cast(immutable(GameStateT*))(newPast);
 
-        // We reset the process profiler each frame to avoid running out of space (for
-        // now, we'll only use the profiling data from the last frame for scheduling).
-        processProfiler_.reset();
-
-        {
-            auto totalProcZone = Zone(externalProfilers_[0], "all processes");
-            // Run the processes (sequentially for now).
-            foreach(idx, process; processes_)
-            {
-                const name = process.name;
-                const nameTruncated = name[0 .. min(profilerNameCutoff, name.length)];
-
-                auto procZoneExternal = Zone(externalProfilers_[0], nameTruncated);
-                auto procZone = Zone(processProfiler_, nameTruncated);
-                process.run(this);
-            }
-        }
+        executeProcesses();
 
         updateDiagnostics();
     }
@@ -609,6 +593,26 @@ private:
     ///////////////////////////////////////////
     /// BEGIN CODE CALLED BY executeFrame() ///
     ///////////////////////////////////////////
+
+    /// Run all processes; called by executeFrame();
+    void executeProcesses() @system nothrow
+    {
+        // We reset the process profiler each frame to avoid running out of space (for
+        // now, we'll only use the profiling data from the last frame for scheduling).
+        processProfiler_.reset();
+
+        auto totalProcZone = Zone(externalProfilers_[0], "all processes");
+        // Run the processes (sequentially for now).
+        foreach(idx, process; processes_)
+        {
+            const name = process.name;
+            const nameTruncated = name[0 .. min(profilerNameCutoff, name.length)];
+
+            auto procZoneExternal = Zone(externalProfilers_[0], nameTruncated);
+            auto procZone = Zone(processProfiler_, nameTruncated);
+            process.run(this);
+        }
+    }
 
     /// Update EntityManager diagnostics (after processes are run).
     void updateDiagnostics() @safe nothrow
