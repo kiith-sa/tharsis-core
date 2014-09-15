@@ -23,21 +23,30 @@ private:
     /// Name of the process.
     string name_;
 
+    /// Process diagnostics, updated by the last run() call.
+    ProcessDiagnostics diagnostics_;
+
 public:
     /// Alias for diagnostics info about a process run.
     alias ProcessDiagnostics = EntityManager!Policy.Diagnostics.Process;
 
     /** Runs the process on all matching entities from specified entity manager.
      *
-     * Returns diagnostics (e.g. benchmarking) info about the process run.
+     * Updates diagnostics (e.g. benchmarking) info about the process run.
      */
-    ProcessDiagnostics run(EntityManager!Policy entities) nothrow
+    void run(EntityManager!Policy entities) nothrow
     {
         assert(false, "DMD (2065) bug workaround - should never happen");
     }
 
     /// Get name of the wrapped process.
     string name() @safe pure nothrow const @nogc { return name_; }
+
+    /// Get process diagnostics updated by the last run() call.
+    ref const(ProcessDiagnostics) diagnostics() @safe pure nothrow const @nogc 
+    {
+        return diagnostics_;
+    }
 }
 
 /// Wraps a process of a concrete type.
@@ -74,8 +83,8 @@ public:
         name_       = Process.stringof;
     }
 
-    override ProcessDiagnostics run(EntityManager!Policy entities) nothrow
+    override void run(EntityManager!Policy entities) nothrow
     {
-        return runProcess_(entities, process_);
+        diagnostics_ = runProcess_(entities, process_);
     }
 }

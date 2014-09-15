@@ -137,6 +137,9 @@ private:
     /// Frame profiler used to determine overhead of individual Processes.
     Profiler processProfiler_;
 
+    /// Process names longer than this are cut for profiling zone names.
+    enum profilerNameCutoff = 80;
+
     /// Storage used by processProfiler_ to record profile data to.
     ubyte[] processProfilerStorage_;
 
@@ -153,7 +156,7 @@ public:
         // For now, we'll just hope 256 kiB is enough for zones for all Processes.
         // It should be OK as long as the user doesn't have thousands of Processes
         // (note that running out of this space will not *break* Tharsis, but it will
-        // lead to inability to effectively schedule processes (but... any user with 
+        // lead to inability to effectively schedule processes (but... any user with
         // 1000s of processes is pretty much asking for it))
         processProfilerStorage_ = (cast(ubyte*)malloc(256 * 1024))[0 .. 256 * 1024];
         processProfiler_ = new Profiler(processProfilerStorage_);
@@ -344,71 +347,25 @@ public:
         future_ = newFuture;
         past_   = cast(immutable(GameStateT*))(newPast);
 
-        diagnostics_ = Diagnostics.init;
-
         // We reset the process profiler each frame to avoid running out of space (for
         // now, we'll only use the profiling data from the last frame for scheduling).
         processProfiler_.reset();
 
-        // If the process name is longer than this, it will be cut to this length.
-        enum nameCutoff = 80;
         {
             auto totalProcZone = Zone(externalProfilers_[0], "all processes");
             // Run the processes (sequentially for now).
             foreach(idx, process; processes_)
             {
                 const name = process.name;
-                const nameTruncated = name[0 .. min(nameCutoff, name.length)];
+                const nameTruncated = name[0 .. min(profilerNameCutoff, name.length)];
 
                 auto procZoneExternal = Zone(externalProfilers_[0], nameTruncated);
                 auto procZone = Zone(processProfiler_, nameTruncated);
-                (diagnostics_.processes[idx] = process.run(this)).assumeWontThrow;
+                process.run(this);
             }
         }
 
-        const diagZone = Zone(externalProfilers_[0], "most diagnostics");
-
-        // Get process execution durations for diagnostics.
-        foreach(zone; processProfiler_.profileData.zoneRange)
-        {
-            // Find the process (diagnostics) with name matching the zone info, and 
-            // set the furation.
-            foreach(ref process; diagnostics_.processes)
-            {
-                const name = process.name;
-                if(zone.info != name[0 .. min(nameCutoff, name.length)]) { continue; }
-                process.duration = zone.duration;
-            }
-        }
-
-        diagnostics_.pastEntityCount = pastEntityCount;
-        diagnostics_.processCount   = processes_.length;
-
-        // Accumulate (past) component type diagnostics.
-        const(ComponentTypeInfo)[] compTypeInfo = componentTypeMgr_.componentTypeInfo;
-        foreach(ushort typeID; 0 .. cast(ushort)compTypeInfo.length)
-        {
-            if(compTypeInfo[typeID].isNull) { continue; }
-
-            // Get diagnostics for one component type.
-            with(past_.components[typeID]) with(diagnostics_.componentTypes[typeID])
-            {
-                name = compTypeInfo[typeID].name;
-                foreach(entity; 0 .. pastEntityCount)
-                {
-                    pastComponentCount += counts[entity];
-                }
-                const componentBytes = buffer.componentBytes;
-                const countBytes     = ComponentCount.sizeof;
-                const offsetBytes    = uint.sizeof;
-
-                pastMemoryAllocated = buffer.allocatedSize * componentBytes +
-                                        counts.capacity * countBytes +
-                                        offsets.capacity * offsetBytes;
-                pastMemoryUsed = pastComponentCount * componentBytes +
-                                    pastEntityCount * (countBytes + offsetBytes);
-            }
-        }
+        updateDiagnostics();
     }
 
     /// When used as an argument for a process() method of a Process, provides access to
@@ -649,9 +606,68 @@ private:
         return componentTypeMgr_.componentTypeInfo;
     }
 
-    ////////////////////////////////////////////
-    /// BEGIN CODE CALLED BY execute_frame() ///
-    ////////////////////////////////////////////
+    ///////////////////////////////////////////
+    /// BEGIN CODE CALLED BY executeFrame() ///
+    ///////////////////////////////////////////
+
+    /// Update EntityManager diagnostics (after processes are run).
+    void updateDiagnostics() @safe nothrow
+    {
+        const diagZone = Zone(externalProfilers_[0], "most diagnostics");
+
+        diagnostics_ = Diagnostics.init;
+
+        // Get process diagnostics.
+        foreach(idx, process; processes_)
+        {
+            diagnostics_.processes[idx] = process.diagnostics;
+        }
+
+        // Get process execution durations from the profiler for diagnostics.
+        foreach(zone; processProfiler_.profileData.zoneRange)
+        {
+            // Find the process (diagnostics) with name matching the zone info, and
+            // set the furation.
+            foreach(ref process; diagnostics_.processes)
+            {
+                const name = process.name;
+                if(zone.info != name[0 .. min(profilerNameCutoff, name.length)]) { continue; }
+                process.duration = zone.duration;
+            }
+        }
+
+        const pastEntityCount = past_.entities.length;
+
+        diagnostics_.pastEntityCount = pastEntityCount;
+        diagnostics_.processCount    = processes_.length;
+
+        // Accumulate (past) component type diagnostics.
+        const(ComponentTypeInfo)[] compTypeInfo = componentTypeMgr_.componentTypeInfo;
+        foreach(ushort typeID; 0 .. cast(ushort)compTypeInfo.length)
+        {
+            if(compTypeInfo[typeID].isNull) { continue; }
+
+            // Get diagnostics for one component type.
+            with(past_.components[typeID]) with(diagnostics_.componentTypes[typeID])
+            {
+                name = compTypeInfo[typeID].name;
+                foreach(entity; 0 .. pastEntityCount)
+                {
+                    pastComponentCount += counts[entity];
+                }
+                const componentBytes = buffer.componentBytes;
+                const countBytes     = ComponentCount.sizeof;
+                const offsetBytes    = uint.sizeof;
+
+                pastMemoryAllocated = buffer.allocatedSize * componentBytes +
+                                        counts.capacity * countBytes +
+                                        offsets.capacity * offsetBytes;
+                pastMemoryUsed = pastComponentCount * componentBytes +
+                                    pastEntityCount * (countBytes + offsetBytes);
+            }
+        }
+    }
+
 
     /// Show any useful debugging information (warnings) before running a frame,
     /// and check frame invariants.
@@ -820,7 +836,7 @@ private:
         entitiesToAdd.prototypes.clear();
     }
 
-    //////////////////////////////////////////
-    /// END CODE CALLED BY execute_frame() ///
-    //////////////////////////////////////////
+    /////////////////////////////////////////
+    /// END CODE CALLED BY executeFrame() ///
+    /////////////////////////////////////////
 }
