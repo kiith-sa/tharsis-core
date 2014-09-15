@@ -61,7 +61,7 @@ class EntityManager(Policy)
     alias EntityPolicy = Policy;
 
     /// Shortcut alias.
-    alias Policy.ComponentCount ComponentCount;
+    alias ComponentCount = Policy.ComponentCount;
 
     import tharsis.entity.diagnostics;
     /// Struct type to store diagnostics info in.
@@ -737,21 +737,17 @@ private:
         // Preallocate space for components based on hints in the Policy and component
         // type info.
 
-        // Minimums common for all component types.
-        const size_t basePreallocPerEntity =
-            cast(size_t)(Policy.minComponentPerEntityPrealloc * state.entities.length);
-        enum baseMinPrealloc = Policy.minComponentPrealloc;
+        const entityCount    = state.entities.length;
+        const minAllEntities = cast(size_t)(Policy.minComponentPerEntityPrealloc * entityCount);
+        enum baseMinimum     = Policy.minComponentPrealloc;
 
         foreach(ref info; componentTypeInfo) if(!info.isNull)
         {
             // Component type specific minimums.
-            const size_t minPrealloc = max(baseMinPrealloc, info.minPrealloc);
-            const size_t specificPreallocPerEntity =
-                cast(size_t)(info.minPreallocPerEntity * state.entities.length);
-            const size_t preallocPerEntity =
-                max(basePreallocPerEntity, specificPreallocPerEntity);
-            const size_t prealloc =
-                cast(size_t)(allocMult_ * max(minPrealloc, preallocPerEntity));
+            const minimum             = max(baseMinimum, info.minPrealloc);
+            const specificAllEntities = cast(size_t)(info.minPreallocPerEntity * entityCount);
+            const allEntities         = max(minAllEntities, specificAllEntities);
+            const prealloc            = cast(size_t)(allocMult_ * max(minimum, allEntities));
             state.components[info.id].buffer.reserveComponentSpace(prealloc);
         }
     }
