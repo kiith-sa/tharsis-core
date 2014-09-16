@@ -90,7 +90,8 @@ struct EntityManagerDiagnostics(Policy)
      * invalid.
      */
     // There may be more processes than this but it's highly unlikely.
-    Process[componentTypes.length * 2] processes;
+    Process[componentTypes.length * 2 + 4] processes;
+
 
     // TODO after tested, add resource manager diagnostics 
     // (memory allocated/used by this manager, new/loading/loaded/loadfailed counts)
