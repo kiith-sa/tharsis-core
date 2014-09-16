@@ -23,6 +23,9 @@ private:
     /// Name of the process.
     string name_;
 
+    /// If not uint.max, this process must run in thead with index boundToThread_ % threadCount.
+    uint boundToThread_ = uint.max;
+
     /// Process diagnostics, updated by the last run() call.
     ProcessDiagnostics diagnostics_;
 
@@ -46,6 +49,17 @@ public:
     ref const(ProcessDiagnostics) diagnostics() @safe pure nothrow const @nogc 
     {
         return diagnostics_;
+    }
+
+    /** If the process must run in a specific thread, returns its index, otherwise uint.max.
+     *
+     * Note: the actual index of the thread the process will run in is
+     *       $(D boundToThread % threadCount), where $(D threadCount) is the number of
+     *       threads used by EntityManager.
+     */
+    uint boundToThread() @safe pure nothrow const @nogc
+    {
+        return boundToThread_;
     }
 }
 
@@ -81,6 +95,12 @@ public:
         process_    = process;
         runProcess_ = runProcess;
         name_       = Process.stringof;
+        import std.traits;
+        // The actual thread this runs in is boundToThread % threadCount
+        static if(hasMember!(Process, "boundToThread"))
+        {
+            boundToThread_ = Process.boundToThread;
+        }
     }
 
     override void run(EntityManager!Policy entities) nothrow
