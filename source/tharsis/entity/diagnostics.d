@@ -39,7 +39,7 @@ struct EntityManagerDiagnostics(Policy)
         bool isNull() @safe pure nothrow const @nogc { return name is null; }
     }
 
-    /// Diagnostics info about a process.
+    /// Diagnostics info about a Tharsis process.
     struct Process
     {
         /** Name of the process.
@@ -69,11 +69,22 @@ struct EntityManagerDiagnostics(Policy)
         bool isNull() @safe pure nothrow const @nogc { return name is null; }
     }
 
+    /// Diagnostics info about a thread.
+    struct Thread 
+    {
+        /** Time this thread spent executing processes this frame in hectonanoseconds.
+         */
+        ulong processesDuration;
+    }
+
     /// Number of past entitites.
     size_t pastEntityCount;
 
     /// Number of registered processes.
     size_t processCount;
+
+    /// Number of process execution threads (including the main thread).
+    size_t threadCount;
 
     /** Diagnostics for individual component types.
      *
@@ -92,6 +103,12 @@ struct EntityManagerDiagnostics(Policy)
     // There may be more processes than this but it's highly unlikely.
     Process[componentTypes.length * 2 + 4] processes;
 
+    /** Diagnostics for individual (used) execution threads.
+     *
+     * As at least 1 process runs whole in one thread, there are at most as many used
+     * threads as processes.
+     */
+    Thread[processes.length] threads;
 
     // TODO after tested, add resource manager diagnostics 
     // (memory allocated/used by this manager, new/loading/loaded/loadfailed counts)
