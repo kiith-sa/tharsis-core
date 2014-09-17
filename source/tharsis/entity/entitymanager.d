@@ -204,6 +204,7 @@ package:
                         // scope(exit) ensures the state is set even if we're crashing
                         // with a Throwable (to avoid EntityManager waiting forever).
                         scope(exit) { atomicStore(state_, State.Waiting); }
+                        self_.executeProcessesOneThread(threadIdx_);
                         // Ensure any memory ops finish before finishing a game update.
                         atomicFence();
                     }
@@ -791,68 +792,53 @@ private:
         auto totalProcZone = Zone(externalProfilers_[0], "EntityManager.executeProcesses()");
 
         scheduler_.updateSchedule!Policy(processes_, diagnostics_);
-        import core.thread;
 
-        static void runProcessesInThread(EntityManager self, uint threadIdx)
-        { with(self) {
-            bool profilerExists   = externalProfilers_.length > threadIdx;
-            auto externalProfiler = profilerExists ? externalProfilers_[threadIdx] : null;
-            auto processProfiler  = processProfilers_[threadIdx];
+        import core.atomic;
+        // Ensure any memory ops finish before finishing the new game update.
+        atomicFence();
 
-            auto processesZone         = Zone(processProfiler, allProcessesZoneName);
-            auto processesZoneExternal = Zone(externalProfiler, allProcessesZoneName);
-
-            // Find all processes assigned to this thread (threadIdx).
-            foreach(i, proc; processes_) if(scheduler_.processToThread(i) == threadIdx)
-            {
-                const name = proc.name;
-                const nameCut = name[0 .. min(profilerNameCutoff, name.length)];
-                auto procZoneExternal = Zone(externalProfiler, nameCut);
-                auto procZone         = Zone(processProfiler, nameCut);
-
-                proc.run(self);
-            }
-        }}
-
-        static class ProcessThread : Thread
-        {
-            EntityManager self_;
-            uint threadIdx_;
-
-            this(EntityManager self, uint threadIdx)
-            {
-                self_      = self;
-                threadIdx_ = threadIdx;
-                super( &run );
-            }
-
-            void run() { runProcessesInThread(self_, threadIdx_); }
-        }
-
-        auto threads = new ProcessThread[scheduler_.threadCount - 1];
-
-        // Start all threads except 0 (the main thread).
-        foreach(uint t, ref thread; threads)
-        {
-            uint threadIdx = t + 1;
-            thread = new ProcessThread(this, threadIdx).assumeWontThrow;
-            thread.start().assumeWontThrow;
-        }
+        // Start running Processes in ProcessThreads.
+        foreach(thread; procThreads_) { thread.startUpdate(); }
 
         // The main thread (this thread) has index 0.
-        runProcessesInThread(this, 0);
+        executeProcessesOneThread(0);
 
-        // Join all non-main threads.
-        try foreach(thread; threads)
+        // Wait till all threads finish executing.
         {
-            thread.join();
+            auto waitingZone = Zone(externalProfilers_[0], "waiting");
+            while(procThreads_.canFind!(e => e.state == ProcessThread.State.Executing))
+            {
+                continue;
+            }
         }
-        catch(Throwable e)
+    }
+
+    /** Run Processes assigned by the scheduler to the current thread.
+     *
+     * Called during executeProcesses(), from the main thread or a ProcessThread.
+     *
+     * Params:
+     *
+     * threadIdx = Index of the current thread (0 for the main thread, other for ProcessThreads)
+     */
+    void executeProcessesOneThread(uint threadIdx) @system nothrow
+    {
+        bool profilerExists   = externalProfilers_.length > threadIdx;
+        auto externalProfiler = profilerExists ? externalProfilers_[threadIdx] : null;
+        auto processProfiler  = processProfilers_[threadIdx];
+
+        auto processesZone         = Zone(processProfiler, allProcessesZoneName);
+        auto processesZoneExternal = Zone(externalProfiler, allProcessesZoneName);
+
+        // Find all processes assigned to this thread (threadIdx).
+        foreach(i, proc; processes_) if(scheduler_.processToThread(i) == threadIdx)
         {
-            import std.stdio;
-            writeln("EntityManager thread terminated with an error:").assumeWontThrow;
-            writeln(e).assumeWontThrow;
-            assert(false);
+            const name = proc.name;
+            const nameCut = name[0 .. min(profilerNameCutoff, name.length)];
+            auto procZoneExternal = Zone(externalProfiler, nameCut);
+            auto procZone         = Zone(processProfiler, nameCut);
+
+            proc.run(this);
         }
     }
 
