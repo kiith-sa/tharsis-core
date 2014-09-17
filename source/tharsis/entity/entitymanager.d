@@ -137,14 +137,14 @@ private:
      */
     Profiler[] externalProfilers_;
 
-    /// Frame profiler used to determine overhead of individual Processes.
-    Profiler processProfiler_;
+    /// Frame profilers (per-thread) used to determine overhead of individual Processes.
+    Profiler[] processProfilers_;
 
     /// Process names longer than this are cut for profiling zone names.
     enum profilerNameCutoff = 128;
 
-    /// Storage used by processProfiler_ to record profile data to.
-    ubyte[] processProfilerStorage_;
+    /// Storage used by processProfilers_ to record profile data to.
+    ubyte[][] processProfilersStorage_;
 
 public:
     /** Construct an EntityManager using component types registered in a ComponentTypeManager.
@@ -163,13 +163,17 @@ public:
         scheduler_ = new Scheduler(overrideThreadCount);
 
         import core.stdc.stdlib: malloc;
-        // For now, we'll just hope 256 kiB is enough for zones for all Processes.
-        // It should be OK as long as the user doesn't have thousands of Processes
-        // (note that running out of this space will not *break* Tharsis, but it will
-        // lead to inability to effectively schedule processes (but... any user with
-        // 1000s of processes is pretty much asking for it))
-        processProfilerStorage_ = (cast(ubyte*)malloc(256 * 1024))[0 .. 256 * 1024];
-        processProfiler_ = new Profiler(processProfilerStorage_);
+        // For now, we assume 128kiB is enough for zones for all Processes in a thread. It
+        // should be OK as long as the user doesn't have thousands of Processes (note that
+        // running out of this space will not *break* Tharsis, but it will lead to
+        // inability to effectively schedule processes (but... any user with 1000s of
+        // processes is pretty much asking for it))
+        foreach(thread; 0 .. scheduler_.threadCount)
+        {
+            processProfilersStorage_ ~= (cast(ubyte*)malloc(128 * 1024))[0 .. 128 * 1024];
+            processProfilers_        ~= new Profiler(processProfilersStorage_.back);
+        }
+
         // 1 null reference so we can easily use Zones in the main thread.
         externalProfilers_ = [null];
 
@@ -212,9 +216,11 @@ public:
         }
 
         import core.stdc.stdlib: free;
-        .destroy(processProfiler_);
-        free(processProfilerStorage_.ptr);
         .destroy(scheduler_);
+        foreach(profiler; processProfilers_) { .destroy(profiler); }
+        .destroy(processProfilers_);
+        foreach(storage; processProfilersStorage_) { free(storage.ptr); }
+        .destroy(processProfilersStorage_);
     }
 
     /** Attach multiple Profilers, each of which will profile a single thread.
@@ -608,22 +614,83 @@ private:
     /// Run all processes; called by executeFrame();
     void executeProcesses() @system nothrow
     {
-        // We reset the process profiler each frame to avoid running out of space (for
+        // We reset the process profilers each frame to avoid running out of space (for
         // now, we'll only use the profiling data from the last frame for scheduling).
-        processProfiler_.reset();
+        foreach(profiler; processProfilers_) { profiler.reset(); }
 
-        auto totalProcZone = Zone(externalProfilers_[0], "all processes");
-        // Run the processes (sequentially for now).
-        foreach(idx, process; processes_)
+        auto totalProcZone = Zone(externalProfilers_[0], "EntityManager.executeProcesses()");
+
+        scheduler_.updateSchedule!Policy(processes_, diagnostics_);
+        import core.thread;
+
+        static void runProcessesInThread(EntityManager self, uint threadIdx)
+        { with(self) {
+            bool profilerExists   = externalProfilers_.length > threadIdx;
+            auto externalProfiler = profilerExists ? externalProfilers_[threadIdx] : null;
+            auto processProfiler  = processProfilers_[threadIdx];
+
+            auto processesZone         = Zone(processProfiler, allProcessesZoneName);
+            auto processesZoneExternal = Zone(externalProfiler, allProcessesZoneName);
+
+            // Find all processes assigned to this thread (threadIdx).
+            foreach(i, proc; processes_) if(scheduler_.processToThread(i) == threadIdx)
+            {
+                const name = proc.name;
+                const nameCut = name[0 .. min(profilerNameCutoff, name.length)];
+                auto procZoneExternal = Zone(externalProfiler, nameCut);
+                auto procZone         = Zone(processProfiler, nameCut);
+
+                proc.run(self);
+            }
+        }}
+
+        static class ProcessThread : Thread
         {
-            const name = process.name;
-            const nameTruncated = name[0 .. min(profilerNameCutoff, name.length)];
+            EntityManager self_;
+            uint threadIdx_;
 
-            auto procZoneExternal = Zone(externalProfilers_[0], nameTruncated);
-            auto procZone = Zone(processProfiler_, nameTruncated);
-            process.run(this);
+            this(EntityManager self, uint threadIdx)
+            {
+                self_      = self;
+                threadIdx_ = threadIdx;
+                super( &run );
+            }
+
+            void run() { runProcessesInThread(self_, threadIdx_); }
+        }
+
+        auto threads = new ProcessThread[scheduler_.threadCount - 1];
+
+        // Start all threads except 0 (the main thread).
+        foreach(uint t, ref thread; threads)
+        {
+            uint threadIdx = t + 1;
+            thread = new ProcessThread(this, threadIdx).assumeWontThrow;
+            thread.start().assumeWontThrow;
+        }
+
+        // The main thread (this thread) has index 0.
+        runProcessesInThread(this, 0);
+
+        // Join all non-main threads.
+        try foreach(thread; threads)
+        {
+            thread.join();
+        }
+        catch(Throwable e)
+        {
+            import std.stdio;
+            writeln("EntityManager thread terminated with an error:").assumeWontThrow;
+            writeln(e).assumeWontThrow;
+            assert(false);
         }
     }
+
+    // Name used for the profiler Zone measuring time spent by all processes in a thread.
+    //
+    // Using __underscores__ to ensure it doesn't collide with zone name of any actual
+    // process type.
+    enum allProcessesZoneName = "__processes__";
 
     /// Update EntityManager diagnostics (after processes are run).
     void updateDiagnostics() @safe nothrow
@@ -638,17 +705,23 @@ private:
             diagnostics_.processes[idx] = process.diagnostics;
         }
 
-        // Get process execution durations from the profiler for diagnostics.
-        foreach(zone; processProfiler_.profileData.zoneRange)
+        // Get process execution durations from the profilers.
+        foreach(prof; processProfilers_) foreach(zone; prof.profileData.zoneRange)
         {
             // Find the process (diagnostics) with name matching the zone info, and
-            // set the furation.
-            foreach(ref process; diagnostics_.processes)
-            {
-                const name = process.name;
-                if(zone.info != name[0 .. min(profilerNameCutoff, name.length)]) { continue; }
-                process.duration = zone.duration;
-            }
+            // set the duration.
+
+            // startsWith(), because we cut off process names over profilerNameCutoff long.
+            auto found = diagnostics_.processes[].find!(p => p.name.startsWith(zone.info));
+            if(found.empty) { continue; }
+            found.front.duration = zone.duration;
+        }
+        // Get the time spent executing processes in each thread this frame.
+        foreach(threadIdx, prof; processProfilers_)
+        {
+            auto found = prof.profileData.zoneRange.find!(z => z.info == allProcessesZoneName)();
+            assert(!found.empty, "Didn't find the 'all Processes in a thread' zone");
+            diagnostics_.threads[threadIdx] = Diagnostics.Thread(found.front.duration);
         }
 
         const pastEntityCount = past_.entities.length;
