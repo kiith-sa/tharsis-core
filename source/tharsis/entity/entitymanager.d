@@ -297,13 +297,14 @@ public:
         allocMult_ = mult;
     }
 
-    /// Execute a single frame/tick/time step of the game/simulation.
-    ///
-    /// Does all management needed between frames, and runs all registered processes on
-    /// matching entities once.
-    ///
-    /// This includes updating resource managers, swapping past/future state, forgetting
-    /// dead entities, creating entities added by addEntity, preallocation, etc.
+    /** Execute a single frame/tick/time step of the game/simulation.
+     *
+     * Does all management needed between frames, and runs all registered processes on
+     * matching entities once.
+     *
+     * This includes updating resource managers, swapping past/future state, forgetting
+     * dead entities, creating entities added by addEntity, preallocation, etc.
+     */
     void executeFrame() @trusted nothrow
     {
         auto zoneExecuteFrame = Zone(externalProfilers_[0], "EntityManager.executeFrame");
@@ -501,11 +502,12 @@ private:
         resourceManagers_ ~= manager;
     }
 
-    /// Calls specified process() method of a Process.
-    ///
-    /// Params: F           = The process() method to call.
-    ///         process     = Process with the process() method.
-    ///         entityRange = Entity range to get the components to pass from.
+    /** Calls specified process() method of a Process.
+     *
+     * Params: F           = The process() method to call.
+     *         process     = Process with the process() method.
+     *         entityRange = Entity range to get the components to pass from.
+     */
     static void callProcessMethod(alias F, P, ERange)(P process, ref ERange entityRange)
         nothrow
     {
