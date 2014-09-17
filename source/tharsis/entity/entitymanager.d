@@ -39,7 +39,6 @@ import tharsis.util.mallocarray;
 /// A shortcut alias for EntityManager with the default entity policy.
 alias DefaultEntityManager = EntityManager!DefaultEntityPolicy;
 
-
 /// The central, "World" object of Tharsis.
 ///
 /// EntityManager fullfills multiple roles:
@@ -138,7 +137,7 @@ private:
     Profiler processProfiler_;
 
     /// Process names longer than this are cut for profiling zone names.
-    enum profilerNameCutoff = 80;
+    enum profilerNameCutoff = 128;
 
     /// Storage used by processProfiler_ to record profile data to.
     ubyte[] processProfilerStorage_;
@@ -219,7 +218,7 @@ public:
      *             being passed. Profiler at profilers[0] will profile code running in
      *             the main thread.
      */
-    void attachPerThreadProfilers(Profiler[] profilers)
+    void attachPerThreadProfilers(Profiler[] profilers) @safe pure nothrow @nogc
     {
         externalProfilers_ = profilers;
     }
