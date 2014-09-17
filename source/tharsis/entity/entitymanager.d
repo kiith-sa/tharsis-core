@@ -32,6 +32,7 @@ import tharsis.entity.lifecomponent;
 import tharsis.entity.processtypeinfo;
 import tharsis.entity.processwrapper;
 import tharsis.entity.resourcemanager;
+import tharsis.entity.scheduler;
 import tharsis.util.bitmanip;
 import tharsis.util.mallocarray;
 
@@ -121,6 +122,9 @@ private:
     /// Entities to add when the next frame starts.
     shared(EntitiesToAdd) entitiesToAdd_;
 
+    /// Determines which processes run in which threads.
+    Scheduler scheduler_;
+
     /// Diagnostics data (how many components of which type, etc).
     Diagnostics diagnostics_;
 
@@ -143,14 +147,21 @@ private:
     ubyte[] processProfilerStorage_;
 
 public:
-    /// Construct an EntityManager using component types registered with passed
-    /// ComponentTypeManager.
-    ///
-    /// Params: componentTypeManager = Component type manager storing component type
-    ///                                information. Must be locked.
-    this(AbstractComponentTypeManager componentTypeManager)
+    /** Construct an EntityManager using component types registered in a ComponentTypeManager.
+     *
+     * Params:
+     *
+     * componentTypeManager = Component type manager storing component type information.
+     *                        Must be locked.
+     * overrideThreadCount  = If nonzero, the EntityManager will always use the specified
+     *                        number of threads (even if there are too few processes to
+     *                        use them) instead of autodetecting optimal thread count.
+     */
+    this(AbstractComponentTypeManager componentTypeManager, size_t overrideThreadCount = 0)
         @trusted nothrow
     {
+        scheduler_ = new Scheduler(overrideThreadCount);
+
         import core.stdc.stdlib: malloc;
         // For now, we'll just hope 256 kiB is enough for zones for all Processes.
         // It should be OK as long as the user doesn't have thousands of Processes
@@ -203,6 +214,7 @@ public:
         import core.stdc.stdlib: free;
         .destroy(processProfiler_);
         free(processProfilerStorage_.ptr);
+        .destroy(scheduler_);
     }
 
     /** Attach multiple Profilers, each of which will profile a single thread.
@@ -643,6 +655,7 @@ private:
 
         diagnostics_.pastEntityCount = pastEntityCount;
         diagnostics_.processCount    = processes_.length;
+        diagnostics_.threadCount     = scheduler_.threadCount;
 
         // Accumulate (past) component type diagnostics.
         const(ComponentTypeInfo)[] compTypeInfo = componentTypeMgr_.componentTypeInfo;
