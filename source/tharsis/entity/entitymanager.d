@@ -40,19 +40,20 @@ import tharsis.util.mallocarray;
 /// A shortcut alias for EntityManager with the default entity policy.
 alias DefaultEntityManager = EntityManager!DefaultEntityPolicy;
 
-/// The central, "World" object of Tharsis.
-///
-/// EntityManager fullfills multiple roles:
-///
-/// * Registers processes and resource managers.
-/// * Creates entities from entity prototypes.
-/// * Executes processes.
-/// * Manages past and future entities and components.
-///
-/// Params: Policy = A struct with enum members specifying various compile-time
-///                  parameters and hints. See entitypolicy.d for an example.
-///
-/// TODO usage example once stable.
+/** The central, "World" object of Tharsis.
+ *
+ * EntityManager fullfills multiple roles:
+ *
+ * * Registers processes and resource managers.
+ * * Creates entities from entity prototypes.
+ * * Executes processes.
+ * * Manages past and future entities and components.
+ *
+ * Params: Policy = A struct with enum members specifying various compile-time
+ *                  parameters and hints. See entitypolicy.d for an example.
+ *
+ * TODO usage example once stable.
+ */
 class EntityManager(Policy)
 {
     mixin validateEntityPolicy!Policy;
@@ -512,16 +513,16 @@ private:
         enum noFuture   = !hasFutureComponent!P;
         alias PastTypes = PastComponentTypes!F;
 
-        /// Generate a string with arguments to pass to a process() method.
-        ///
-        /// Mixed into the process() call at compile time. Should correctly handle past
-        /// components, future component and EntityAccess arguments regardless of
-        /// their order.
-        ///
-        /// Params: futureString = String to mix in to pass the future component/s
-        ///                        (should be the name of a variable defined where the
-        ///                        result is mixed in). Should be null if process()
-        ///                        writes no future component/s.
+        /* Generate a string with arguments to pass to a process() method.
+         *
+         * Mixed into the process() call at compile time. Should correctly handle
+         * past/future component and EntityAccess arguments regardless of their order.
+         *
+         * Params: futureString = String to mix in to pass the future component/s
+         *                        (should be the name of a variable defined where the
+         *                        result is mixed in). Should be null if process()
+         *                        writes no future component/s.
+         */
         string processArgs(string futureString = null)()
         {
             string[] parts;
