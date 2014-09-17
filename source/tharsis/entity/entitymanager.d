@@ -267,6 +267,9 @@ private:
     /// Determines which processes run in which threads.
     Scheduler scheduler_;
 
+    /// Process threads (all threads executing processes other than the main thread).
+    ProcessThread[] procThreads_;
+
     /// Diagnostics data (how many components of which type, etc).
     Diagnostics diagnostics_;
 
@@ -303,6 +306,14 @@ public:
         @trusted nothrow
     {
         scheduler_ = new Scheduler(overrideThreadCount);
+
+        // Start the process threads.
+        // 0 is the main thread, so we only need to add threads other than 0.
+        foreach(threadIdx; 1 .. scheduler_.threadCount)
+        {
+            procThreads_ ~= new ProcessThread(this, cast(uint)threadIdx);
+            procThreads_.back.start().assumeWontThrow;
+        }
 
         import core.stdc.stdlib: malloc;
         // For now, we assume 128kiB is enough for zones for all Processes in a thread. It
@@ -355,6 +366,21 @@ public:
         if(clearResources) foreach(manager; resourceManagers_)
         {
             manager.clear();
+        }
+
+        // Tell all process threads to stop and then wait to join them.
+        foreach(thread; procThreads_) { thread.stop(); }
+        try foreach(thread; procThreads_)
+        {
+            thread.join();
+        }
+        catch(Throwable e)
+        {
+            // TODO: Logging 2014-09-17
+            import std.stdio;
+            writeln("EntityManager thread terminated with an error:").assumeWontThrow;
+            writeln(e).assumeWontThrow;
+            assert(false);
         }
 
         import core.stdc.stdlib: free;
