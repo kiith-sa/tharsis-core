@@ -75,6 +75,146 @@ package:
     alias ComponentStateT     = ComponentState!Policy;
     alias ComponentTypeStateT = ComponentTypeState!Policy;
 
+
+    import core.thread;
+    /** A thread that runs processes each frame.
+     *
+     * The thread alternates between states:
+     *
+     * When a game update starts, EntityManager changes the state to Executing (by a
+     * startUpdate() call), which is detected by the ProcessThread which then begins
+     * executing Processes (as determined by the Scheduler) for the game update. Once
+     * the ProcessThread is done running the Processes, it sets its state to Waiting.
+     * EntityManager waits until all ProcessThreads are Waiting to end the game update.
+     *
+     * On the next game update, this sequence repeats.
+     *
+     * EntityManager stops all ProcessThreads at its deinitialization by calling stop(),
+     * changing ProcessThread state to Stopping, which is detected by the ProcessThread
+     * which then stops.
+     */
+    static class ProcessThread : Thread
+    {
+        /// Possible states of a ProcessThread.
+        enum State: ubyte
+        {
+            // Executing processes in a game update.
+            Executing,
+            // Waiting for the next game update after done executing the last one.
+            Waiting,
+            // Stopping the thread.
+            //
+            // Set by EntityManager to signify that the thread should stop.
+            Stopping,
+        }
+
+    private:
+        // Using atomic *stores* to set state_ but don't use atomic loads to read it:
+        // The value won't get 'teared' since it's 1 byte.
+
+        // Current state of the thread. Use atomic stores to write, normal reads to read.
+        shared(State) state_ = State.Waiting;
+
+        // The entity manager (called self_ because this is essentially EntityManager code).
+        EntityManager self_;
+
+        // Index of this thread (main thread is 0, first external thread 1, next 2, etc.)
+        uint threadIdx_;
+
+        // Name of the thread (for profiling/debugging).
+        string threadName_;
+
+        // package avoids invariants, which slow down state() to crawl in debug builds.
+    package:
+        /** Construct a ProcessThread.
+         *
+         * Params:
+         *
+         * self      = The entity manager. The ProcessThread is essentially EntityManager
+         *             code moved into a separate thread.
+         * threadIdx = Index of the thread. 0 is the main thread, 1 the first
+         *             ProcessThread, etc.
+         */
+        this(EntityManager self, uint threadIdx) @system nothrow
+        {
+            self_      = self;
+            threadIdx_ = threadIdx;
+            threadName_ = "Tharsis ExecuteThread %s".format(threadIdx_).assumeWontThrow;
+            super( &run ).assumeWontThrow;
+        }
+
+        /// Get the current state of the thread.
+        final State state() @system pure nothrow @nogc { return cast(State)state_; }
+
+        import core.atomic;
+        /** Stop the thread. Should be called only by EntityManager.
+         * Can only be called once execution of any game update is finished (i.e. when
+         *
+         * the thread is in Waiting state).
+         */
+        final void stop() @system nothrow
+        {
+            assert(isRunning, "Trying to stop() a thread that is not running");
+            assert(state == State.Waiting, "Trying to stop a ProcessThread that is "
+                                           "either executing or is already stopping");
+            atomicStore(state_, State.Stopping);
+        }
+
+        /** Start executing processes in a game update. Should be called only by EntityManager.
+         *
+         * Can only be called when the thread is in Waiting state.
+         */
+        final void startUpdate() @system nothrow
+        {
+            assert(isRunning, "Trying to startUpdate() in a thread that is not running");
+            assert(state == State.Waiting, "Trying to start an update on an ProcessThread "
+                                           "that is either executing or is stopping");
+            atomicStore(state_, State.Executing);
+        }
+
+        /// Code that runs in the ProcessThread.
+        void run() @system nothrow
+        {
+            bool profilerExists = self_.externalProfilers_.length > threadIdx_;
+            auto profiler       = profilerExists ? self_.externalProfilers_[threadIdx_] : null;
+            auto threadZone     = Zone(profiler, threadName_);
+
+            for(;;) final switch(state)
+            {
+                case State.Waiting:
+                    // Wait for the next game update (and measure the wait with profiler).
+                    auto waitingZone = Zone(profiler, "waiting");
+                    while(state == State.Waiting)
+                    {
+                        // We need to give the OS some time to do other work... otherwise
+                        // if we hog all cores the OS will stop our threads in
+                        // inconvenient times.
+                        import std.datetime;
+                        try { sleep(dur!"msecs"(0)); }
+                        // TODO: log this, eventually 2014-09-17
+                        catch(Exception e)
+                        {
+                            // ignore, resulting in a hot loop
+                        }
+                        continue;
+                    }
+                    break;
+                case State.Executing:
+                    {
+                        // scope(exit) ensures the state is set even if we're crashing
+                        // with a Throwable (to avoid EntityManager waiting forever).
+                        scope(exit) { atomicStore(state_, State.Waiting); }
+                        // Ensure any memory ops finish before finishing a game update.
+                        atomicFence();
+                    }
+                    break;
+                case State.Stopping:
+                    // return, finishing the thread.
+                    return;
+            }
+        }
+    }
+
     /// Game state from the previous frame. Stores entities and their components,
     /// including dead entities and entities that were added during the last frame.
     immutable(GameStateT)* past_;
