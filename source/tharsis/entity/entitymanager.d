@@ -35,6 +35,7 @@ import tharsis.entity.resourcemanager;
 import tharsis.entity.scheduler;
 import tharsis.util.bitmanip;
 import tharsis.util.mallocarray;
+import tharsis.util.time;
 
 
 /// A shortcut alias for EntityManager with the default entity policy.
