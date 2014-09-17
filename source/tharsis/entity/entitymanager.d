@@ -247,10 +247,11 @@ private:
     /// Registered resource managers.
     AbstractResourceManager[] resourceManagers_;
 
-    /// A simple class wrapper over entities to add when the next frame starts.
-    ///
-    /// A class is used to allow convenient use of synchronized and shared. A struct +
-    /// mutex could be used if needed, but GC overhead of a single instance is very low.
+    /** A simple class wrapper over entities to add when the next frame starts.
+     *
+     * A class is used to allow convenient use of synchronized and shared. A struct +
+     * mutex could be used if needed, but GC overhead of a single instance is very low.
+     */
     class EntitiesToAdd
     {
         /// The ID of the next entity that will be created.
@@ -453,11 +454,12 @@ public:
         return nothrowWrapper().assumeWontThrow();
     }
 
-    /// Can be set to force more or less preallocation.
-    ///
-    /// Useful e.g. before loading a big map.
-    ///
-    /// Params:  mult = Multiplier for size of preallocations. Must be greater than 0.
+    /** Can be set to force more or less preallocation.
+     *
+     * Useful e.g. before loading a big map.
+     *
+     * Params:  mult = Multiplier for size of preallocations. Must be greater than 0.
+     */
     void allocMult(const double mult) @safe pure nothrow
     {
         assert(mult > 0.0, "allocMult parameter set to 0 or less");
@@ -539,10 +541,11 @@ public:
         updateDiagnostics();
     }
 
-    /// When used as an argument for a process() method of a Process, provides access to
-    /// the current entity handle and components of all past entities.
-    ///
-    /// See_Also: tharsis.entity.entityrange.EntityAccess
+    /** When used as an argument for a process() method of a Process, provides access to
+     * the current entity handle and components of all past entities.
+     *
+     * See_Also: tharsis.entity.entityrange.EntityAccess
+     */
     alias Context = EntityAccess!(typeof(this));
 
 package:
@@ -655,10 +658,11 @@ private:
     }
 
     // TODO a "locked" EntityManager state when no new stuff can be registered.
-    /// Register specified resource manager.
-    ///
-    /// Once registered, components may refer to resources managed by this resource
-    /// manager, and the EntityManager will update it between frames.
+    /** Register specified resource manager.
+     *
+     * Once registered, components may refer to resources managed by this resource
+     * manager, and the EntityManager will update it between frames.
+     */
     void registerResourceManager(Manager)(Manager manager) @safe pure nothrow
         if(is(Manager : AbstractResourceManager))
     {
@@ -914,8 +918,7 @@ private:
     }
 
 
-    /// Show any useful debugging information (warnings) before running a frame,
-    /// and check frame invariants.
+    /// Show any useful debugging info (warnings) before an update, and check update invariants.
     void frameDebug() @trusted nothrow
     {
         auto debugZone = Zone(externalProfilers_[0], "frameDebug");
@@ -945,9 +948,10 @@ private:
         (cast(void function(EntityManager) nothrow)&implementation)(this);
     }
 
-    /// Update every resource manager, allowing them to load resources.
-    ///
-    /// Part of the code executed between frames in executeFrame().
+    /** Update every resource manager, allowing them to load resources.
+     *
+     * Part of the code executed between frames in executeFrame().
+     */
     void updateResourceManagers() @safe nothrow
     {
         auto debugZone = Zone(externalProfilers_[0], "updateResourceManagers");
