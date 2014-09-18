@@ -231,6 +231,48 @@ struct GameState(Policy)
         }
     }
 
+    import tharsis.entity.diagnostics;
+    /** Update game state related value in entity manager diagnostics.
+     *
+     * Params:
+     *
+     * diagnostics      = Diagnostics to update.
+     * componentTypeMgr = Component type manager (for component type info).
+     */
+    void updateDiagnostics(ref EntityManagerDiagnostics!Policy diagnostics,
+                           const(AbstractComponentTypeManager) componentTypeMgr)
+        @safe pure nothrow const @nogc
+    {
+        const pastEntityCount = entities.length;
+        diagnostics.pastEntityCount = pastEntityCount;
+
+        // Accumulate component type diagnostics.
+        const(ComponentTypeInfo)[] compTypeInfo = componentTypeMgr.componentTypeInfo;
+        foreach(ushort typeID; 0 .. cast(ushort)compTypeInfo.length)
+        {
+            if(compTypeInfo[typeID].isNull) { continue; }
+
+            // Get diagnostics for one component type.
+            with(components[typeID]) with(diagnostics.componentTypes[typeID])
+            {
+                name = compTypeInfo[typeID].name;
+                foreach(entity; 0 .. pastEntityCount)
+                {
+                    pastComponentCount += counts[entity];
+                }
+                const componentBytes = buffer.componentBytes;
+                const countBytes     = ComponentCount.sizeof;
+                const offsetBytes    = uint.sizeof;
+
+                pastMemoryAllocated = buffer.allocatedSize * componentBytes +
+                                      counts.capacity * countBytes +
+                                      offsets.capacity * offsetBytes;
+                pastMemoryUsed = pastComponentCount * componentBytes +
+                                 pastEntityCount * (countBytes + offsetBytes);
+            }
+        }
+    }
+
     /** Copy the surviving entities from past (this GameState) to future entity buffer.
      *
      * Executed between frames in EntityManager.executeFrame().
