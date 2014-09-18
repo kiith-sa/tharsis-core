@@ -182,8 +182,7 @@ public:
     /// Params: componentCount = Number of components to allocate space for.
     void reserveComponentSpace(const size_t componentCount) @trusted nothrow
     {
-        assert(enabled_,
-                "Calling reserveComponentSpace on a non-enabled buffer");
+        assert(enabled_, "Calling reserveComponentSpace on a non-enabled buffer");
         if(allocatedComponents_ >= componentCount) { return; }
         const oldBytes = storage_.length;
         const bytes    = componentSize_ * componentCount;
