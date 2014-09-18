@@ -500,29 +500,22 @@ public:
         // Get the number of entities added this frame.
         const addedEntityCount = (cast(EntitiesToAdd)entitiesToAdd_).prototypes.length;
 
-        // Create space for the newly added entities in future.
-        newFuture.entities.length = futureEntityCount + addedEntityCount;
-        newFuture.components.resetBuffers();
-        auto addedFutureEntities = newFuture.entities[futureEntityCount .. $];
+        const pastEntityCount = newPast.entities.length;
 
-        // Create space for the newly added entities in past.
-        const pastEntityCount   = newPast.entities.length;
-        newPast.entities.length = pastEntityCount + addedEntityCount;
-        auto addedPastEntities  = newPast.entities[pastEntityCount .. $];
-
+        // Create space for the newly added entities.
+        {
+            auto growZone = Zone(profilerMainThread_, "growEntityCount");
+            newPast.growEntityCountTo(futureEntityCount + addedEntityCount);
+            newFuture.growEntityCountTo(pastEntityCount + addedEntityCount);
+        }
         // Preallocate future component buffer if needed.
         {
-            auto preallocZone = Zone(profilerMainThread_, "preallocateComponents");
+            auto preallocZone = Zone(profilerMainThread_, "preallocate components");
             newFuture.preallocateComponents(allocMult_, componentTypeMgr_);
         }
 
-        // Inform the entity count buffers about a changed number of entities.
-        {
-            auto growZone = Zone(profilerMainThread_, "growEntityCount");
-            newPast.components.growEntityCount(newPast.entities.length);
-            newFuture.components.growEntityCount(newFuture.entities.length);
-        }
-
+        auto addedFutureEntities = newFuture.entities[futureEntityCount .. $];
+        auto addedPastEntities   = newPast.entities[pastEntityCount .. $];
         // Add the new entities into the reserved entity/component space.
         addNewEntities(newPast.components, pastEntityCount,
                        addedPastEntities, addedFutureEntities);

@@ -83,6 +83,7 @@ public:
     /// Is there a component type using this ComponentTypeState?
     bool enabled() @safe pure nothrow const @nogc { return enabled_; }
 
+private:
     /** Grow the number of entities to store component counts for.
      *
      * Can only be used to _increase_ the number of entities. Component counts for the new
@@ -135,6 +136,7 @@ public:
 
     @disable this();
 
+private:
     /** Clear the buffers.
      *
      * Used to clear future component buffers when starting a frame.
@@ -275,6 +277,9 @@ struct GameState(Policy)
 
     /** Copy the surviving entities from past (this GameState) to future entity buffer.
      *
+     * Note that immediately after copied, the future entities will have no components
+     * (component buffers in GameState will be reset).
+     *
      * Executed between frames in EntityManager.executeFrame().
      *
      * Params: past   = New past, former future state.
@@ -302,6 +307,18 @@ struct GameState(Policy)
         {
             future.entities[aliveEntities++] = pastEntity;
         }
+
+        future.components.resetBuffers();
         return aliveEntities;
+    }
+
+    /** Reserve space for specified number of entities.
+     *
+     * Also reserves space for per-entity component counts/offsets for each component type.
+     */
+    void growEntityCountTo(size_t newCount)
+    {
+        entities.length = newCount;
+        components.growEntityCount(newCount);
     }
 }
