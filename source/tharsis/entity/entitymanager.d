@@ -284,15 +284,6 @@ private:
      */
     Profiler[] externalProfilers_;
 
-    /// Frame profilers (per-thread) used to determine overhead of individual Processes.
-    Profiler[] processProfilers_;
-
-    /// Process names longer than this are cut for profiling zone names.
-    enum profilerNameCutoff = 128;
-
-    /// Storage used by processProfilers_ to record profile data to.
-    ubyte[][] processProfilersStorage_;
-
 public:
     /** Construct an EntityManager using component types registered in a ComponentTypeManager.
      *
@@ -315,18 +306,6 @@ public:
         {
             procThreads_ ~= new ProcessThread(this, cast(uint)threadIdx);
             procThreads_.back.start().assumeWontThrow;
-        }
-
-        import core.stdc.stdlib: malloc;
-        // For now, we assume 128kiB is enough for zones for all Processes in a thread. It
-        // should be OK as long as the user doesn't have thousands of Processes (note that
-        // running out of this space will not *break* Tharsis, but it will lead to
-        // inability to effectively schedule processes (but... any user with 1000s of
-        // processes is pretty much asking for it))
-        foreach(thread; 0 .. scheduler_.threadCount)
-        {
-            processProfilersStorage_ ~= (cast(ubyte*)malloc(128 * 1024))[0 .. 128 * 1024];
-            processProfilers_        ~= new Profiler(processProfilersStorage_.back);
         }
 
         // 1 null reference so we can easily use Zones in the main thread.
@@ -387,10 +366,7 @@ public:
 
         import core.stdc.stdlib: free;
         .destroy(scheduler_);
-        foreach(profiler; processProfilers_) { .destroy(profiler); }
-        .destroy(processProfilers_);
-        foreach(storage; processProfilersStorage_) { free(storage.ptr); }
-        .destroy(processProfilersStorage_);
+        foreach(wrapper; processes_) { .destroy(wrapper); }
     }
 
     /** Attach multiple Profilers, each of which will profile a single thread.
@@ -789,10 +765,6 @@ private:
     /// Run all processes; called by executeFrame();
     void executeProcesses() @system nothrow
     {
-        // We reset the process profilers each frame to avoid running out of space (for
-        // now, we'll only use the profiling data from the last frame for scheduling).
-        foreach(profiler; processProfilers_) { profiler.reset(); }
-
         auto totalProcZone = Zone(externalProfilers_[0], "EntityManager.executeProcesses()");
 
         scheduler_.updateSchedule!Policy(processes_, diagnostics_);
@@ -829,18 +801,15 @@ private:
     {
         bool profilerExists   = externalProfilers_.length > threadIdx;
         auto externalProfiler = profilerExists ? externalProfilers_[threadIdx] : null;
-        auto processProfiler  = processProfilers_[threadIdx];
 
-        auto processesZone         = Zone(processProfiler, allProcessesZoneName);
         auto processesZoneExternal = Zone(externalProfiler, allProcessesZoneName);
 
         // Find all processes assigned to this thread (threadIdx).
         foreach(i, proc; processes_) if(scheduler_.processToThread(i) == threadIdx)
         {
             const name = proc.name;
-            const nameCut = name[0 .. min(profilerNameCutoff, name.length)];
+            const nameCut = name[0 .. min(Policy.profilerNameCutoff, name.length)];
             auto procZoneExternal = Zone(externalProfiler, nameCut);
-            auto procZone         = Zone(processProfiler, nameCut);
 
             proc.run(this);
         }
@@ -866,22 +835,17 @@ private:
         }
 
         // Get process execution durations from the profilers.
-        foreach(prof; processProfilers_) foreach(zone; prof.profileData.zoneRange)
+        foreach(idx, process; processes_)
         {
-            // Find the process (diagnostics) with name matching the zone info, and
-            // set the duration.
+            auto zones = process.profiler.profileData.zoneRange;
+            import std.range;
+            assert(zones.walkLength == 1,
+                   "A process profiler must have exactly 1 zone - process execution time");
+            const duration = zones.front.duration;
+            diagnostics_.processes[idx].duration = duration;
+            const threadIdx = scheduler_.processToThread(idx);
 
-            // startsWith(), because we cut off process names over profilerNameCutoff long.
-            auto found = diagnostics_.processes[].find!(p => p.name.startsWith(zone.info));
-            if(found.empty) { continue; }
-            found.front.duration = zone.duration;
-        }
-        // Get the time spent executing processes in each thread this frame.
-        foreach(threadIdx, prof; processProfilers_)
-        {
-            auto found = prof.profileData.zoneRange.find!(z => z.info == allProcessesZoneName)();
-            assert(!found.empty, "Didn't find the 'all Processes in a thread' zone");
-            diagnostics_.threads[threadIdx] = Diagnostics.Thread(found.front.duration);
+            diagnostics_.threads[threadIdx].processesDuration += duration;
         }
 
         const pastEntityCount = past_.entities.length;

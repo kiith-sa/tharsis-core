@@ -29,6 +29,13 @@ private:
     /// Process diagnostics, updated by the last run() call.
     ProcessDiagnostics diagnostics_;
 
+    import tharsis.prof;
+    /// Profiler used to profile runtime of this process.
+    Profiler profiler_;
+
+    /// Storage used by profiler_ to record profile data to.
+    ubyte[] profilerStorage_;
+
 public:
     /// Alias for diagnostics info about a process run.
     alias ProcessDiagnostics = EntityManager!Policy.Diagnostics.Process;
@@ -42,6 +49,23 @@ public:
         assert(false, "DMD (2065) bug workaround - should never happen");
     }
 
+    /// Construct the process wrapper. Initializes the process profiler
+    this() @trusted nothrow
+    {
+        // For now, assume 32kiB is enough for the Process. (TODO) Once we finish TimeStep
+        // replacement in Tharsis.prof, even 4k or less (static buffer) will be enough.
+        import core.stdc.stdlib;
+        profilerStorage_ = (cast(ubyte*)malloc(32 * 1024))[0 .. 32 * 1024];
+        profiler_        = new Profiler(profilerStorage_);
+    }
+
+    /// Destroy the process wrapper. Must be called.
+    ~this() nothrow
+    {
+        import core.stdc.stdlib;
+        free(profilerStorage_.ptr);
+    }
+
     /// Get name of the wrapped process.
     string name() @safe pure nothrow const @nogc { return name_; }
 
@@ -49,6 +73,12 @@ public:
     ref const(ProcessDiagnostics) diagnostics() @safe pure nothrow const @nogc 
     {
         return diagnostics_;
+    }
+
+    /// Get the internal profiler (only has one zone - process execution time).
+    const(Profiler) profiler() @safe pure nothrow const @nogc
+    {
+        return profiler_;
     }
 
     /** If the process must run in a specific thread, returns its index, otherwise uint.max.
@@ -100,10 +130,14 @@ public:
         {
             boundToThread_ = Process.boundToThread;
         }
+        super();
     }
 
     override void run(EntityManager!Policy entities) nothrow
     {
+        profiler_.reset();
+        const nameCut = name[0 .. min(Policy.profilerNameCutoff, name.length)];
+        auto zone = Zone(profiler_, nameCut);
         diagnostics_ = runProcess_(entities, process_);
     }
 }
