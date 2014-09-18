@@ -28,7 +28,6 @@ import tharsis.entity.entityid;
 import tharsis.entity.entityprototype;
 import tharsis.entity.entityrange;
 import tharsis.entity.gamestate;
-import tharsis.entity.lifecomponent;
 import tharsis.entity.processtypeinfo;
 import tharsis.entity.processwrapper;
 import tharsis.entity.resourcemanager;
@@ -262,7 +261,7 @@ private:
      */
     class EntitiesToAdd
     {
-        /// The ID of the next entity that will be created.
+        /// ID of the next entity that will be created.
         ///
         /// 1 is used to ease detection of bugs with uninitialized data.
         uint nextEntityID = 1;
@@ -509,8 +508,10 @@ public:
         // Add the new entities into the reserved entity/component space.
         {
             auto zone = Zone(profilerMainThread_, "init new entities");
-            initNewEntities(cast(EntitiesToAdd)entitiesToAdd_, componentTypeMgr_,
-                            *newPast, *newFuture);
+            initNewEntities((cast(EntitiesToAdd)entitiesToAdd_).prototypes,
+                            componentTypeMgr_, *newPast, *newFuture);
+            // Clear to reuse during the next frame.
+            (cast(EntitiesToAdd)entitiesToAdd_).prototypes.clear();
         }
 
         // Assign back to data members.
@@ -893,78 +894,6 @@ private:
     {
         auto resourceZone = Zone(profilerMainThread_, "updateResourceManagers");
         foreach(resManager; resourceManagers_) { resManager.update(); }
-    }
-
-    /** Add newly created entities (from the entitiesToAdd_ data member).
-     *
-     * Part of the code executed between frames in executeFrame(). Entities are added both
-     * to past and future state of the next frame. Processes running during the next frame
-     * will decide which entities survive beyond the next frame.
-     *
-     * Params:
-     * 
-     * entitiesToAdd    = Access to prototypes to initialize the new entities with.
-     * componentTypeMgr = Access to component type info.
-     * newPast          = Past state for the new frame.
-     * newFuture        = Future state for the new frame.
-     */
-    static void initNewEntities(EntitiesToAdd entitiesToAdd,
-                                const(AbstractComponentTypeManager) componentTypeMgr,
-                                ref GameStateT newPast, ref GameStateT newFuture)
-        @trusted nothrow
-    {
-        // We're adding entities created during the previous frame; the next frame will
-        // see their components as past state.
-        ComponentTypeStateT[] target = newPast.components.self_[];
-        // Past entities to add the newly created entities to.
-        Entity[] targetPast = newPast.addedEntities;
-        // Future entities to add the newly created entities to. (They need to be added
-        // for processes to run; processes running during the next frame will then decide
-        // whether or not they will continue to live). 
-        Entity[] targetFuture = newFuture.addedEntities;
-
-        const(ComponentTypeInfo)[] compTypeInfo = componentTypeMgr.componentTypeInfo;
-        foreach(index, pair; entitiesToAdd.prototypes)
-        {
-            immutable(EntityPrototype)* prototype = pair[0];
-
-            // Component counts of each component type for this entity.
-            ComponentCount[maxComponentTypes!Policy] componentCounts;
-
-            // Copy components from the prototype to component buffers.
-            foreach(const rawComponent; prototype.constComponentRange(compTypeInfo))
-            {
-                // Copies and commits the component.
-                target[rawComponent.typeID].buffer.addComponent(rawComponent);
-                ++componentCounts[rawComponent.typeID];
-            }
-
-            // Add a (mandatory) LifeComponent.
-            enum lifeID = LifeComponent.ComponentTypeID;
-            auto life   = LifeComponent(true);
-            auto source = RawComponent(lifeID, cast(ubyte[])((&life)[0 .. 1]));
-            target[lifeID].buffer.addComponent(source);
-            ++componentCounts[lifeID];
-
-            // Add the new entity to past/future entities.
-            const EntityID entityID = pair[1];
-            targetPast[index] = targetFuture[index] = Entity(entityID);
-
-            // Set the component counts/offsets for this entity.
-            foreach(typeID, count; componentCounts)
-            {
-                if(!target[typeID].enabled) { continue; }
-                const globalIndex = newPast.entityCountNoAdded + index;
-                const offset = globalIndex == 0
-                             ? 0
-                             : target[typeID].offsets[globalIndex - 1] + count;
-                target[typeID].counts[globalIndex]  = count;
-                target[typeID].offsets[globalIndex] = offset;
-            }
-        }
-
-        // Clear to reuse during the next frame.
-        entitiesToAdd.prototypes.clear();
     }
 
     /////////////////////////////////////////
