@@ -124,10 +124,10 @@ package:
         // Name of the thread (for profiling/debugging).
         string threadName_;
 
-        // External profiler that can be attached by the user to profile this thread.
+        // External profiler (if any) attached by the user to profile this thread.
         //
         // See_Also: EntityManager.attachPerThreadProfilers()
-        Profiler externalProfiler_;
+        Profiler profiler_;
 
         // package avoids invariants, which slow down state() to crawl in debug builds.
     package:
@@ -142,14 +142,17 @@ package:
          */
         this(EntityManager self, uint threadIdx) @system nothrow
         {
-            self_      = self;
-            threadIdx_ = threadIdx;
+            self_       = self;
+            threadIdx_  = threadIdx;
             threadName_ = "Tharsis ExecuteThread %s".format(threadIdx_).assumeWontThrow;
-            if(self_.externalProfilers_.length > threadIdx_)
-            {
-                externalProfiler_ = self_.externalProfilers_[threadIdx];
-            }
             super( &run ).assumeWontThrow;
+        }
+
+        /// Attach an external profiler to profile this thread.
+        void profiler(Profiler rhs) @system nothrow
+        {
+            assert(!isRunning, "Trying to attach a profiler while the thread is running");
+            profiler_ = rhs;
         }
 
         /// Get the current state of the thread.
@@ -184,13 +187,11 @@ package:
         /// Code that runs in the ProcessThread.
         void run() @system nothrow
         {
-            auto threadZone = Zone(externalProfiler_, threadName_);
-
             for(;;) final switch(state)
             {
                 case State.Waiting:
                     // Wait for the next game update (and measure the wait with profiler).
-                    auto waitingZone = Zone(externalProfiler_, "waiting");
+                    auto waitingZone = Zone(profiler_, "waiting");
                     while(state == State.Waiting)
                     {
                         // We need to give the OS some time to do other work... otherwise
@@ -211,7 +212,7 @@ package:
                         // scope(exit) ensures the state is set even if we're crashing
                         // with a Throwable (to avoid EntityManager waiting forever).
                         scope(exit) { atomicStore(state_, State.Waiting); }
-                        self_.executeProcessesOneThread(threadIdx_, externalProfiler_);
+                        self_.executeProcessesOneThread(threadIdx_, profiler_);
                         // Ensure any memory ops finish before finishing a game update.
                         atomicFence();
                     }
@@ -279,20 +280,19 @@ private:
     /// Process threads (all threads executing processes other than the main thread).
     ProcessThread[] procThreads_;
 
+    /// Have the process threads been started?
+    bool threadsStarted_ = false;
+
     /// Diagnostics data (how many components of which type, etc).
     Diagnostics diagnostics_;
 
-    /** Profilers attached by $(D attachPerThreadProfilers())
-     *
-     * If no profilers are attached, this contains one null reference so we can pass
-     * externalProfilers_[0] to zones without complicating code.
-     *
-     * Used to profile Tharsis itself and Tharsis as a part of a bigger program.
-     */
-    Profiler[] externalProfilers_;
+    /// Profiler (if any) attached to the main thread by attachPerThreadProfilers().
+    Profiler profilerMainThread_ = null;
 
 public:
     /** Construct an EntityManager using component types registered in a ComponentTypeManager.
+     *
+     * Note: startThreads() must be called before executing any game updates (frames).
      *
      * Params:
      *
@@ -306,17 +306,12 @@ public:
         @trusted nothrow
     {
         scheduler_ = new Scheduler(overrideThreadCount);
-
-        // Start the process threads.
+        // Construct process threads.
         // 0 is the main thread, so we only need to add threads other than 0.
         foreach(threadIdx; 1 .. scheduler_.threadCount)
         {
             procThreads_ ~= new ProcessThread(this, cast(uint)threadIdx);
-            procThreads_.back.start().assumeWontThrow;
         }
-
-        // 1 null reference so we can easily use Zones in the main thread.
-        externalProfilers_ = [null];
 
         componentTypeMgr_ = componentTypeManager;
         // Explicit initialization is needed as of DMD 2.066, may be redundant later.
@@ -338,6 +333,19 @@ public:
         future_ = &(stateStorage_[1]);
     }
 
+    /** Start executing EntityManager in multiple threads.
+     *
+     * Throws:
+     *
+     * core.thread.ThreadException on failure to start the threads..
+     */
+    void startThreads() @trusted
+    {
+        // Start the process threads.
+        foreach(thread; procThreads_) { thread.start(); }
+        threadsStarted_ = true;
+    }
+
     /** Destroy the EntityManager.
      *
      * Must be called after using the entity manager.
@@ -349,7 +357,7 @@ public:
     void destroy(Flag!"ClearResources" clearResources = Yes.ClearResources)
         @trusted
     {
-        auto zoneDtor = Zone(externalProfilers_[0], "EntityManager.destroy");
+        auto zoneDtor = Zone(profilerMainThread_, "EntityManager.destroy");
         .destroy(cast(EntitiesToAdd)entitiesToAdd_);
         if(clearResources) foreach(manager; resourceManagers_)
         {
@@ -378,20 +386,24 @@ public:
 
     /** Attach multiple Profilers, each of which will profile a single thread.
      *
-     * Can be used for to profile Tharsis execution as a part of a larger program.
-     * If there are not enough profilers for all threads, only profilers.length threads
-     * will be profiled. If there are more profilers than threads, the extra profilers
-     * will be unused.
+     * Can only be called before startThreads().
+     *
+     * Allows to profile Tharsis execution as a part of a larger program. If there are not
+     * enough profilers for all threads, only profilers.length threads will be profiled.
+     * If there are more profilers than threads, the extra profilers will be unused.
      *
      * Params:
      *
-     * profilers = A slice of profilers to attach. The slice must not be modified after
-     *             being passed. Profiler at profilers[0] will profile code running in
-     *             the main thread.
+     * profilers = Profilers to attach. Profiler at profilers[0] will profile code running
+     *             in the main thread. $(B Note: ) attached profilers must not be modified
+     *             until the EntityManager.destroy() (which stops the threads) is called.
      */
-    void attachPerThreadProfilers(Profiler[] profilers) @safe pure nothrow @nogc
+    void attachPerThreadProfilers(Profiler[] profilers) @trusted nothrow
     {
-        externalProfilers_ = profilers;
+        assert(!threadsStarted_, "Trying to attach profilers after starting threads");
+        if(profilers.empty) { return; }
+        profilerMainThread_ = profilers.front;
+        foreach(idx, prof; profilers[1 .. $]) { procThreads_[idx].profiler = prof; }
     }
 
     /** Get a copy of diagnostics from the last game update.
@@ -459,7 +471,9 @@ public:
      */
     void executeFrame() @trusted nothrow
     {
-        auto zoneExecuteFrame = Zone(externalProfilers_[0], "EntityManager.executeFrame");
+        assert(threadsStarted_, "startThreads() must be called before executeFrame()");
+
+        auto zoneExecuteFrame = Zone(profilerMainThread_, "EntityManager.executeFrame");
         frameDebug();
         updateResourceManagers();
 
@@ -488,7 +502,7 @@ public:
         // entities in future.
         size_t futureEntityCount;
         {
-            auto zone = Zone(externalProfilers_[0], "copy/add entities for next frame");
+            auto zone = Zone(profilerMainThread_, "copy/add entities for next frame");
 
             futureEntityCount = copyLiveEntitiesToFuture(newPast, newFuture);
             newFuture.entities.length = futureEntityCount + addedEntityCount;
@@ -506,7 +520,7 @@ public:
 
         // Inform the entity count buffers about a changed number of entities.
         {
-            auto growZone = Zone(externalProfilers_[0], "growEntityCount");
+            auto growZone = Zone(profilerMainThread_, "growEntityCount");
             newPast.components.growEntityCount(newPast.entities.length);
             newFuture.components.growEntityCount(newFuture.entities.length);
         }
@@ -566,7 +580,7 @@ private:
     {
         mixin validateProcess!P;
 
-        auto registerZone = Zone(externalProfilers_[0], "EntityManager.registerProcess");
+        auto registerZone = Zone(profilerMainThread_, "EntityManager.registerProcess");
         // True if the Process does not write to any future component. Usually processes
         // that only read past components and produce some kind of output.
         enum noFuture = !hasFutureComponent!P;
@@ -675,12 +689,11 @@ private:
          * Mixed into the process() call at compile time. Should correctly handle
          * past/future component and EntityAccess arguments regardless of their order.
          *
-         * Params: futureString = String to mix in to pass the future component/s
-         *                        (should be the name of a variable defined where the
-         *                        result is mixed in). Should be null if process()
-         *                        writes no future component/s.
+         * Params: futureStr = String to mix in to pass the future component/s (should be
+         *                     the name of a variable defined where the mixed in). Should
+         *                     be null if process() writes no future component/s.
          */
-        string processArgs(string futureString = null)()
+        string processArgs(string futureStr = null)()
         {
             string[] parts;
             size_t pastIndex = 0;
@@ -695,8 +708,8 @@ private:
                 {
                     static if(isMutable!(Param.Component))
                     {
-                        assert(futureString !is null, "future component not specified");
-                        parts ~= futureString;
+                        assert(futureStr !is null, "future component not specified");
+                        parts ~= futureStr;
                     }
                     else
                     {
@@ -772,7 +785,7 @@ private:
     /// Run all processes; called by executeFrame();
     void executeProcesses() @system nothrow
     {
-        auto totalProcZone = Zone(externalProfilers_[0], "EntityManager.executeProcesses()");
+        auto totalProcZone = Zone(profilerMainThread_, "EntityManager.executeProcesses()");
 
         scheduler_.updateSchedule!Policy(processes_, diagnostics_);
 
@@ -784,11 +797,11 @@ private:
         foreach(thread; procThreads_) { thread.startUpdate(); }
 
         // The main thread (this thread) has index 0.
-        executeProcessesOneThread(0, externalProfilers_[0]);
+        executeProcessesOneThread(0, profilerMainThread_);
 
         // Wait till all threads finish executing.
         {
-            auto waitingZone = Zone(externalProfilers_[0], "waiting");
+            auto waitingZone = Zone(profilerMainThread_, "waiting");
             while(procThreads_.canFind!(e => e.state == ProcessThread.State.Executing))
             {
                 continue;
@@ -830,7 +843,7 @@ private:
     /// Update EntityManager diagnostics (after processes are run).
     void updateDiagnostics() @safe nothrow
     {
-        const diagZone = Zone(externalProfilers_[0], "most diagnostics");
+        const diagZone = Zone(profilerMainThread_, "most diagnostics");
 
         diagnostics_ = Diagnostics.init;
 
@@ -891,7 +904,7 @@ private:
     /// Show any useful debugging info (warnings) before an update, and check update invariants.
     void frameDebug() @trusted nothrow
     {
-        auto debugZone = Zone(externalProfilers_[0], "frameDebug");
+        auto debugZone = Zone(profilerMainThread_, "frameDebug");
 
         foreach(id; 0 .. maxBuiltinComponentTypes)
         {
@@ -922,7 +935,7 @@ private:
      */
     void updateResourceManagers() @safe nothrow
     {
-        auto debugZone = Zone(externalProfilers_[0], "updateResourceManagers");
+        auto resourceZone = Zone(profilerMainThread_, "updateResourceManagers");
         foreach(resManager; resourceManagers_) { resManager.update(); }
     }
 
@@ -966,9 +979,8 @@ private:
      */
     void preallocateComponents(GameStateT* state) @safe nothrow
     {
-        auto preallocZone = Zone(externalProfilers_[0], "preallocateComponents");
-        // Preallocate space for components based on hints in the Policy and component
-        // type info.
+        auto preallocZone = Zone(profilerMainThread_, "preallocateComponents");
+        // Prealloc space for components based on hints in the Policy and component type info.
 
         const entityCount    = state.entities.length;
         const minAllEntities = cast(size_t)(Policy.minComponentPerEntityPrealloc * entityCount);
@@ -1006,7 +1018,7 @@ private:
                         Entity[] targetPast, Entity[] targetFuture)
         @trusted nothrow
     {
-        auto addZone = Zone(externalProfilers_[0], "addNewEntities");
+        auto addZone = Zone(profilerMainThread_, "addNewEntities");
 
         auto entitiesToAdd = cast(EntitiesToAdd)entitiesToAdd_;
         const(ComponentTypeInfo)[] compTypeInfo = componentTypeMgr_.componentTypeInfo;
