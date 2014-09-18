@@ -41,6 +41,17 @@ struct DefaultEntityPolicy
     /// type compared to entity count.
     enum minComponentPerEntityPrealloc = 0.05;
 
+    /** Process names longer than this will be cut to this length for profiling purposes.
+     *
+     * Note that Tharsis uses internal profiling to balance load of Processes between
+     * threads. Using Processes with names longer than this will not break Tharsis but it
+     * may result in suboptimal performance if two Processes end up being confused after
+     * their names are cut.
+     *
+     * Can be at most 255.
+     */
+    enum profilerNameCutoff = 128;
+
     /// Data type used internally for component counts in an entity.
     ///
     /// The maximum number of components of one type in an entity is ComponentCount.max.
@@ -54,6 +65,8 @@ template validateEntityPolicy(Policy)
     static assert(std.traits.isUnsigned!(Policy.ComponentCount),
                   "ComponentCount must be an unsigned integer type");
     static assert(Policy.reallocMult > 1.0, "reallocMult must be greater than 1");
+    static assert(Policy.profilerNameCutoff <= 255,
+                  "profilerNameCutoff must not be more than 255");
 }
 
 /// The maximum possible number of component types when using specified entity
