@@ -200,6 +200,37 @@ struct GameState(Policy)
      */
 
 
+    import tharsis.entity.componenttypemanager;
+    /** Preallocate space in component buffers.
+     *
+     * Part of the code executed between frames in EntityManager.executeFrame().
+     *
+     * Used to prealloc space for future components to minimize allocations during update.
+     *
+     * Params: allocMult   = Allocation size multiplier.
+     *         compTypeMgr = Component type manager (for component type info).
+     */
+    void preallocateComponents(float allocMult,
+                               const(AbstractComponentTypeManager) componentTypeMgr)
+        @safe nothrow
+    {
+        // Prealloc space for components based on hints in Policy and component type info.
+        const entityCount    = entities.length;
+        const minAllEntities = cast(size_t)(Policy.minComponentPerEntityPrealloc * entityCount);
+        enum baseMinimum     = Policy.minComponentPrealloc;
+
+        foreach(ref info; componentTypeMgr.componentTypeInfo) if(!info.isNull)
+        {
+            import std.algorithm;
+            // Component type specific minimums.
+            const minimum             = max(baseMinimum, info.minPrealloc);
+            const specificAllEntities = cast(size_t)(info.minPreallocPerEntity * entityCount);
+            const allEntities         = max(minAllEntities, specificAllEntities);
+            const prealloc            = cast(size_t)(allocMult * max(minimum, allEntities));
+            components[info.id].buffer.reserveComponentSpace(prealloc);
+        }
+    }
+
     /** Copy the surviving entities from past (this GameState) to future entity buffer.
      *
      * Executed between frames in EntityManager.executeFrame().

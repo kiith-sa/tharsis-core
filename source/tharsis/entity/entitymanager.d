@@ -516,7 +516,10 @@ public:
         auto addedPastEntities  = newPast.entities[pastEntityCount .. $];
 
         // Preallocate future component buffer if needed.
-        preallocateComponents(newFuture);
+        {
+            auto preallocZone = Zone(profilerMainThread_, "preallocateComponents");
+            newFuture.preallocateComponents(allocMult_, componentTypeMgr_);
+        }
 
         // Inform the entity count buffers about a changed number of entities.
         {
@@ -937,34 +940,6 @@ private:
     {
         auto resourceZone = Zone(profilerMainThread_, "updateResourceManagers");
         foreach(resManager; resourceManagers_) { resManager.update(); }
-    }
-
-    /** Preallocate space in component buffers.
-     *
-     * Part of the code executed between frames in executeFrame().
-     *
-     * Used to prealloc space for future components to minimize allocations during update.
-     *
-     * Params: state = Game state (past or future) to preallocate space for.
-     */
-    void preallocateComponents(GameStateT* state) @safe nothrow
-    {
-        auto preallocZone = Zone(profilerMainThread_, "preallocateComponents");
-        // Prealloc space for components based on hints in the Policy and component type info.
-
-        const entityCount    = state.entities.length;
-        const minAllEntities = cast(size_t)(Policy.minComponentPerEntityPrealloc * entityCount);
-        enum baseMinimum     = Policy.minComponentPrealloc;
-
-        foreach(ref info; componentTypeInfo) if(!info.isNull)
-        {
-            // Component type specific minimums.
-            const minimum             = max(baseMinimum, info.minPrealloc);
-            const specificAllEntities = cast(size_t)(info.minPreallocPerEntity * entityCount);
-            const allEntities         = max(minAllEntities, specificAllEntities);
-            const prealloc            = cast(size_t)(allocMult_ * max(minimum, allEntities));
-            state.components[info.id].buffer.reserveComponentSpace(prealloc);
-        }
     }
 
     /** Add newly created entities (from the entitiesToAdd_ data member).
