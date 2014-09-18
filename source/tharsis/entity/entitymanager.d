@@ -509,8 +509,10 @@ public:
         }
 
         // Add the new entities into the reserved entity/component space.
-        addNewEntities(newPast.components, newPast.entityCountNoAdded,
-                       newPast.addedEntities, newFuture.addedEntities);
+        {
+            auto addZone = Zone(profilerMainThread_, "add new entities");
+            addNewEntities(*newPast, *newFuture);
+        }
 
         // Assign back to data members.
         future_ = newFuture;
@@ -898,25 +900,27 @@ private:
     /** Add newly created entities (from the entitiesToAdd_ data member).
      *
      * Part of the code executed between frames in executeFrame().
+     * Entities are added both to past and future state of the next frame. Processes 
+     * running during the next frame will decide which entities survive beyond the next
+     * frame.
      *
      * Params:
-     *
-     * target          = Past component buffers to add components of the added entities
-     *                   to. We're adding entities created during the previous frame; the
-     *                   next frame will see them as past state.
-     * baseEntityCount = The number of past entities (before the new entities are added).
-     * targetPast      = Past entities to add the newly created entities to. Must have
-     *                   enough space for all entities in entitiesToAdd_.
-     * targetFuture    = Future entities to add the newly created entities to. (They need
-     *                   to be added for processes to run; processes running during the
-     *                   next frame will then decide whether or not they will continue to
-     *                   live). Must have enough space for all entities in entitiesToAdd_.
+     * 
+     * newPast = Past state for the new frame.
+     * newPast = Future state for the new frame.
      */
-    void addNewEntities(ref ComponentStateT target, const size_t baseEntityCount,
-                        Entity[] targetPast, Entity[] targetFuture)
+    void addNewEntities(ref GameStateT newPast, ref GameStateT newFuture)
         @trusted nothrow
     {
-        auto addZone = Zone(profilerMainThread_, "addNewEntities");
+        // We're adding entities created during the previous frame; the next frame will
+        // see their components as past state.
+        ComponentTypeStateT[] target = newPast.components.self_[];
+        // Past entities to add the newly created entities to.
+        Entity[] targetPast = newPast.addedEntities;
+        // Future entities to add the newly created entities to. (They need to be added
+        // for processes to run; processes running during the next frame will then decide
+        // whether or not they will continue to live). 
+        Entity[] targetFuture = newFuture.addedEntities;
 
         auto entitiesToAdd = cast(EntitiesToAdd)entitiesToAdd_;
         const(ComponentTypeInfo)[] compTypeInfo = componentTypeMgr_.componentTypeInfo;
@@ -950,7 +954,7 @@ private:
             foreach(typeID, count; componentCounts)
             {
                 if(!target[typeID].enabled) { continue; }
-                const globalIndex = baseEntityCount + index;
+                const globalIndex = newPast.entityCountNoAdded + index;
                 const offset = globalIndex == 0
                              ? 0
                              : target[typeID].offsets[globalIndex - 1] + count;
