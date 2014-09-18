@@ -198,4 +198,36 @@ struct GameState(Policy)
      *
      * Would have to be updated with the entity array between frames.
      */
+
+
+    /** Copy the surviving entities from past (this GameState) to future entity buffer.
+     *
+     * Executed between frames in EntityManager.executeFrame().
+     *
+     * Params: past   = New past, former future state.
+     *         future = New future, former past state. future.entities must be exactly
+     *                  as long as past.entities. Surviving entities will be copied here.
+     *
+     * Returns: The number of surviving entities written to futureEntities.
+     */
+    size_t copyLiveEntitiesToFuture(ref GameState future)
+        @trusted pure nothrow const
+    {
+        assert(entities.length == future.entities.length,
+               "Past/future entity counts do not match");
+
+        import tharsis.entity.lifecomponent;
+        // Get the past LifeComponents.
+        enum lifeID            = LifeComponent.ComponentTypeID;
+        auto rawLifeComponents = components[lifeID].buffer.committedComponentSpace;
+        auto lifeComponents    = cast(immutable(LifeComponent)[])rawLifeComponents;
+
+        // Copy the alive entities to the future and count them.
+        size_t aliveEntities = 0;
+        foreach(i, pastEntity; entities) if(lifeComponents[i].alive)
+        {
+            future.entities[aliveEntities++] = pastEntity;
+        }
+        return aliveEntities;
+    }
 }
