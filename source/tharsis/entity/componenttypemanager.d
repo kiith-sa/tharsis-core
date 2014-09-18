@@ -46,7 +46,7 @@ public:
     }
 
     /// Is this manager locked?
-    final @property bool locked() @safe const pure nothrow {return locked_;}
+    final @property bool locked() @safe const pure nothrow @nogc { return locked_; }
 
     /// Are all specified component types registered?
     final bool areTypesRegistered(Types ...)() @safe nothrow const
@@ -104,7 +104,7 @@ public:
     /// be null (determine this using ComponentTypeInfo.isNull).
     ///
     /// Can only be called after this manager is locked.
-    final const(ComponentTypeInfo[]) componentTypeInfo() @safe pure nothrow const
+    final const(ComponentTypeInfo[]) componentTypeInfo() @safe pure nothrow const @nogc
     {
         assert(locked, "Can't access component type info before locking "
                        "ComponentTypeManager");

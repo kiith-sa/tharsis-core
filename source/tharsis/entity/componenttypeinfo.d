@@ -629,7 +629,7 @@ public:
     }
 
     /// Is this ComponentTypeInfo null (i.e. doesn't describe any type)?
-    bool isNull() @safe pure nothrow const { return id == nullComponentTypeID; }
+    bool isNull() @safe pure nothrow const @nogc { return id == nullComponentTypeID; }
 
     import tharsis.entity.entitymanager;
     /** Load a component of this component type.
