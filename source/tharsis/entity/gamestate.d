@@ -286,8 +286,9 @@ struct GameState(Policy)
     size_t copyLiveEntitiesToFuture(ref GameState future)
         @trusted pure nothrow const
     {
-        assert(entities.length == future.entities.length,
-               "Past/future entity counts do not match");
+        future.entities = future.entities[0 .. entities.length];
+        // Clear the future (recycled from former past) entities to help detect bugs.
+        future.entities[] = Entity.init;
 
         import tharsis.entity.lifecomponent;
         // Get the past LifeComponents.

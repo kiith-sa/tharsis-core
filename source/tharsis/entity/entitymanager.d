@@ -490,10 +490,6 @@ public:
         GameStateT* newFuture = cast(GameStateT*)past_;
         GameStateT* newPast   = future_;
 
-        newFuture.entities = cast(Entity[])newFuture.entities[0 .. newPast.entities.length];
-        // Clear the future (former past) entities to help detect bugs.
-        newFuture.entities[] = Entity.init;
-
         // Get the number of entities added this frame.
         auto entitiesToAdd     = cast(const(EntitiesToAdd))entitiesToAdd_;
         const addedEntityCount = entitiesToAdd.prototypes.length;
