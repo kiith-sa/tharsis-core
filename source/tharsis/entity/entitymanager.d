@@ -478,35 +478,33 @@ public:
         updateResourceManagers();
 
         // Past entities from the previous frame may be longer or equal, but not shorter
-        // than future entities from the previous frame: any dead entities from past were
-        // not copied to future (any new entities were copied to both).
+        // than future entities.
         assert(past_.entities.length >= future_.entities.length,
-               "Less past than future entities in the previous frame. Past entities may "
-               "be longer or equal, never shorter than future entities. The reason is "
-               "that any dead entities from past are not copied to future (newly added "
-               "entities are copied to both, so they don't affect relative lengths");
+               "Less past than future entities in previous frame. Past entities may be "
+               "longer or equal, never shorter than future entities: any dead entities "
+               "from past are not copied to future (newly added entities are copied to "
+               "both, so they don't affect relative lengths");
 
         // Get the past & future component/entity buffers for the new frame.
         GameStateT* newFuture = cast(GameStateT*)past_;
         GameStateT* newPast   = future_;
 
         // Copy alive past entities to future.
-        size_t futureEntityCount;
         {
-            auto zone = Zone(profilerMainThread_, "copy/add entities for next frame");
-            futureEntityCount = newPast.copyLiveEntitiesToFuture(*newFuture);
+            auto zone = Zone(profilerMainThread_, "copy entities from the past update");
+            newPast.copyLiveEntitiesToFuture(*newFuture);
         }
 
         // Get the number of entities added this frame.
-        const addedEntityCount = (cast(EntitiesToAdd)entitiesToAdd_).prototypes.length;
-
-        const pastEntityCount = newPast.entities.length;
+        const copiedFutureEntityCount = newFuture.entities.length;
+        const copiedPastEntityCount   = newPast.entities.length;
 
         // Create space for the newly added entities.
         {
             auto growZone = Zone(profilerMainThread_, "growEntityCount");
-            newPast.growEntityCountTo(futureEntityCount + addedEntityCount);
-            newFuture.growEntityCountTo(pastEntityCount + addedEntityCount);
+            const addedEntityCount = (cast(EntitiesToAdd)entitiesToAdd_).prototypes.length;
+            newPast.growEntityCountBy(addedEntityCount);
+            newFuture.growEntityCountBy(addedEntityCount);
         }
         // Preallocate future component buffer if needed.
         {
@@ -514,10 +512,10 @@ public:
             newFuture.preallocateComponents(allocMult_, componentTypeMgr_);
         }
 
-        auto addedFutureEntities = newFuture.entities[futureEntityCount .. $];
-        auto addedPastEntities   = newPast.entities[pastEntityCount .. $];
+        auto addedFutureEntities = newFuture.entities[copiedFutureEntityCount .. $];
+        auto addedPastEntities   = newPast.entities[copiedPastEntityCount .. $];
         // Add the new entities into the reserved entity/component space.
-        addNewEntities(newPast.components, pastEntityCount,
+        addNewEntities(newPast.components, copiedPastEntityCount,
                        addedPastEntities, addedFutureEntities);
 
         // Assign back to data members.

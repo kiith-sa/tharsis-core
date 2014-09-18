@@ -288,8 +288,8 @@ struct GameState(Policy)
      *
      * Returns: The number of surviving entities written to futureEntities.
      */
-    size_t copyLiveEntitiesToFuture(ref GameState future)
-        @trusted pure nothrow const
+    void copyLiveEntitiesToFuture(ref GameState future)
+        @system pure nothrow const
     {
         future.entities = future.entities[0 .. entities.length];
         // Clear the future (recycled from former past) entities to help detect bugs.
@@ -309,16 +309,17 @@ struct GameState(Policy)
         }
 
         future.components.resetBuffers();
-        return aliveEntities;
+        future.entities = future.entities[0 .. aliveEntities];
     }
 
-    /** Reserve space for specified number of entities.
+    /** Reserve space to add specified number of entities.
      *
      * Also reserves space for per-entity component counts/offsets for each component type.
      */
-    void growEntityCountTo(size_t newCount)
+    void growEntityCountBy(size_t addedCount) @system nothrow
     {
-        entities.length = newCount;
-        components.growEntityCount(newCount);
+        entities.assumeSafeAppend();
+        entities.length = entities.length + addedCount;
+        components.growEntityCount(entities.length);
     }
 }
