@@ -124,6 +124,11 @@ package:
         // Name of the thread (for profiling/debugging).
         string threadName_;
 
+        // External profiler that can be attached by the user to profile this thread.
+        //
+        // See_Also: EntityManager.attachPerThreadProfilers()
+        Profiler externalProfiler_;
+
         // package avoids invariants, which slow down state() to crawl in debug builds.
     package:
         /** Construct a ProcessThread.
@@ -140,6 +145,10 @@ package:
             self_      = self;
             threadIdx_ = threadIdx;
             threadName_ = "Tharsis ExecuteThread %s".format(threadIdx_).assumeWontThrow;
+            if(self_.externalProfilers_.length > threadIdx_)
+            {
+                externalProfiler_ = self_.externalProfilers_[threadIdx];
+            }
             super( &run ).assumeWontThrow;
         }
 
@@ -175,15 +184,13 @@ package:
         /// Code that runs in the ProcessThread.
         void run() @system nothrow
         {
-            bool profilerExists = self_.externalProfilers_.length > threadIdx_;
-            auto profiler       = profilerExists ? self_.externalProfilers_[threadIdx_] : null;
-            auto threadZone     = Zone(profiler, threadName_);
+            auto threadZone = Zone(externalProfiler_, threadName_);
 
             for(;;) final switch(state)
             {
                 case State.Waiting:
                     // Wait for the next game update (and measure the wait with profiler).
-                    auto waitingZone = Zone(profiler, "waiting");
+                    auto waitingZone = Zone(externalProfiler_, "waiting");
                     while(state == State.Waiting)
                     {
                         // We need to give the OS some time to do other work... otherwise
@@ -204,7 +211,7 @@ package:
                         // scope(exit) ensures the state is set even if we're crashing
                         // with a Throwable (to avoid EntityManager waiting forever).
                         scope(exit) { atomicStore(state_, State.Waiting); }
-                        self_.executeProcessesOneThread(threadIdx_);
+                        self_.executeProcessesOneThread(threadIdx_, externalProfiler_);
                         // Ensure any memory ops finish before finishing a game update.
                         atomicFence();
                     }
@@ -777,7 +784,7 @@ private:
         foreach(thread; procThreads_) { thread.startUpdate(); }
 
         // The main thread (this thread) has index 0.
-        executeProcessesOneThread(0);
+        executeProcessesOneThread(0, externalProfilers_[0]);
 
         // Wait till all threads finish executing.
         {
@@ -796,20 +803,19 @@ private:
      * Params:
      *
      * threadIdx = Index of the current thread (0 for the main thread, other for ProcessThreads)
+     * profiler  = Profiler to profile this thread with, if any is attached.
      */
-    void executeProcessesOneThread(uint threadIdx) @system nothrow
+    void executeProcessesOneThread(uint threadIdx, Profiler profiler)
+        @system nothrow
     {
-        bool profilerExists   = externalProfilers_.length > threadIdx;
-        auto externalProfiler = profilerExists ? externalProfilers_[threadIdx] : null;
-
-        auto processesZoneExternal = Zone(externalProfiler, allProcessesZoneName);
+        auto processesZoneExternal = Zone(profiler, allProcessesZoneName);
 
         // Find all processes assigned to this thread (threadIdx).
         foreach(i, proc; processes_) if(scheduler_.processToThread(i) == threadIdx)
         {
             const name = proc.name;
             const nameCut = name[0 .. min(Policy.profilerNameCutoff, name.length)];
-            auto procZoneExternal = Zone(externalProfiler, nameCut);
+            auto procZoneExternal = Zone(profiler, nameCut);
 
             proc.run(this);
         }
