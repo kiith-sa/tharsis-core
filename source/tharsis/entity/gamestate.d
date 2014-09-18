@@ -207,8 +207,8 @@ struct GameState(Policy)
      *
      * Used to prealloc space for future components to minimize allocations during update.
      *
-     * Params: allocMult   = Allocation size multiplier.
-     *         compTypeMgr = Component type manager (for component type info).
+     * Params: allocMult        = Allocation size multiplier.
+     *         componentTypeMgr = Component type manager (for component type info).
      */
     void preallocateComponents(float allocMult,
                                const(AbstractComponentTypeManager) componentTypeMgr)
