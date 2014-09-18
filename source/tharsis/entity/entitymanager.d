@@ -922,30 +922,28 @@ private:
     void frameDebug() @trusted nothrow
     {
         auto debugZone = Zone(externalProfilers_[0], "frameDebug");
-        static void implementation(EntityManager self)
-        {with(self){
-            foreach(id; 0 .. maxBuiltinComponentTypes)
+
+        foreach(id; 0 .. maxBuiltinComponentTypes)
+        {
+            const(ComponentTypeInfo)* info = &componentTypeInfo[id];
+            // If no such builtin component type exists, ignore.
+            if(info.isNull) { continue; }
+            assert(writtenComponentTypes_[id],
+                   "No process writing builtin component type %s: register a process "
+                   "writing this component type (see tharsis.defaults.copyprocess for "
+                   "a placeholder).".format(info.name).assumeWontThrow);
+        }
+        // If no process writes a component type, print a warning.
+        foreach(ref info; componentTypeInfo)
+        {
+            if(writtenComponentTypes_[info.id] || info.id == nullComponentTypeID)
             {
-                const(ComponentTypeInfo)* info = &componentTypeInfo[id];
-                // If no such builtin component type exists, ignore.
-                if(info.isNull) { continue; }
-                assert(writtenComponentTypes_[id],
-                       "No process writing builtin component type %s: please register "
-                       "a process writing this component type (see "
-                       "tharsis.defaults.copyprocess for a placeholder process)."
-                       .format(info.name));
+                continue;
             }
-            foreach(ref info; componentTypeInfo)
-            {
-                if(writtenComponentTypes_[info.id] || info.id == nullComponentTypeID)
-                {
-                    continue;
-                }
-                writefln("WARNING: No process writing component type %s: components of "
-                        "this type will disappear after the first update.", info.name);
-            }
-        }}
-        (cast(void function(EntityManager) nothrow)&implementation)(this);
+            writefln("WARNING: No process writing component type %s: components of this "
+                     " type will disappear after the first update.", info.name)
+                     .assumeWontThrow;
+        }
     }
 
     /** Update every resource manager, allowing them to load resources.
