@@ -873,10 +873,10 @@ private:
                 const offsetBytes    = uint.sizeof;
 
                 pastMemoryAllocated = buffer.allocatedSize * componentBytes +
-                                        counts.capacity * countBytes +
-                                        offsets.capacity * offsetBytes;
+                                      counts.capacity * countBytes +
+                                      offsets.capacity * offsetBytes;
                 pastMemoryUsed = pastComponentCount * componentBytes +
-                                    pastEntityCount * (countBytes + offsetBytes);
+                                 pastEntityCount * (countBytes + offsetBytes);
             }
         }
     }
