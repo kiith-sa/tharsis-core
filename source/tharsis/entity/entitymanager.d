@@ -490,20 +490,19 @@ public:
         GameStateT* newFuture = cast(GameStateT*)past_;
         GameStateT* newPast   = future_;
 
-        // Get the number of entities added this frame.
-        auto entitiesToAdd     = cast(const(EntitiesToAdd))entitiesToAdd_;
-        const addedEntityCount = entitiesToAdd.prototypes.length;
-
-        // Copy alive past entities to future and create space for the newly added
-        // entities in future.
+        // Copy alive past entities to future.
         size_t futureEntityCount;
         {
             auto zone = Zone(profilerMainThread_, "copy/add entities for next frame");
-
             futureEntityCount = newPast.copyLiveEntitiesToFuture(*newFuture);
-            newFuture.entities.length = futureEntityCount + addedEntityCount;
-            newFuture.components.resetBuffers();
         }
+
+        // Get the number of entities added this frame.
+        const addedEntityCount = (cast(EntitiesToAdd)entitiesToAdd_).prototypes.length;
+
+        // Create space for the newly added entities in future.
+        newFuture.entities.length = futureEntityCount + addedEntityCount;
+        newFuture.components.resetBuffers();
         auto addedFutureEntities = newFuture.entities[futureEntityCount .. $];
 
         // Create space for the newly added entities in past.
