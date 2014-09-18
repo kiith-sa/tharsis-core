@@ -74,22 +74,21 @@ private:
     ProcessFunction runProcess_;
 
 public:
-    /// A generated function that runs the process on all matching entities.
-    ///
-    /// The EntityManager parameter provides the entities to process; the
-    /// Process parameter is the process whose process() method/s will be
-    /// called.
-    ///
-    /// Can be changed into delegate if needed, but try to keep it a function.
+    /** A generated function that runs the process on all matching entities.
+     *
+     * The EntityManager parameter provides the entities to process; the Process parameter
+     * is the process who's process() method/s will be called.
+     *
+     * Can be changed into delegate if needed, but try to keep it a function.
+     */
     alias ProcessDiagnostics function(EntityManager!Policy, Process) nothrow ProcessFunction;
 
-    /// Construct a ProcessWrapper.
-    ///
-    /// Params: process    = The process to wrap.
-    ///         runProcess = Function that, passed the an entity manager and the
-    ///                      process, will run the process on all entities with
-    ///                      components matching the process() method/s of the
-    ///                      process.
+    /** Construct a ProcessWrapper.
+     *
+     * Params: process    = Process to wrap.
+     *         runProcess = Function that, passed the entity manager and the process, will
+     *                      run process all entities with components matching the process.
+     */
     this(Process process, ProcessFunction runProcess) nothrow
     {
         process_    = process;
