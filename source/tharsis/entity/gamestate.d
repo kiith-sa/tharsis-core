@@ -321,11 +321,11 @@ struct GameState(Policy)
         future.entities = future.entities[0 .. aliveEntities];
     }
 
-    /** Reserve space to add specified number of entities.
+    /** Add specified number of new entities, without initializing them or their components.
      *
      * Also reserves space for per-entity component counts/offsets for each component type.
      */
-    void growEntityCountBy(size_t addedCount) @system nothrow
+    void addNewEntitiesNoInit(size_t addedCount) @system nothrow
     {
         entityCountNoAdded = entities.length;
         entities.assumeSafeAppend();

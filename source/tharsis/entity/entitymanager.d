@@ -494,24 +494,23 @@ public:
             auto zone = Zone(profilerMainThread_, "copy entities from the past update");
             newPast.copyLiveEntitiesToFuture(*newFuture);
         }
-
         // Create space for the newly added entities.
         {
-            auto growZone = Zone(profilerMainThread_, "growEntityCount");
+            auto zone = Zone(profilerMainThread_, "add new entities without initializing");
             const addedEntityCount = (cast(EntitiesToAdd)entitiesToAdd_).prototypes.length;
-            newPast.growEntityCountBy(addedEntityCount);
-            newFuture.growEntityCountBy(addedEntityCount);
+            newPast.addNewEntitiesNoInit(addedEntityCount);
+            newFuture.addNewEntitiesNoInit(addedEntityCount);
         }
         // Preallocate future component buffer if needed.
         {
-            auto preallocZone = Zone(profilerMainThread_, "preallocate components");
+            auto zone = Zone(profilerMainThread_, "preallocate components");
             newFuture.preallocateComponents(allocMult_, componentTypeMgr_);
         }
-
         // Add the new entities into the reserved entity/component space.
         {
-            auto addZone = Zone(profilerMainThread_, "add new entities");
-            addNewEntities(*newPast, *newFuture);
+            auto zone = Zone(profilerMainThread_, "init new entities");
+            initNewEntities(cast(EntitiesToAdd)entitiesToAdd_, componentTypeMgr_,
+                            *newPast, *newFuture);
         }
 
         // Assign back to data members.
@@ -519,7 +518,6 @@ public:
         past_   = cast(immutable(GameStateT*))(newPast);
 
         executeProcesses();
-
         updateDiagnostics();
     }
 
@@ -899,17 +897,20 @@ private:
 
     /** Add newly created entities (from the entitiesToAdd_ data member).
      *
-     * Part of the code executed between frames in executeFrame().
-     * Entities are added both to past and future state of the next frame. Processes 
-     * running during the next frame will decide which entities survive beyond the next
-     * frame.
+     * Part of the code executed between frames in executeFrame(). Entities are added both
+     * to past and future state of the next frame. Processes running during the next frame
+     * will decide which entities survive beyond the next frame.
      *
      * Params:
      * 
-     * newPast = Past state for the new frame.
-     * newPast = Future state for the new frame.
+     * entitiesToAdd    = Access to prototypes to initialize the new entities with.
+     * componentTypeMgr = Access to component type info.
+     * newPast          = Past state for the new frame.
+     * newFuture        = Future state for the new frame.
      */
-    void addNewEntities(ref GameStateT newPast, ref GameStateT newFuture)
+    static void initNewEntities(EntitiesToAdd entitiesToAdd,
+                                const(AbstractComponentTypeManager) componentTypeMgr,
+                                ref GameStateT newPast, ref GameStateT newFuture)
         @trusted nothrow
     {
         // We're adding entities created during the previous frame; the next frame will
@@ -922,8 +923,7 @@ private:
         // whether or not they will continue to live). 
         Entity[] targetFuture = newFuture.addedEntities;
 
-        auto entitiesToAdd = cast(EntitiesToAdd)entitiesToAdd_;
-        const(ComponentTypeInfo)[] compTypeInfo = componentTypeMgr_.componentTypeInfo;
+        const(ComponentTypeInfo)[] compTypeInfo = componentTypeMgr.componentTypeInfo;
         foreach(index, pair; entitiesToAdd.prototypes)
         {
             immutable(EntityPrototype)* prototype = pair[0];
