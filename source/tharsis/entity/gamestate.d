@@ -193,6 +193,15 @@ struct GameState(Policy)
      */
     Entity[] entities;
 
+    /** Number of entities *before* adding new entities for the current frame.
+     *
+     * For past state, this is the number of entities from the last frame.
+     * For future state, this is the number of *surviving* entities that didn't die during
+     * the last frame.
+     */
+    size_t entityCountNoAdded;
+
+
     /* TODO: May add a structure to access entities by entityID to speed up direct
      * component access with EntityAccess (currently using binary search). Could use some
      * hash map, or a multi-level bucket-sorted structure (?) (E.g. 65536 buckets for the
@@ -318,8 +327,15 @@ struct GameState(Policy)
      */
     void growEntityCountBy(size_t addedCount) @system nothrow
     {
+        entityCountNoAdded = entities.length;
         entities.assumeSafeAppend();
         entities.length = entities.length + addedCount;
         components.growEntityCount(entities.length);
+    }
+
+    /// Get entities added during this (starting) game update.
+    Entity[] addedEntities() @safe pure nothrow @nogc 
+    {
+        return entities[entityCountNoAdded .. $];
     }
 }

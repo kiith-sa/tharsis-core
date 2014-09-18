@@ -495,10 +495,6 @@ public:
             newPast.copyLiveEntitiesToFuture(*newFuture);
         }
 
-        // Get the number of entities added this frame.
-        const copiedFutureEntityCount = newFuture.entities.length;
-        const copiedPastEntityCount   = newPast.entities.length;
-
         // Create space for the newly added entities.
         {
             auto growZone = Zone(profilerMainThread_, "growEntityCount");
@@ -512,11 +508,9 @@ public:
             newFuture.preallocateComponents(allocMult_, componentTypeMgr_);
         }
 
-        auto addedFutureEntities = newFuture.entities[copiedFutureEntityCount .. $];
-        auto addedPastEntities   = newPast.entities[copiedPastEntityCount .. $];
         // Add the new entities into the reserved entity/component space.
-        addNewEntities(newPast.components, copiedPastEntityCount,
-                       addedPastEntities, addedFutureEntities);
+        addNewEntities(newPast.components, newPast.entityCountNoAdded,
+                       newPast.addedEntities, newFuture.addedEntities);
 
         // Assign back to data members.
         future_ = newFuture;
