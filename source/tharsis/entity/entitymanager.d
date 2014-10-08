@@ -189,8 +189,8 @@ package:
             for(;;) final switch(state)
             {
                 case State.Waiting:
-                    // Wait for the next game update (and measure the wait with profiler).
-                    auto waitingZone = Zone(profiler_, "waiting");
+                    // Wait for the next game update.
+                    // No profiling so the user can access the profiler between frames.
                     while(state == State.Waiting)
                     {
                         // We need to give the OS some time to do other work... otherwise
@@ -201,7 +201,7 @@ package:
                         // TODO: log this, eventually 2014-09-17
                         catch(Exception e)
                         {
-                            // ignore, resulting in a hot loop
+                            // ignore, resulting in a hot loop replacing sleep
                         }
                         continue;
                     }
@@ -211,7 +211,10 @@ package:
                         // scope(exit) ensures the state is set even if we're crashing
                         // with a Throwable (to avoid EntityManager waiting forever).
                         scope(exit) { atomicStore(state_, State.Waiting); }
-                        self_.executeProcessesOneThread(threadIdx_, profiler_);
+                        {
+                            auto frameZone = Zone(profiler_, "frame");
+                            self_.executeProcessesOneThread(threadIdx_, profiler_);
+                        }
                         // Ensure any memory ops finish before finishing a game update.
                         atomicFence();
                     }
