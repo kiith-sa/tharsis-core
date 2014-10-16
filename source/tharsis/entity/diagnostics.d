@@ -16,6 +16,37 @@ import tharsis.entity.entitypolicy;
 
 
 
+
+/// Diagnostics info about a Tharsis process.
+struct ProcessDiagnostics
+{
+    /** Name of the process.
+     *
+     * If null, this Process struct is unused and doesn't store diagnostics for any
+     * process.
+     */
+    string name;
+    /** Number of calls to the process() method/s of the Process during the game update.
+     *
+     * A Process may have multiple process() methods, but at most one of them will be
+     * called for one entity.
+     */
+    size_t processCalls;
+    /** Number of past component types read by the process.
+     *
+     * This is the number of different past component types read by *all* process()
+     * methods of the Process.
+     */
+    size_t componentTypesRead;
+
+    /** Time this process spent executing this frame in hectonanoseconds.
+     */
+    ulong duration;
+
+    /// Is this a 'null' struct that doesn't store valid data?
+    bool isNull() @safe pure nothrow const @nogc { return name is null; }
+}
+
 /// Diagnostics info for EntityManager.
 struct EntityManagerDiagnostics(Policy)
 {
@@ -34,36 +65,6 @@ struct EntityManagerDiagnostics(Policy)
         size_t pastMemoryAllocated;
         /// Bytes actually used for past components of this type in the entity manager.
         size_t pastMemoryUsed;
-
-        /// Is this a 'null' struct that doesn't store valid data?
-        bool isNull() @safe pure nothrow const @nogc { return name is null; }
-    }
-
-    /// Diagnostics info about a Tharsis process.
-    struct Process
-    {
-        /** Name of the process.
-         *
-         * If null, this Process struct is unused and doesn't store diagnostics for any
-         * process.
-         */
-        string name;
-        /** Number of calls to the process() method/s of the Process during the game update.
-         *
-         * A Process may have multiple process() methods, but at most one of them will be
-         * called for one entity.
-         */
-        size_t processCalls;
-        /** Number of past component types read by the process.
-         *
-         * This is the number of different past component types read by *all* process()
-         * methods of the Process.
-         */
-        size_t componentTypesRead;
-
-        /** Time this process spent executing this frame in hectonanoseconds.
-         */
-        ulong duration;
 
         /// Is this a 'null' struct that doesn't store valid data?
         bool isNull() @safe pure nothrow const @nogc { return name is null; }
@@ -101,7 +102,7 @@ struct EntityManagerDiagnostics(Policy)
      * invalid.
      */
     // There may be more processes than this but it's highly unlikely.
-    Process[componentTypes.length * 2 + 4] processes;
+    ProcessDiagnostics[componentTypes.length * 2 + 4] processes;
 
     /** Diagnostics for individual (used) execution threads.
      *

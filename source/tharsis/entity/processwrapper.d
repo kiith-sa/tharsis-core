@@ -37,8 +37,7 @@ private:
     ubyte[] profilerStorage_;
 
 public:
-    /// Alias for diagnostics info about a process run.
-    alias ProcessDiagnostics = EntityManager!Policy.Diagnostics.Process;
+    import tharsis.entity.diagnostics: ProcessDiagnostics;
 
     /** Runs the process on all matching entities from specified entity manager.
      *
@@ -113,11 +112,13 @@ public:
     /** A generated function that runs the process on all matching entities.
      *
      * The EntityManager parameter provides the entities to process; the Process parameter
-     * is the process who's process() method/s will be called.
+     * is the process who's process() method/s will be called. The Profiler parameter is 
+     * the external profiler for the thread the Process runs in, if attached through
+     * $(D EntitityManager.attachPerThreadProfilers()).
      *
      * Can be changed into delegate if needed, but try to keep it a function.
      */
-    alias ProcessDiagnostics function(EntityManager!Policy, Process) nothrow ProcessFunction;
+    alias ProcessDiagnostics function(EntityManager!Policy, Process, Profiler) nothrow ProcessFunction;
 
     /** Construct a ProcessWrapper.
      *
@@ -144,6 +145,6 @@ public:
         profiler_.reset();
         const nameCut = name[0 .. min(Policy.profilerNameCutoff, name.length)];
         auto zone = Zone(profiler_, nameCut);
-        diagnostics_ = runProcess_(entities, process_);
+        diagnostics_ = runProcess_(entities, process_, extProfiler);
     }
 }

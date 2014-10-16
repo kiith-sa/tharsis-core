@@ -609,9 +609,15 @@ private:
         // Specific overloads have precedence over more general. For example, if there are
         // overloads process(A) and process(A, B), and an entity has components A and B,
         // the latter overload is called.
-        static Diagnostics.Process runProcess(EntityManager self, P process) nothrow
+        //
+        // Params: self           = The entity manager.
+        //         process        = The process being executed.
+        //         threadProfiler = Profiler for this thread, if attached with
+        //                          attachPerThreadProfilers().
+        static ProcessDiagnostics runProcess
+            (EntityManager self, P process, Profiler threadProfiler) nothrow
         {
-            Diagnostics.Process processDiagnostics;
+            ProcessDiagnostics processDiagnostics;
             processDiagnostics.name = P.stringof;
             processDiagnostics.componentTypesRead = AllPastComponentTypes!P.length;
             // If the process has a 'preProcess' method, call it before processing any entities.
