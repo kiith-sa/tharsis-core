@@ -193,16 +193,19 @@ package:
             for(;;) final switch(state)
             {
                 case State.Waiting:
+                    bool shouldSleep = true;
                     // Wait for the next game update.
                     // No profiling so the user can access the profiler between frames.
                     while(state == State.Waiting)
                     {
-                        // We need to give the OS some time to do other work... otherwise
-                        // if we hog all cores the OS will stop our threads in
-                        // inconvenient times.
+                        // We need to give the OS some time to do other work... if we hog 
+                        // all cores the OS will stop our threads at inconvenient times.
                         import std.datetime;
-                        try { sleep(dur!"msecs"(0)); }
-                        // TODO: log this, eventually 2014-09-17
+                        try if(shouldSleep)
+                        {
+                            sleep(dur!"msecs"(0));
+                        }
+                        // TODO: log this, eventually (despiker eventEvent?) 2014-09-17
                         catch(Exception e)
                         {
                             // ignore, resulting in a hot loop replacing sleep
@@ -796,8 +799,19 @@ private:
         // Wait till all threads finish executing.
         {
             auto waitingZone = Zone(profilerMainThread_, "waiting");
+            bool shouldSleep = true;
+
             while(procThreads_.canFind!(e => e.state == ProcessThread.State.Executing))
             {
+                try if(shouldSleep)
+                {
+                    Thread.sleep(dur!"msecs"(0));
+                }
+                catch(Exception e)
+                {
+                    // ignore, will wait in hot loop if we can't sleep
+                }
+
                 continue;
             }
         }
