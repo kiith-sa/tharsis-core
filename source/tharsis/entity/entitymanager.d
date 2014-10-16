@@ -912,6 +912,7 @@ private:
             past_.updateDiagnostics(diagnostics_, componentTypeMgr_);
         }
 
+        diagnostics_.scheduler = scheduler_.diagnostics;
     }
 
 

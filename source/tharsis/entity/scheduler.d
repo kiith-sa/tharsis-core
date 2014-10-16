@@ -59,6 +59,9 @@ private:
     /// Number of processes in each thread.
     MallocArray!uint processesPerThread_;
 
+    // Diagnostics for the scheduler, like scheduling algorithm, estimated frame etc.
+    SchedulerDiagnostics diagnostics_;
+
 public:
     /** Construct a Scheduler.
      *
