@@ -817,7 +817,7 @@ private:
             const nameCut = name[0 .. min(Policy.profilerNameCutoff, name.length)];
             auto procZoneExternal = Zone(profiler, nameCut);
 
-            proc.run(this);
+            proc.run(this, profiler);
         }
     }
 

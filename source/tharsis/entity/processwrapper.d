@@ -30,7 +30,7 @@ private:
     ProcessDiagnostics diagnostics_;
 
     import tharsis.prof;
-    /// Profiler used to profile runtime of this process.
+    /// Internal profiler used to profile runtime of this process.
     Profiler profiler_;
 
     /// Storage used by profiler_ to record profile data to.
@@ -43,8 +43,14 @@ public:
     /** Runs the process on all matching entities from specified entity manager.
      *
      * Updates diagnostics (e.g. benchmarking) info about the process run.
+     *
+     * Params:
+     *
+     * entities    = Entity manager used to read entities, the "self" parameter for the
+     *               generated runProcess() function.
+     * extProfiler = External profiler, if provided by the user.
      */
-    void run(EntityManager!Policy entities) nothrow
+    void run(EntityManager!Policy entities, Profiler extProfiler) nothrow
     {
         assert(false, "DMD (2065) bug workaround - should never happen");
     }
@@ -133,7 +139,7 @@ public:
         super();
     }
 
-    override void run(EntityManager!Policy entities) nothrow
+    override void run(EntityManager!Policy entities, Profiler extProfiler) nothrow
     {
         profiler_.reset();
         const nameCut = name[0 .. min(Policy.profilerNameCutoff, name.length)];
