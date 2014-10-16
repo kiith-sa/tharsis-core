@@ -873,34 +873,42 @@ private:
     /// Update EntityManager diagnostics (after processes are run).
     void updateDiagnostics() @safe nothrow
     {
-        const diagZone = Zone(profilerMainThread_, "most diagnostics");
+        auto diagZone = Zone(profilerMainThread_, "updateDiagnostics()");
 
         diagnostics_ = Diagnostics.init;
 
-        // Get process diagnostics.
-        foreach(idx, process; processes_)
         {
-            diagnostics_.processes[idx] = process.diagnostics;
+            auto procDiagZone = Zone(profilerMainThread_, "process diagnostics");
+
+            // Get process diagnostics.
+            foreach(idx, process; processes_)
+            {
+                diagnostics_.processes[idx] = process.diagnostics;
+            }
+
+            // Get process execution durations from the processes' internal profilers.
+            foreach(idx, process; processes_)
+            {
+                auto zones = process.profiler.profileData.zoneRange;
+                import std.range;
+                assert(zones.walkLength == 1,
+                        "A process profiler must have exactly 1 zone - process execution time");
+                const duration = zones.front.duration;
+                diagnostics_.processes[idx].duration = duration;
+                const threadIdx = scheduler_.processToThread(idx);
+
+                diagnostics_.threads[threadIdx].processesDuration += duration;
+            }
+
+            diagnostics_.processCount = processes_.length;
+            diagnostics_.threadCount  = scheduler_.threadCount;
         }
 
-        // Get process execution durations from the profilers.
-        foreach(idx, process; processes_)
         {
-            auto zones = process.profiler.profileData.zoneRange;
-            import std.range;
-            assert(zones.walkLength == 1,
-                   "A process profiler must have exactly 1 zone - process execution time");
-            const duration = zones.front.duration;
-            diagnostics_.processes[idx].duration = duration;
-            const threadIdx = scheduler_.processToThread(idx);
-
-            diagnostics_.threads[threadIdx].processesDuration += duration;
+            auto stateDiagZone = Zone(profilerMainThread_, "GameState.updateDiagnostics()");
+            past_.updateDiagnostics(diagnostics_, componentTypeMgr_);
         }
 
-        diagnostics_.processCount    = processes_.length;
-        diagnostics_.threadCount     = scheduler_.threadCount;
-
-        past_.updateDiagnostics(diagnostics_, componentTypeMgr_);
     }
 
 
