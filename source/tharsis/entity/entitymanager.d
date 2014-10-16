@@ -1,8 +1,8 @@
 //          Copyright Ferdinand Majerech 2013-2014.
 // Distributed under the Boost Software License, Version 1.0.
-//    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
+//    (See accompanying file LICENSE_1_0.txt or copy at
 module tharsis.entity.entitymanager;
 
 
@@ -186,6 +186,10 @@ package:
         /// Code that runs in the ProcessThread.
         void run() @system nothrow
         {
+            ulong frameIdx = 0;
+            // Note:
+            // Can't have any profiler events while Waiting because user code may decide
+            // to read profiler data between frames.
             for(;;) final switch(state)
             {
                 case State.Waiting:
@@ -203,6 +207,7 @@ package:
                         {
                             // ignore, resulting in a hot loop replacing sleep
                         }
+
                         continue;
                     }
                     break;
@@ -211,10 +216,12 @@ package:
                         // scope(exit) ensures the state is set even if we're crashing
                         // with a Throwable (to avoid EntityManager waiting forever).
                         scope(exit) { atomicStore(state_, State.Waiting); }
+
                         {
                             auto frameZone = Zone(profiler_, "frame");
                             self_.executeProcessesOneThread(threadIdx_, profiler_);
                         }
+                        ++frameIdx;
                         // Ensure any memory ops finish before finishing a game update.
                         atomicFence();
                     }
