@@ -500,8 +500,8 @@ public:
         {
             auto zone = Zone(profilerMainThread_, "add new entities without initializing");
             const addedEntityCount = (cast(EntitiesToAdd)entitiesToAdd_).prototypes.length;
-            newPast.addNewEntitiesNoInit(addedEntityCount);
-            newFuture.addNewEntitiesNoInit(addedEntityCount);
+            newPast.addNewEntitiesNoInit(addedEntityCount, profilerMainThread_);
+            newFuture.addNewEntitiesNoInit(addedEntityCount, profilerMainThread_);
         }
         // Preallocate future component buffer if needed.
         {

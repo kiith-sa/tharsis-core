@@ -14,6 +14,7 @@ import tharsis.entity.componenttypemanager;
 import tharsis.entity.entity;
 import tharsis.entity.entityid;
 import tharsis.entity.entitypolicy;
+import tharsis.prof;
 import tharsis.util.mallocarray;
 import tharsis.util.noncopyable;
 
@@ -95,16 +96,24 @@ private:
      * Params: count = New entity count. Must be greater than the current entity count
      *                 (set by a previous call to reset or growEntityCount).
      */
-    void growEntityCount(const size_t count)
+    void growEntityCount(const size_t count, Profiler profiler)
     {
+        auto zone = Zone(profiler, "ComponentTypeState.growEntityCount()");
         assert(enabled_, "This ComponentTypeState is not enabled");
-        counts.reserve(count);
-        offsets.reserve(count);
+        {
+            auto zoneReserve = Zone(profiler, "reserve");
+            counts.reserve(count, profiler);
+            offsets.reserve(count, profiler);
+        }
         const oldSize = counts.length;
         counts.growUninitialized(count);
         offsets.growUninitialized(count);
-        counts[oldSize .. $]  = cast(ComponentCount)0;
-        offsets[oldSize .. $] = uint.max;
+        {
+            auto zoneInit = Zone(profiler, "init");
+            counts[oldSize .. $]  = cast(ComponentCount)0;
+            // Ensure memset is used (setting to uint.max might not use memset).
+            (cast(ubyte[])offsets[oldSize .. $])[] = ubyte.max;
+        }
     }
 
     /** Reset the buffers, clearing them.
@@ -152,11 +161,11 @@ private:
      *
      * Called between frames when entities are added.
      */
-    void growEntityCount(const size_t count)
+    void growEntityCount(const size_t count, Profiler profiler)
     {
         foreach(ref data; this) if(data.enabled)
         {
-            data.growEntityCount(count);
+            data.growEntityCount(count, profiler);
         }
     }
 }
@@ -244,7 +253,7 @@ struct GameState(Policy)
     }
 
     import tharsis.entity.diagnostics;
-    /** Update game state related value in entity manager diagnostics.
+    /** Update game state related values in entity manager diagnostics.
      *
      * Params:
      *
@@ -267,20 +276,17 @@ struct GameState(Policy)
             // Get diagnostics for one component type.
             with(components[typeID]) with(diagnostics.componentTypes[typeID])
             {
-                name = compTypeInfo[typeID].name;
-                foreach(entity; 0 .. pastEntityCount)
-                {
-                    pastComponentCount += counts[entity];
-                }
                 const componentBytes = buffer.componentBytes;
                 const countBytes     = ComponentCount.sizeof;
                 const offsetBytes    = uint.sizeof;
 
+                name                = compTypeInfo[typeID].name;
+                pastComponentCount  = buffer.committedComponents;
                 pastMemoryAllocated = buffer.allocatedSize * componentBytes +
                                       counts.capacity * countBytes +
                                       offsets.capacity * offsetBytes;
-                pastMemoryUsed = pastComponentCount * componentBytes +
-                                 pastEntityCount * (countBytes + offsetBytes);
+                pastMemoryUsed      = pastComponentCount * componentBytes +
+                                      pastEntityCount * (countBytes + offsetBytes);
             }
         }
     }
@@ -326,12 +332,16 @@ struct GameState(Policy)
      *
      * Also reserves space for per-entity component counts/offsets for each component type.
      */
-    void addNewEntitiesNoInit(size_t addedCount) @system nothrow
+    void addNewEntitiesNoInit(size_t addedCount, Profiler profiler) @system nothrow
     {
+        auto zone = Zone(profiler, "GameState.addNewEntitiesNoInit()");
         entityCountNoAdded = entities.length;
         entities.assumeSafeAppend();
-        entities.length = entities.length + addedCount;
-        components.growEntityCount(entities.length);
+        {
+            auto zoneEntitiesRealloc = Zone(profiler, "entities potential realloc");
+            entities.length = entities.length + addedCount;
+        }
+        components.growEntityCount(entities.length, profiler);
     }
 
     /// Get entities added during this (starting) game update.

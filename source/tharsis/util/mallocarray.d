@@ -79,32 +79,54 @@ public:
         assert(this.length == oldLength + 1, "Unexpected length after append");
     }
 
-    /// Preallocate space for more elements.
-    /// 
-    /// Params:  items = Number of items to preallocate space for. If less than
-    ///                  the current capacity, this call is ignored.
-    void reserve(const size_t items) @trusted nothrow
+    import tharsis.prof;
+    
+    /** Reserve (preallocate) space for more elements.
+     * 
+     * Params:  items    = Minimum of items to preallocate space for. If less than
+     *                     the current capacity, this call is ignored. The actual size
+     *                     of allocated space might be higher.
+     *          profiler = Optional profiler to profile overhead.
+     */
+    void reserve(const size_t items, Profiler profiler = null) @trusted nothrow
     {
-        const bytes = T.sizeof * items;
-        if(data_.length >= bytes) { return; }
-        data_ = cast(ubyte[])allocateMemory(bytes, typeid(T));
+        auto zone = Zone(profiler, "MallocArray.reserve()");
+        const bytesNeeded = T.sizeof * items;
+        if(data_.length >= bytesNeeded) { return; }
+
+        // Ensure that even if reserve() is called with gradually increasing sizes we
+        // don't always need to allocate.
+        const bytesAlloc = max(bytesNeeded, data_.length * 2);
+
+        {
+            auto zoneAlloc = Zone(profiler, "allocateMemory()");
+            data_ = cast(ubyte[])allocateMemory(bytesAlloc, typeid(T));
+        }
+
         // True if the GC needs to scan this type.
         if(forceGC || typeid(T).flags)
         {
+            auto zoneAddRange = Zone(profiler, "GC.addRange()");
             GC.addRange(cast(void*)data_.ptr, data_.length); 
         }
 
         auto oldUsedData = usedData_;
         usedData_ = (cast(T[])data_)[0 .. this.length];
-        // Avoid postblits or copy-ctors.
-        (cast(ubyte[])usedData_)[] = (cast(ubyte[])oldUsedData)[];
+        {
+            auto zoneCopy = Zone(profiler, "copy");
+            // Avoid postblits or copy-ctors.
+            (cast(ubyte[])usedData_)[] = (cast(ubyte[])oldUsedData)[];
+        }
         // True if the GC needs to scan this type.
         if(forceGC || typeid(T).flags)
         {
+            auto zoneRemoveRange = Zone(profiler, "GC.removeRange()");
             GC.removeRange(cast(void*)oldUsedData.ptr); 
         }
+
         if(oldUsedData !is null)
         {
+            auto zoneFree = Zone(profiler, "freeMemory()");
             freeMemory(cast(void[])oldUsedData);
         }
     }
