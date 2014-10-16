@@ -621,7 +621,23 @@ private:
             processDiagnostics.name = P.stringof;
             processDiagnostics.componentTypesRead = AllPastComponentTypes!P.length;
             // If the process has a 'preProcess' method, call it before processing any entities.
-            static if(hasMember!(P, "preProcess")) { process.preProcess(); }
+            static if(hasMember!(P, "preProcess"))
+            {
+                alias params = ParameterTypeTuple!(process.preProcess);
+                static if(params.length == 0)
+                {
+                    process.preProcess();
+                }
+                else
+                {
+                    static assert(params.length == 1 && is(params[0] == Profiler),
+                                  "preProcess() method of a process must either have no "
+                                  "parameters, or exactly one Profiler parameter "
+                                  "(for one of the thread profilers attached by the "
+                                  "EntityManager.attachPerThreadProfilers())");
+                    process.preProcess(threadProfiler);
+                }
+            }
 
             // Iterate over all alive entities, executing the process on those that
             // match the process() methods of the Process.
