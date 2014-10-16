@@ -87,22 +87,25 @@ public:
         return processToThread_[processIndex];
     }
 
+    import tharsis.prof;
     /** Reschedule processes between threads.
      *
      * Provides information for Scheduler to decide how to assign Processes to threads.
      *
      * Params:
      *
-     * processes   = Processes to schedule, wrapped in process wrappers. These are the 
+     * processes   = Processes to schedule, wrapped in process wrappers. These are the
      *               processes used *this update* (it's possible that registered processes
      *               could change between updates in future).
      * diagnostics = EntityManager diagnostics from the previous game update. Includes
      *               time durations spent executing individual processes during the
      *               previous update.
+     * profiler    = Profiler to record scheduling overhead with.
      */
     void updateSchedule(Policy)(AbstractProcessWrapper!Policy[] processes,
-                                ref const EntityManagerDiagnostics!Policy diagnostics)
-        @safe pure nothrow
+                                ref const EntityManagerDiagnostics!Policy diagnostics,
+                                Profiler profiler)
+        @safe nothrow
     {
         if(processToThread_.length != processes.length)
         {

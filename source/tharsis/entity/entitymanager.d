@@ -806,7 +806,10 @@ private:
     {
         auto totalProcZone = Zone(profilerMainThread_, "EntityManager.executeProcesses()");
 
-        scheduler_.updateSchedule!Policy(processes_, diagnostics_);
+        {
+            auto schedulingZone = Zone(profilerMainThread_, "scheduling");
+            scheduler_.updateSchedule!Policy(processes_, diagnostics_, profilerMainThread_);
+        }
 
         import core.atomic;
         // Ensure any memory ops finish before finishing the new game update.
