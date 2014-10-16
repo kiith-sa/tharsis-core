@@ -209,6 +209,9 @@ public:
     /// Get the size of a single component in bytes.
     size_t componentBytes() @safe pure nothrow const @nogc { return componentSize_; }
 
+    /// Get the number of committed (fully written) components.
+    size_t committedComponents() @safe pure nothrow const @nogc { return committedComponents_; }
+
     /** Clear a ComponentBuffer before use as a future component buffer to catch any bugs
      *  with reading no longer used data.
      *
