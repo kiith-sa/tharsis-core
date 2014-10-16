@@ -40,10 +40,8 @@ package:
 /// The default number of threads if we have no idea (e.g. on ARM - 4 is a good guess).
 enum defaultThreadCount = 4;
 
-
-
 /// Determines which Processes should run in which threads, as well as the thread count.
-class Scheduler
+final class Scheduler
 {
 private:
     import core.thread;
@@ -51,16 +49,16 @@ private:
     // Number of threads used (including the main thread).
     size_t threadCount_;
 
-    // TODO: Use manual allocation (ideally std.container.Array+std.allocator *after
-    // released*) 2014-09-15
+    // TODO: Use manual allocation here and throughout the module 
+    //  (ideally std.container.Array+std.allocator *after released*) 2014-09-15
     /* Maps processes to threads.
      *
      * processToThread_[i] is the index of thread process i is scheduled to run in)
      */
     uint[] processToThread_;
 
-    /// Number of processes in each thread.
-    MallocArray!uint processesPerThread_;
+    // Scheduling algorithm used at the moment.
+    SchedulingAlgorithm algorithm_;
 
     // Diagnostics for the scheduler, like scheduling algorithm, estimated frame etc.
     SchedulerDiagnostics diagnostics_;
@@ -79,10 +77,12 @@ public:
         threadCount_ = overrideThreadCount == 0 ? autodetectThreadCount()
                                                 : overrideThreadCount;
 
-        processesPerThread_.reserve(threadCount_);
-        processesPerThread_.growUninitialized(threadCount_);
-        processesPerThread_[] = 0;
+        // algorithm_ = new LPTScheduling(threadCount_);
+        algorithm_ = new RandomBacktrackScheduling(threadCount_, 400, 3);
     }
+
+    /// Destroy the scheduler. Must be called to free used resources.
+    ~this() { destroy(algorithm_); }
 
     /// Get the number of threads to use.
     size_t threadCount() @safe pure nothrow const @nogc { return threadCount_; }
@@ -91,6 +91,12 @@ public:
     uint processToThread(size_t processIndex) @safe pure nothrow const @nogc
     {
         return processToThread_[processIndex];
+    }
+
+    /// Get diagnostics data.
+    ref const(SchedulerDiagnostics) diagnostics() @safe pure nothrow const @nogc
+    {
+        return diagnostics_;
     }
 
     import tharsis.prof;
@@ -113,29 +119,42 @@ public:
                                 Profiler profiler)
         @safe nothrow
     {
-        if(processToThread_.length != processes.length)
+        diagnostics_.schedulingAlgorithm = algorithm_.name;
+        processToThread_.length = processes.length;
+
         {
-            processToThread_.length = processes.length;
+            Zone schedulePrep = Zone(profiler, "scheduling preparation");
+            algorithm_.beginScheduling();
+            foreach(uint i, proc; processes)
+            {
+                // Process is not bound to a specific thread, so we can schedule it.
+                if(proc.boundToThread == uint.max)
+                {
+                    algorithm_.addProcess(i, diagnostics.processes[i]);
+                    continue;
+                }
+
+                // Process is bound to a thread.
+                const thread = proc.boundToThread % threadCount_;
+                processToThread_[i] = thread;
+                algorithm_.increaseThreadUsage(thread, diagnostics.processes[i].duration);
+            }
         }
 
-
-        processesPerThread_[] = 0;
-        // First look for processes bound to specific threads.
-        foreach(uint i, proc; processes) if(proc.boundToThread != uint.max)
         {
-            const thread = proc.boundToThread % threadCount_;
-            processToThread_[i] = thread;
-            processesPerThread_[thread] = processesPerThread_[thread] + 1;
+            Zone scheduleAlg = Zone(profiler, "scheduling algorithm");
+            diagnostics_.approximate = algorithm_.endScheduling();
         }
 
-        const targetProcPerThread = (processes.length + threadCount - 1) / threadCount;
-        uint thread = 0;
+        diagnostics_.estimatedFrameTime = 
+            iota(threadCount_).map!(t => algorithm_.estimatedThreadUsage(t))
+                              .reduce!max
+                              .assumeWontThrow;
 
-        // Now assign threads to processes that are not bound to any specific thread.
+        // For each non-bound process, get the thread it should run in.
         foreach(uint i, proc; processes) if(proc.boundToThread == uint.max)
         {
-            assert(thread < threadCount_, "Thread out of range");
-            if(processesPerThread_[thread] >= targetProcPerThread)
+            processToThread_[i] = algorithm_.assignedThread(i);
         }
     }
 }
