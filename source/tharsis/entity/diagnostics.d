@@ -47,6 +47,21 @@ struct ProcessDiagnostics
     bool isNull() @safe pure nothrow const @nogc { return name is null; }
 }
 
+/// Diagnostics info for Scheduler.
+struct SchedulerDiagnostics
+{
+    /// Name of the scheduling algorithm used.
+    string schedulingAlgorithm;
+
+    /** Did the scheduling algorithm procude an approximate (not guaranteed to be optimal)
+     * schedule?
+     */
+    bool approximate;
+
+    /// Estimated time of the next frame in hnsecs.
+    ulong estimatedFrameTime;
+}
+
 /// Diagnostics info for EntityManager.
 struct EntityManagerDiagnostics(Policy)
 {
@@ -110,6 +125,9 @@ struct EntityManagerDiagnostics(Policy)
      * threads as processes.
      */
     Thread[processes.length] threads;
+
+    /// Diagnostics for the scheduler.
+    SchedulerDiagnostics scheduler;
 
     // TODO after tested, add resource manager diagnostics 
     // (memory allocated/used by this manager, new/loading/loaded/loadfailed counts)
