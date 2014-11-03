@@ -57,6 +57,9 @@ private:
      */
     uint[] processToThread_;
 
+    // Estimates the time each Process will take to run during the next frame.
+    TimeEstimator timeEstimator_;
+
     // Scheduling algorithm used at the moment.
     SchedulingAlgorithm algorithm_;
 
@@ -77,12 +80,18 @@ public:
         threadCount_ = overrideThreadCount == 0 ? autodetectThreadCount()
                                                 : overrideThreadCount;
 
-        // algorithm_ = new LPTScheduling(threadCount_);
-        algorithm_ = new RandomBacktrackScheduling(threadCount_, 400, 3);
+        // algorithm_  = new LPTScheduling(threadCount_);
+        algorithm_     = new RandomBacktrackScheduling(threadCount_, 400, 3);
+        // timeEstimator_ = new SimpleTimeEstimator();
+        timeEstimator_ = new StepTimeEstimator(0.1);
     }
 
     /// Destroy the scheduler. Must be called to free used resources.
-    ~this() { destroy(algorithm_); }
+    ~this() 
+    {
+        destroy(algorithm_);
+        destroy(timeEstimator_);
+    }
 
     /// Get the number of threads to use.
     size_t threadCount() @safe pure nothrow const @nogc { return threadCount_; }
@@ -122,6 +131,9 @@ public:
         diagnostics_.schedulingAlgorithm = algorithm_.name;
         processToThread_.length = processes.length;
 
+        // Estimate execution times for the next frame.
+        timeEstimator_.updateEstimates(diagnostics.processes[]);
+
         {
             Zone schedulePrep = Zone(profiler, "scheduling preparation");
             algorithm_.beginScheduling();
@@ -130,20 +142,20 @@ public:
                 // Process is not bound to a specific thread, so we can schedule it.
                 if(proc.boundToThread == uint.max)
                 {
-                    algorithm_.addProcess(i, diagnostics.processes[i]);
+                    algorithm_.addProcess(i);
                     continue;
                 }
 
                 // Process is bound to a thread.
                 const thread = proc.boundToThread % threadCount_;
                 processToThread_[i] = thread;
-                algorithm_.increaseThreadUsage(thread, diagnostics.processes[i].duration);
+                algorithm_.increaseThreadUsage(thread, timeEstimator_.processDuration(i));
             }
         }
 
         {
             Zone scheduleAlg = Zone(profiler, "scheduling algorithm");
-            diagnostics_.approximate = algorithm_.endScheduling();
+            diagnostics_.approximate = algorithm_.endScheduling(timeEstimator_);
         }
 
         diagnostics_.estimatedFrameTime = 
@@ -168,15 +180,10 @@ import tharsis.std.internal.scopebuffer;
 /// Information about a process for scheduling purposes.
 struct ProcessInfo
 {
-    import tharsis.entity.diagnostics;
-
     /// Thread the process is assigned to. uint.max if not assigned yet.
     uint assignedThread = uint.max;
-    /// Diagnostics of the process (such as run time).
-    ProcessDiagnostics diagnostics;
-
-    /// Allow to access diagnostics members directly.
-    alias diagnostics this;
+    /// ID (index) of the process.
+    size_t processIdx = uint.max;
 }
 
 
@@ -201,7 +208,6 @@ protected:
     const size_t threadCount_;
     // Estimated usage (run time) of inidivual threads (depends on which processes run where).
     ulong[] threadUsage_;
-
 
     // Default storage for procInfo_.
     ProcessInfo[64] procInfoScratch_;
@@ -295,18 +301,12 @@ public:
      *
      * Params:
      *
-     * process     = ID (index) of the process.
-     * diagnostics = Diagnostics of the process, including its run time used for scheduling.
+     * process = ID (index) of the process.
      */
-    final void addProcess(size_t process, ref const ProcessDiagnostics diagnostics)
-        @trusted nothrow
+    final void addProcess(size_t process) @trusted nothrow
     {
-        assert(scheduling_, "Can only get pass process diagnostics while scheduling");
-        if(knowProcess(process))
-        {
-            procInfo(process).diagnostics = diagnostics;
-            return;
-        }
+        assert(scheduling_, "Can only addProcess() while scheduling");
+        if(knowProcess(process)) { return; }
 
         // Don't know this process yet, add it.
 
@@ -316,7 +316,7 @@ public:
         procInfo_.put(ProcessInfo.init);
         assert(knowProcess(process),
                "Setting procIDToProcInfo_ must result in knowing the process");
-        procInfo(process).diagnostics = diagnostics;
+        procInfo(process).processIdx = process;
     }
 
     /** Begin passing arguments to the scheduling algorithm.
@@ -341,17 +341,21 @@ public:
      * assignedThread() and estimatedThreadUsage().
      *
      * beginScheduling() must be called first.
+     *
+     * Params:
+     *
+     * estimator = Estimates execution times of Processes.
      */
-    final Flag!"approximate" endScheduling() @safe nothrow
+    final Flag!"approximate" endScheduling(TimeEstimator estimator) @safe nothrow
     {
         assert(scheduling_, "Called endScheduling when not scheduling");
         scope(exit) { scheduling_ = false; }
-        return doScheduling();
+        return doScheduling(estimator);
     }
 
 protected:
     /// Internal implementation of endScheduling(). Runs the scheduling algorithm.
-    Flag!"approximate" doScheduling() @safe nothrow
+    Flag!"approximate" doScheduling(TimeEstimator estimator) @safe nothrow
     {
         // Implemented because of a DMD bug as of 2.066
         assert(false, "BUG: Default doScheduling() implementation should never be called");
@@ -387,7 +391,7 @@ class DumbScheduling: SchedulingAlgorithm
 
     override string name() @safe pure nothrow const @nogc { return "Dumb"; }
 
-    override Flag!"approximate" doScheduling() @trusted nothrow
+    override Flag!"approximate" doScheduling(TimeEstimator estimator) @trusted nothrow
     {
         size_t thread = 0;
         foreach(i, ref process; procInfo_[])
@@ -482,7 +486,7 @@ public:
 
     override string name() @safe pure nothrow const @nogc { return "RandomBacktrack"; }
 
-    override Flag!"approximate" doScheduling() @trusted nothrow
+    override Flag!"approximate" doScheduling(TimeEstimator estimator) @trusted nothrow
     {
         auto procCount = procInfo_.length;
 
@@ -504,7 +508,7 @@ public:
         foreach(attempt; 0 .. maxBacktrackAttempts_)
         {
             // If we didn't give up, we found the best solution.
-            if(backtrackAttempt(minCost).assumeWontThrow == No.givenUp)
+            if(backtrackAttempt(minCost, estimator).assumeWontThrow == No.givenUp)
             {
                 return No.approximate;
             }
@@ -520,8 +524,9 @@ private:
      *
      * Params:
      *
-     * minCost = The best cost (estimated run time of worst thread) we got in previous
-     *           attempts so far.
+     * minCost   = The best cost (estimated run time of worst thread) we got in previous
+     *             attempts so far.
+     * estimator = Estimates execution times of processes.
      *
      * Returns: Yes.givenUp if we ran out of time before exploring all possible best
      *          process/thread assignments, No.givenUp otherwise. If No.givenUp is
@@ -529,7 +534,7 @@ private:
      *
      * Never throws (enforce this with assumeWontThrow()).
      */
-    Flag!"givenUp" backtrackAttempt(ref ulong minCost) @system
+    Flag!"givenUp" backtrackAttempt(ref ulong minCost, TimeEstimator estimator) @system
     {
         import tharsis.std.random: randomCover;
         bool[][] coverStack = coverBuffers_[];
@@ -555,7 +560,7 @@ private:
 
             // Add the duration of process at procIdx to thread at threadIdx, and subtract
             // it when we return.
-            const duration = procInfo_[procIdx].duration;
+            const duration = estimator.processDuration(procInfo_[procIdx].processIdx);
             tempThreadUsage_[threadIdx] += duration;
             scope(exit) { tempThreadUsage_[threadIdx] -= duration; }
 
@@ -605,7 +610,7 @@ class PlainBacktrackScheduling: SchedulingAlgorithm
 
     override string name() @safe pure nothrow const @nogc { return "PlainBacktrack"; }
 
-    override Flag!"approximate" doScheduling() @trusted nothrow
+    override Flag!"approximate" doScheduling(TimeEstimator estimator) @trusted nothrow
     {
         const procCount = procInfo_.length;
 
@@ -622,7 +627,7 @@ class PlainBacktrackScheduling: SchedulingAlgorithm
             foreach(i, thread; procThreads)
             {
                 procInfo_[i].assignedThread = thread;
-                threadCosts[thread] += procInfo_[i].duration;
+                threadCosts[thread] += estimator.processDuration(procInfo_[i].processIdx);
             }
             return reduce!max(threadCosts).assumeWontThrow;
         }
@@ -685,20 +690,25 @@ public:
 
     override string name() @safe pure nothrow const @nogc { return "LPT"; }
 
-    override Flag!"approximate" doScheduling() @trusted nothrow
+    override Flag!"approximate" doScheduling(TimeEstimator estimator) @trusted nothrow
     {
         // Lengthten procIndex_ if needed.
         while(procIndex_.length < procInfo_.length) { procIndex_.put(0); }
         procIndex_.length = procInfo_.length;
 
+        ulong duration(ref ProcessInfo info) nothrow @nogc
+        {
+            return estimator.processDuration(info.processIdx);
+        }
+
         // Initialize procIndex_ as an array of indices to procInfo_ contents sorted
         // by process run duration.
-        procInfo_[].makeIndex!((l, r) => l.duration < r.duration)(procIndex_[])
+        procInfo_[].makeIndex!((l, r) => duration(l) < duration(r))(procIndex_[])
                    .assumeWontThrow;
 
         auto index = procIndex_[];
         // Check that we sorted it right.
-        assert(procInfo_[index.back].duration >= procInfo_[index.front].duration,
+        assert(duration(procInfo_[index.back]) >= duration(procInfo_[index.front]),
                "Index not sorted from shorter to greater duration");
 
         // Assign processes to thread, from slowest to fastest, always to the thread with
@@ -706,10 +716,10 @@ public:
         while(!index.empty)
         {
             const longest = index.back;
-            const duration = procInfo_[longest].duration;
+            const dur = duration(procInfo_[longest]);
             // minPos gets the range starting at position of the least used thread
             const threadIndex = threadUsage_.length - threadUsage_.minPos.length;
-            threadUsage_[threadIndex] += duration;
+            threadUsage_[threadIndex] += dur;
             procInfo_[longest].assignedThread = cast(uint)threadIndex;
 
             index.popBack();
