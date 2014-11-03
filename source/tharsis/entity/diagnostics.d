@@ -112,9 +112,9 @@ struct EntityManagerDiagnostics(Policy)
 
     /** Diagnostics for individual processes.
      *
-     * Not all entries in this array match existing processes. If $(D processes[i].isNull)
-     * is true, there is no component type with ID $(D i) and the curresponding entry is
-     * invalid.
+     * Not all entries in this array match existing processes. $(D processes[i]) are the 
+     * diagnostics of process with ID (index) $(D i). If $(D processes[i].isNull) is true,
+     * there is no process with ID $(D i) and the curresponding entry is invalid.
      */
     // There may be more processes than this but it's highly unlikely.
     ProcessDiagnostics[componentTypes.length * 2 + 4] processes;
