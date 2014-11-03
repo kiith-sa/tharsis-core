@@ -30,14 +30,18 @@ import tharsis.util.noncopyable;
 struct MallocArray(T, Flag!"ForceGC" forceGC = No.ForceGC)
     if(isBasicType!T || is(T == struct))
 {
+public:
+    /** Must NOT be used directly. Will be made private once a DMD bug is fixed.
+     *
+     * Moved to the top to ensure fast read access.
+     */
+    T[] usedData_;
+
 private:
-    /// Internally allocated data.
+    // Internally allocated data.
     ubyte[] data_;
 
 public:
-    /// Must NOT be used directly. Will be made private once a DMD bug is fixed.
-    T[] usedData_;
-
     /// Use plain D array features as a base.
     alias usedData_ this;
 
