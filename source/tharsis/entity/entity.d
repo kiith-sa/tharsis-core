@@ -14,20 +14,16 @@ import tharsis.entity.entityid;
 /// and information about what components it consists of.
 struct Entity 
 {
-private:
-    /// Unique identifier of this entity.
-    EntityID id_;
-
-public:
-    /// Get the ID of the entity.
-    @property EntityID id() const pure nothrow @safe
+    union
     {
-        return id_;
+        /// Unique identifier of this entity.
+        private EntityID id_;
+        const EntityID id;
     }
 
 package:
     /// Create an entity with specified ID.
-    this(const EntityID id) pure nothrow @safe
+    this(const EntityID id) pure nothrow @safe @nogc
     {
         id_ = id;
     }
