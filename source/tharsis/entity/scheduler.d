@@ -718,3 +718,44 @@ public:
         return No.approximate;
     }
 }
+
+
+// More time estimator ideas:
+// - average time (of last N frames)
+// - neural net for each process (hard, usefullness uncertain)
+/** Base class for time estimators.
+ *
+ * Time estimators estimate the time each Process will take to execute during the next
+ * game update.
+ */
+abstract class TimeEstimator
+{
+protected:
+    // Default storage for timeEstimates_.
+    ulong[64] timeEstimatesScratch_;
+    /// Estimated times for processes are stored here, indexed by process indices.
+    ScopeBuffer!ulong timeEstimates_;
+
+public:
+    /// Construct a TimeEstimator.
+    this() @trusted pure nothrow @nogc
+    {
+        timeEstimates_ = scopeBuffer(timeEstimatesScratch_);
+    }
+
+    /// Destroy the TimeEstimator, freeing any resources used.
+    ~this()
+    {
+        destroy(timeEstimates_);
+    }
+
+    /// Update time estimates based on process diagnostics from the last game update.
+    void updateEstimates(const ProcessDiagnostics[] processes) @trusted nothrow;
+
+    /// Get the estimated process run duration for process with specified index.
+    final ulong processDuration(size_t processIdx) @trusted pure nothrow const @nogc
+    {
+        return timeEstimates_[processIdx];
+    }
+}
+
