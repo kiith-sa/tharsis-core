@@ -759,3 +759,85 @@ public:
     }
 }
 
+/// Simple time estimator that expects a process to take the same time it took the last frame.
+final class SimpleTimeEstimator: TimeEstimator
+{
+    override void updateEstimates(const ProcessDiagnostics[] processes) @trusted nothrow
+    {
+        auto procCount = processes.length;
+
+        // If not enough space in out buffers, lengthten them.
+        while(timeEstimates_.length < procCount) { timeEstimates_.put(0); }
+        timeEstimates_.length = procCount;
+
+        foreach(id, ref proc; processes) if(!proc.isNull())
+        {
+            timeEstimates_[id] = proc.duration;
+        }
+    }
+}
+
+
+/** Time estimator that quickly increases estimated time at a spike and gradually
+ * decreases it as the measured time gets lower.
+ *
+ * If a process takes longer than estimated time to run, the new estimate will be set to
+ * the time it took to run. If it takes less than estimated time to run, the estimate will
+ * be decreased by $(D (estimated - measured) * estimateFalloff_). estimateFalloff_ is a
+ * normalized value specified at constructor. E.g. if estimateFalloff_ is 0.1, any time
+ * the measured time is lower than estimated the estimate will be decreased by 10% of the
+ * difference between estimated and measured time.
+ */
+final class StepTimeEstimator: TimeEstimator 
+{
+private:
+    /** A normalized number specifying how fast can estimated time decrease when process
+     * time is overestimated.
+     */
+    float estimateFalloff_;
+
+public:
+    /** Construct a StepTimeEstimator with specified falloff.
+     *
+     * Params:
+     *
+     * estimateFalloff = normalized number specifying how fast can estimated time decrease
+     *                   when process time is overestimated. E.g. ie 0.1, the estimated
+     *                   time will decrease by 10% of the difference between estimated
+     *                   and measured time (if estimated was longer than measured).
+     */
+    this(float estimateFalloff) @safe pure nothrow @nogc
+    {
+        super();
+        estimateFalloff_ = estimateFalloff;
+    }
+
+    override void updateEstimates(const ProcessDiagnostics[] processes) @trusted nothrow
+    {
+        assert(estimateFalloff_ >= 0.0 && estimateFalloff_ <= 1.0,
+               "estimateFalloff_ must be between 0 and 1");
+        auto procCount = processes.length;
+
+        // If not enough space in out buffers, lengthten them.
+        while(timeEstimates_.length < procCount) { timeEstimates_.put(0); }
+        timeEstimates_.length = procCount;
+
+        // Update estimates for all processes.
+        foreach(id, ref proc; processes) if(!proc.isNull())
+        {
+            const prevEst = timeEstimates_[id];
+            const duration = proc.duration;
+            // If process ran longer than estimated, increase the estimate to duration.
+            if(duration >= prevEst)
+            {
+                timeEstimates_[id] = duration;
+                continue;
+            }
+
+            // If the process ran faster than estimated, lower the next estimate based on
+            // estimateFalloff_.
+            const diff = prevEst - duration;
+            timeEstimates_[id] = prevEst - cast(ulong)(diff * estimateFalloff_);
+        }
+    }
+}
