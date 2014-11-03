@@ -419,7 +419,7 @@ void initNewEntities(Policy)
             const offset = globalIndex == 0
                          ? 0 : target[typeID].offsets[globalIndex - 1] + count;
             target[typeID].counts[globalIndex]  = count;
-            target[typeID].offsets[globalIndex] = offset;
+            target[typeID].offsets[globalIndex] = cast(uint)offset;
         }
     }
 }
