@@ -1,3 +1,7 @@
+/dub.selections.json
+/perf.data.old
+/perf.data
+callgrind.out.*
 /__dummy.html
 /docs.json
 /entity/unittest.o
