@@ -32,8 +32,12 @@ struct EntityAccess(EntityManager)
 package:
     /// Index of the past entity we're currently reading.
     ///
-    /// Updated by EntityRange.
-    size_t pastEntityIndex_ = 0;
+    /// Updated by nextPastEntity().
+    union
+    {
+        size_t pastEntityIndex_ = 0;
+        const size_t pastEntityIndex;
+    }
 
     // Hack to allow process type info to figure out that an EntityAccess argument is
     // not a component argument.
@@ -48,6 +52,15 @@ private:
     /// Stores past components of all entities.
     immutable(EntityManager.ComponentStateT)* pastComponents_;
 
+public:
+    /// Entity currently being processed. Located here for fast r/w access.
+    union
+    {
+        private Entity currentEntity_;
+        const Entity currentEntity;
+    }
+
+private:
     /// Provides access to component type info.
     AbstractComponentTypeManager componentTypeMgr_;
 
@@ -90,31 +103,10 @@ public:
         assert(!componentTypeMgr_.componentTypeInfo[typeID].isMulti,
                "rawPastComponent can't access components of MultiComponent types");
 
-        // Get the component with type typeID of past entity at index index.
-        static auto componentOfEntity(ref const(EntityAccess) self, const ushort typeID,
-                                      const size_t index) nothrow
-        { with(self) {
-            auto pastComponents  = &((*pastComponents_)[typeID]);
-            const componentCount = pastComponents.counts[index];
-            if(0 == componentCount)
-            {
-                return ImmutableRawComponent(nullComponentTypeID, null);
-            }
-
-            const offset = pastComponents.offsets[index];
-            assert(offset != size_t.max, "Offset not set");
-
-            auto raw           = pastComponents.buffer.committedComponentSpace;
-            auto componentSize = componentTypeMgr_.componentTypeInfo[typeID].size;
-            auto byteOffset    = offset * componentSize;
-            auto componentData = raw[byteOffset .. byteOffset + componentSize];
-            return ImmutableRawComponent(typeID, componentData);
-        } }
-
         // Fast path when accessing a component in the current past entity.
-        if(currentEntity().id == entity)
+        if(currentEntity.id == entity)
         {
-            return componentOfEntity(this, typeID, pastEntityIndex_);
+            return componentOfEntity(typeID, pastEntityIndex_);
         }
 
         // If accessing a component in another past entity, binary search to find the
@@ -126,23 +118,52 @@ public:
             const EntityID mid = slice[index].id;
             if(mid > entity)       { slice = slice[0 .. index]; }
             else if (mid < entity) { slice = slice[index + 1 .. $]; }
-            else                   { return componentOfEntity(this, typeID, index); }
+            else                   { return componentOfEntity(typeID, index); }
         }
 
         // If this happens, the user passed an invalid entity ID or we have a bug.
         assert(false, "Couldn't find an entity with specified ID");
     }
 
-    /// Get the entity ID of the entity currently being processed.
-    Entity currentEntity() @safe pure nothrow const { return pastEntities_[pastEntityIndex_]; }
-
 package:
     /// Construct an EntityAccess for entities of specified entity manager.
     this(EntityManager entityManager) @safe pure nothrow
     {
         pastEntities_     = entityManager.past_.entities;
+        if(!pastEntities_.empty) { currentEntity_ = pastEntities_[0]; }
         pastComponents_   = &entityManager.past_.components;
         componentTypeMgr_ = entityManager.componentTypeMgr_;
+    }
+
+    /// Move to the next past entity (called by EntityRange).
+    void nextPastEntity() @safe pure nothrow @nogc
+    {
+        ++pastEntityIndex_;
+        if(pastEntityIndex_ < pastEntities_.length)
+        {
+            currentEntity_ = pastEntities_[pastEntityIndex_];
+        }
+    }
+
+private:
+    // Get the component with type typeID of past entity at index index.
+    auto componentOfEntity(const ushort typeID, const size_t index) nothrow const
+    {
+        auto pastComponents  = &((*pastComponents_)[typeID]);
+        const componentCount = pastComponents.counts[index];
+        if(0 == componentCount)
+        {
+            return ImmutableRawComponent(nullComponentTypeID, null);
+        }
+
+        const offset = pastComponents.offsets[index];
+        assert(offset != size_t.max, "Offset not set");
+
+        auto raw           = pastComponents.buffer.committedComponentSpace;
+        auto componentSize = componentTypeMgr_.componentTypeInfo[typeID].size;
+        auto byteOffset    = offset * componentSize;
+        auto componentData = raw[byteOffset .. byteOffset + componentSize];
+        return ImmutableRawComponent(typeID, componentData);
     }
 }
 
@@ -181,6 +202,11 @@ private:
     /// Index of the future entity we're currently writing to.
     size_t futureEntityIndex_ = 0;
 
+    /// Future entities in the entity manager.
+    ///
+    /// Used to check if the current past and future entity is the same.
+    const(Entity[]) futureEntities_;
+
     static if(!noFuture)
     {
 
@@ -206,10 +232,13 @@ private:
 
     }
 
-    /// Future entities in the entity manager.
+    /// Mixin slices to access past components, and pointers to component count buffers
+    /// to read the number of components of a type per entity.
     ///
-    /// Used to check if the current past and future entity is the same.
-    const(Entity[]) futureEntities_;
+    /// These are typed slices to the untyped buffers in the ComponentBuffer struct of
+    /// each component type. Past components can also be accessed through
+    /// EntityAccess.pastComponents_; these slices are a performance optimization.
+    mixin(pastComponentBuffers());
 
     /// All processed component types.
     ///
@@ -234,24 +263,34 @@ private:
     static string pastComponentBuffers()
     {
         string[] parts;
+        // Component counts should be near each other, not interleaved with buffers,
+        // to decrease cache misses.
+        foreach(index, Component; ProcessedComponents)
+        {
+            // parts ~= q{
+            // immutable(MallocArray!ComponentCount*) %s;
+            // }.format(countsName!(Component.ComponentTypeID));
+            version(assert)
+            {
+                parts ~= q{
+                immutable(ComponentCount[]) %s;
+                }.format(countsName!(Component.ComponentTypeID));
+            }
+            else 
+            {
+                parts ~= q{
+                immutable(ComponentCount*) %s;
+                }.format(countsName!(Component.ComponentTypeID));
+            }
+        }
         foreach(index, Component; ProcessedComponents)
         {
             parts ~= q{
             immutable(ProcessedComponents[%s][]) %s;
-            immutable(MallocArray!ComponentCount*) %s;
-            }.format(index, bufferName!Component,
-                     countsName!(Component.ComponentTypeID));
+            }.format(index, bufferName!Component);
         }
         return parts.join("\n");
     }
-
-    /// Mixin slices to access past components, and pointers to component count buffers
-    /// to read the number of components of a type per entity.
-    ///
-    /// These are typed slices to the untyped buffers in the ComponentBuffer struct of
-    /// each component type. Past components can also be accessed through
-    /// EntityAccess.pastComponents_; these slices are a performance optimization.
-    mixin(pastComponentBuffers());
 
     /// No default construction or copying.
     @disable this();
@@ -273,10 +312,20 @@ package:
             // Untyped component buffer to cast to a typed slice.
             auto raw = (*pastComponents)[id].buffer.committedComponentSpace;
 
-            mixin(q{
-            %s = cast(immutable(ProcessedComponents[%s][]))raw;
-            %s = &(*pastComponents)[id].counts;
-            }.format(bufferName!Component, index, countsName!id));
+            version(assert)
+            {
+                mixin(q{
+                %s = cast(immutable(ProcessedComponents[%s][]))raw;
+                %s = (*pastComponents)[id].counts[];
+                }.format(bufferName!Component, index, countsName!id));
+            }
+            else
+            {
+                mixin(q{
+                %s = cast(immutable(ProcessedComponents[%s][]))raw;
+                %s = (*pastComponents)[id].counts[].ptr;
+                }.format(bufferName!Component, index, countsName!id));
+            }
         }
 
         static if(!noFuture)
@@ -291,19 +340,19 @@ package:
     }
 
     /// Get the current past entity.
-    Entity front() @safe pure nothrow const
+    Entity front() @safe pure nothrow const @nogc
     {
         return entityAccess_.currentEntity;
     }
 
     /// Get the EntityAccess data member to pass it to a process() method.
-    ref EntityAccess!EntityManager entityAccess() @safe pure nothrow
+    ref EntityAccess!EntityManager entityAccess() @safe pure nothrow @nogc
     {
         return entityAccess_;
     }
 
     /// True if we've processed all alive past entities.
-    bool empty() @safe pure nothrow
+    bool empty() @safe pure nothrow @nogc
     {
         // Only live entities are in futureEntities; if we're at the end, the rest of
         // past entities are dead and we don't need to process them.
@@ -317,15 +366,18 @@ package:
     void popFront() @trusted nothrow
     {
         assert(!empty, "Trying to advance an empty entity range");
-        const past   = front().id;
-        const future = futureEntities_[futureEntityIndex_].id;
-        assert(past == future,
-               "The past (%s) and future (%s) entity is not the same. Maybe we forgot "
-               "to skip a dead past entity, or we copied a dead entity into future "
-               "entities, or we inserted a new entity elsewhere than the end of future "
-               "entities.".format(past, future).assumeWontThrow);
-        assert(pastComponent!LifeComponent().alive,
-               "Current entity is dead. Likely a bug when calling skipDeadEntities?");
+        version(assert)
+        {
+            const past = front().id;
+            const future = futureEntities_[futureEntityIndex_].id; 
+            assert(past == future,
+                   "Past:%s and future:%s entity is not the same. Maybe we forgot to skip a "
+                   "dead past entity, or we copied a dead entity into future entities, or we "
+                   "inserted a new entity elsewhere than the end of future entities."
+                   .format(past, future).assumeWontThrow);
+            assert(pastComponent!LifeComponent().alive,
+                   "Current entity is dead. Likely a bug when calling skipDeadEntities?");
+        }
 
         nextFutureEntity();
         nextPastEntity();
@@ -352,7 +404,7 @@ package:
     /// Params: Component = Type of components to access.
     ///
     /// Returns: An immutable slice to the past components.
-    immutable(Component)[] pastComponent(Component)() @safe nothrow const
+    immutable(Component)[] pastComponent(Component)() @system nothrow const
         if(isMultiComponent!Component)
     {
         enum id = Component.ComponentTypeID;
@@ -360,7 +412,7 @@ package:
 
         mixin(q{
         // Get the number of components in the current past entity.
-        const componentCount = (*%s)[entityAccess_.pastEntityIndex_];
+        const componentCount = %s[entityAccess_.pastEntityIndex];
         // The first component in the current entity is at 'offset'.
         return %s[offset .. offset + componentCount];
         }.format(countsName!id, bufferName!Component));
@@ -393,12 +445,12 @@ package:
     /// Specify the number of future components written for the current entity.
     ///
     /// May be called more than once while processing an entity; the last call must pass
-    /// the number of components actually written.
+    /// the number of components actually written. Must be called at least once.
     ///
     /// Params: count = Number of components written. Must be 0 or 1 for non-multi
     ///                 components.
     static if(!noFuture)
-    void setFutureComponentCount(const ComponentCount count) @safe pure nothrow
+    void setFutureComponentCount(const ComponentCount count) @safe pure nothrow @nogc
     {
         assert(isMultiComponent!FutureComponent || count <= 1,
                "Component count for a non-multi component can be at most 1");
@@ -425,59 +477,89 @@ package:
             {
                 // Component count for this component type will be a member of the
                 // product.
-                parts ~= q{(*%s)[entityAccess_.pastEntityIndex_]}.format(countsName!id);
+                parts ~= q{%s[entityAccess_.pastEntityIndex]}.format(countsName!id);
             }
-            return parts.join(" * ");
+            return parts.join(" && ");
         }
 
+        // The actual run-time code is here.
         mixin(q{const result = cast(bool)(%s);}.format(matchCode()));
         return result;
     }
 
 private:
     /// Skip (past) dead entities until an alive entity is reached.
-    void skipDeadEntities() @safe nothrow
+    void skipDeadEntities() @trusted pure nothrow @nogc
     {
-        while(!empty && !pastComponent!LifeComponent().alive)
+        // Optimization to avoid repeating some overhead in pastComponent!LifeComponent
+        mixin(q{
+        immutable(LifeComponent[]) lifeComponents = %s;
+        }.format(bufferName!LifeComponent));
+
+        // Skipping dead entities will not make us empty; the last entity, if any,
+        // is always alive.
+        if(empty) { return; }
+
+        assert(lifeComponents.back.alive, "The last entity must be alive");
+
+        auto lifeOffset = componentOffsets_[LifeComponent.ComponentTypeID];
+        while(!lifeComponents[lifeOffset].alive)
         {
+            // Each past entity has one life component, alive or not.
+            assert(lifeOffset == componentOffsets_[LifeComponent.ComponentTypeID],
+                   "lifeOffset must match the actual LifeComponent offset");
+            ++lifeOffset;
+            assert(!empty, "Skipping dead entities unexpectedly emptied EntityRange");
             nextPastEntity();
         }
+
+        // Unoptimized version:
+        // while(!empty && !pastComponent!LifeComponent().alive)
+        // {
+        //     nextPastEntity();
+        // }
     }
 
-    /// Move to the next past entity and its components.
-    void nextPastEntity() @safe nothrow
+    /** Move to the next past entity and its components.
+     */
+    void nextPastEntity() @system pure nothrow @nogc
     {
         // Generate code for every processed component type to move past the components
         // in this entity.
         foreach(C; ProcessedComponents)
         {
-            enum id = C.ComponentTypeID;
-            mixin(q{
+            enum id = cast(size_t)C.ComponentTypeID;
             // Increase offset for this component type by the number of components in
-            // the current past entity.
-            componentOffsets_[id] += (*%s)[entityAccess_.pastEntityIndex_];
+            // the current past entity. The explicit cast to size_t is an optimization
+            // (to prevent the compiler from emitting the `cltq` instruction).
+            mixin(q{
+            componentOffsets_[id] += cast(size_t)%s[entityAccess_.pastEntityIndex];
             }.format(countsName!id));
         }
-        ++entityAccess_.pastEntityIndex_;
+        entityAccess.nextPastEntity();
     }
 
     /// Move to the next future entity.
     ///
     /// Also definitively commits the future components for the current entity.
-    void nextFutureEntity() @safe pure nothrow
+    void nextFutureEntity() @safe pure nothrow @nogc
     {
         static if(!noFuture)
         {
-            enum id = FutureComponent.ComponentTypeID;
-            with(futureComponents_)
+            futureComponents_.offsets[futureEntityIndex_] = futureComponentOffset_;
+            assert(futureComponents_.counts[futureEntityIndex_] == 0,
+                    "Default component count must be 0 so we can avoid writing "
+                    "component count futureComponentCount_ is 0");
+            // No need to run this if futureComponentCount_ is 0.
+            if(futureComponentCount_ != 0)
             {
-                buffer.commitComponents(futureComponentCount_);
-                counts[futureEntityIndex_]  = futureComponentCount_;
-                offsets[futureEntityIndex_] = futureComponentOffset_;
+                futureComponentOffset_ += futureComponentCount_;
+                futureComponents_.counts[futureEntityIndex_] = futureComponentCount_;
+                futureComponents_.buffer.commitComponents(futureComponentCount_);
             }
-            futureComponentOffset_ += futureComponentCount_;
+
             // Ease bug detection by setting to an absurd value.
-            futureComponentCount_ = ComponentCount.max;
+            version(assert) { futureComponentCount_ = ComponentCount.max; }
         }
         ++futureEntityIndex_;
     }
@@ -491,7 +573,7 @@ private:
         {
             enum id = C.ComponentTypeID;
             mixin(q{
-            const count = (*%s)[entityAccess_.pastEntityIndex_];
+            const count = %s[entityAccess_.pastEntityIndex];
             }.format(countsName!id));
             parts ~= "%s: %s".format(id, count);
         }
