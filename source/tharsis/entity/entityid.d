@@ -17,19 +17,19 @@ package:
 
 public:
     /// Equality comparison with another ID.
-    bool opEquals(EntityID rhs) const pure nothrow @safe
+    bool opEquals(EntityID rhs) const pure nothrow @safe @nogc
     {
         return id_ == rhs.id_;
     }
 
     /// Is the ID null? (E.g. unititialized, or returned by a failed operation)
-    @property bool isNull() const pure nothrow @safe
+    @property bool isNull() const pure nothrow @safe @nogc
     {
         return id_ == uint.max;
     }
 
     /// Comparison for sorting.
-    long opCmp(EntityID rhs) const pure nothrow @safe
+    long opCmp(EntityID rhs) const pure nothrow @safe @nogc
     {
         return cast(long)id_ - cast(long)rhs.id_;
     }
