@@ -196,6 +196,18 @@ struct EntityManagerDiagnostics(Policy)
         return processes[].map!(a => a.processCalls).reduce!((a, b) => a + b).assumeWontThrow;
     }
 
+    /// Get the total (summed) duration of all processes in all threads.
+    ulong processDurationTotal() @safe pure nothrow const
+    {
+        return processes[].map!(a => a.duration).reduce!((a, b) => a + b).assumeWontThrow;
+    }
+
+    /// Get the average duration of a process.
+    ulong processDurationAverage() @safe pure nothrow const
+    {
+        return processDurationTotal / processCount;
+    }
+
     /** Get the average number of process() calls per entity.
      *
      * Can also be interpreted as the average number of processes that match any single
