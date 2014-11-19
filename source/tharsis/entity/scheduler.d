@@ -57,6 +57,9 @@ private:
      */
     uint[] processToThread_;
 
+    // Number of frames each thread has had no processes scheduled to run in it.
+    uint[] idleFrames_;
+
     // Estimates the time each Process will take to run during the next frame.
     TimeEstimator timeEstimator_;
 
@@ -83,23 +86,31 @@ public:
         // algorithm_  = new LPTScheduling(threadCount_);
         algorithm_     = new RandomBacktrackScheduling(threadCount_, 400, 3);
         // timeEstimator_ = new SimpleTimeEstimator();
-        timeEstimator_ = new StepTimeEstimator(0.1);
+        // timeEstimator_ = new StepTimeEstimator(0.1);
+        timeEstimator_ = new StepTimeEstimator(0.2);
+        idleFrames_ = new uint[threadCount_];
     }
 
     /// Destroy the scheduler. Must be called to free used resources.
-    ~this() 
+    ~this()
     {
         destroy(algorithm_);
         destroy(timeEstimator_);
     }
 
-    /// Get the number of threads to use.
+    /// Get the number of threads we're scheduling for.
     size_t threadCount() @safe pure nothrow const @nogc { return threadCount_; }
 
     /// Get the index of the thread a process with index processIndex should run in.
     uint processToThread(size_t processIndex) @safe pure nothrow const @nogc
     {
         return processToThread_[processIndex];
+    }
+
+    /// Number of frames specified thread has had no processes scheduled to run in it.
+    uint idleFrames(size_t threadIndex) @safe pure nothrow const @nogc
+    {
+        return idleFrames_[threadIndex];
     }
 
     /// Get diagnostics data.
@@ -131,6 +142,12 @@ public:
         diagnostics_.schedulingAlgorithm = algorithm_.name;
         processToThread_.length = processes.length;
 
+        idleFrames_[] += 1;
+
+        // Get diagnostics by comparing measured process times (from entity manager
+        // diagnostics) to the times we estimated during the last frame.
+        diagnostics_.timeEstimator = timeEstimator_.diagnostics(diagnostics, diagnostics_);
+
         // Estimate execution times for the next frame.
         timeEstimator_.updateEstimates(diagnostics.processes[]);
 
@@ -149,6 +166,7 @@ public:
                 // Process is bound to a thread.
                 const thread = proc.boundToThread % threadCount_;
                 processToThread_[i] = thread;
+                idleFrames_[thread] = 0;
                 algorithm_.increaseThreadUsage(thread, timeEstimator_.processDuration(i));
             }
         }
@@ -158,7 +176,7 @@ public:
             diagnostics_.approximate = algorithm_.endScheduling(timeEstimator_);
         }
 
-        diagnostics_.estimatedFrameTime = 
+        diagnostics_.estimatedFrameTime =
             iota(threadCount_).map!(t => algorithm_.estimatedThreadUsage(t))
                               .reduce!max
                               .assumeWontThrow;
@@ -166,7 +184,9 @@ public:
         // For each non-bound process, get the thread it should run in.
         foreach(uint i, proc; processes) if(proc.boundToThread == uint.max)
         {
-            processToThread_[i] = algorithm_.assignedThread(i);
+            const thread = algorithm_.assignedThread(i);
+            processToThread_[i] = thread;
+            idleFrames_[thread] = 0;
         }
     }
 }
@@ -322,7 +342,7 @@ public:
     /** Begin passing arguments to the scheduling algorithm.
      *
      * Forgets all processes added since the last beginScheduling() call; information
-     * about processes must be readded through addProcess() before doing the actual 
+     * about processes must be readded through addProcess() before doing the actual
      * scheduling in endScheduling().
      */
     final void beginScheduling() @trusted pure nothrow @nogc
@@ -336,7 +356,7 @@ public:
 
     /** End scheduling, running the actual scheduling algorithm.
      *
-     * Schedules all processes passed through addProcess() calls. After calling this, 
+     * Schedules all processes passed through addProcess() calls. After calling this,
      * threads assigned to processes and estimated thread runtime can be read through
      * assignedThread() and estimatedThreadUsage().
      *
@@ -798,7 +818,7 @@ final class SimpleTimeEstimator: TimeEstimator
  * the measured time is lower than estimated the estimate will be decreased by 10% of the
  * difference between estimated and measured time.
  */
-final class StepTimeEstimator: TimeEstimator 
+final class StepTimeEstimator: TimeEstimator
 {
 private:
     /** A normalized number specifying how fast can estimated time decrease when process
