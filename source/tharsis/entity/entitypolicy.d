@@ -25,7 +25,7 @@ struct DefaultEntityPolicy
     /// ComponentTypeIDs of user-defined component types must be
     /// >= maxReservedComponentTypes and
     /// <  maxReservedComponentTypes + maxUserComponentTypes.
-    enum maxUserComponentTypes = 64;
+    enum maxUserComponentTypes = 256;
 
     /// Maximum entities added during one frame.
     enum maxNewEntitiesPerFrame = 4096;
