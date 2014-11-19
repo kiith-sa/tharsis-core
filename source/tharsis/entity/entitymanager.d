@@ -92,7 +92,7 @@ package:
      * changing ProcessThread state to Stopping, which is detected by the ProcessThread
      * which then stops.
      */
-    static class ProcessThread : Thread
+    static class ProcessThread
     {
         /// Possible states of a ProcessThread.
         enum State: ubyte
@@ -105,14 +105,19 @@ package:
             //
             // Set by EntityManager to signify that the thread should stop.
             Stopping,
+            // The thread is stopped, or never ran in the first place.
+            Stopped,
         }
 
     private:
+        // The thread itself.
+        Thread thread_;
+
         // Using atomic *stores* to set state_ but don't use atomic loads to read it:
         // The value won't get 'teared' since it's 1 byte.
 
         // Current state of the thread. Use atomic stores to write, normal reads to read.
-        shared(State) state_ = State.Waiting;
+        shared(State) state_ = State.Stopped;
 
         // The entity manager (called self_ because this is essentially EntityManager code).
         EntityManager self_;
@@ -144,7 +149,13 @@ package:
             self_       = self;
             threadIdx_  = threadIdx;
             threadName_ = "Tharsis ExecuteThread %s".format(threadIdx_).assumeWontThrow;
-            super( &run ).assumeWontThrow;
+        }
+
+        /// Destroy the thread.
+        ~this()
+        {
+            // .destroy(thread_);
+            assert(thread_ is null, "Thread must be stopped before being destroyed");
         }
 
         /// Attach an external profiler to profile this thread.
@@ -156,6 +167,39 @@ package:
 
         /// Get the current state of the thread.
         final State state() @system pure nothrow @nogc { return cast(State)state_; }
+
+        /// Call when waiting so the OS can use the CPU core for something else.
+        void yieldToOS() @system nothrow
+        {
+            assert(thread_ !is null, "yieldToOS called when thread stopped");
+            try 
+            {
+                // thread_.yield();
+                thread_.sleep(dur!"msecs"(0)); 
+            }
+            // TODO: log this, eventually (despiker eventEvent?) 2014-09-17
+            catch(Exception e) { }  // ignore, resulting in a hot loop replacing sleep
+        }
+
+        /// Is the thread running right now?
+        bool isRunning() @system nothrow
+        {
+            return !(thread_ is null) && thread_.isRunning;
+        }
+
+        /** Create and start the thread itself.
+         *
+         * Throws:
+         *
+         * core.thread.ThreadException on failure to start the thread.
+         */
+        void start() @system 
+        {
+            assert(state_ == State.Stopped, "Can't start a thread that is not stopped");
+            state_  = state_.Waiting;
+            thread_ = new Thread(&run);
+            thread_.start();
+        }
 
         import core.atomic;
         /** Stop the thread. Should be called only by EntityManager.
@@ -169,6 +213,24 @@ package:
             assert(state == State.Waiting, "Trying to stop a ProcessThread that is "
                                            "either executing or is already stopping");
             atomicStore(state_, State.Stopping);
+
+            try
+            {
+                scope(exit) 
+                {
+                    atomicStore(state_, State.Stopped); 
+                    .destroy(thread_);
+                }
+                thread_.join();
+            }
+            catch(Throwable e)
+            {
+                // TODO: Logging 2014-09-17
+                import std.stdio;
+                writeln("EntityManager thread terminated with an error:").assumeWontThrow;
+                writeln(e).assumeWontThrow;
+            }
+            thread_ = null;
         }
 
         /** Start executing processes in a game update. Should be called only by EntityManager.
@@ -177,6 +239,7 @@ package:
          */
         final void startUpdate() @system nothrow
         {
+            assert(thread_ !is null, "startUpdate called when thread stopped");
             assert(isRunning, "Trying to startUpdate() in a thread that is not running");
             assert(state == State.Waiting, "Trying to start an update on an ProcessThread "
                                            "that is either executing or is stopping");
@@ -186,6 +249,7 @@ package:
         /// Code that runs in the ProcessThread.
         void run() @system nothrow
         {
+            assert(thread_ !is null, "startUpdate called when thread stopped");
             ulong frameIdx = 0;
             // Note:
             // Can't have any profiler events while Waiting because user code may decide
@@ -200,17 +264,7 @@ package:
                     {
                         // We need to give the OS some time to do other work... if we hog 
                         // all cores the OS will stop our threads at inconvenient times.
-                        import std.datetime;
-                        try if(shouldSleep)
-                        {
-                            sleep(dur!"msecs"(0));
-                        }
-                        // TODO: log this, eventually (despiker eventEvent?) 2014-09-17
-                        catch(Exception e)
-                        {
-                            // ignore, resulting in a hot loop replacing sleep
-                        }
-
+                        yieldToOS();
                         continue;
                     }
                     break;
@@ -232,6 +286,8 @@ package:
                 case State.Stopping:
                     // return, finishing the thread.
                     return;
+                case State.Stopped:
+                    assert(false, "run() still running when the thread is Stopped");
             }
         }
     }
@@ -353,7 +409,9 @@ public:
      */
     void startThreads() @trusted
     {
-        // Start the process threads.
+        // Start the process threads. This is the place where the user can handle any
+        // failure to start the threads. updateThreads() assumes starting threads to be
+        // safe.
         foreach(thread; procThreads_) { thread.start(); }
         threadsStarted_ = true;
     }
@@ -377,18 +435,9 @@ public:
         }
 
         // Tell all process threads to stop and then wait to join them.
-        foreach(thread; procThreads_) { thread.stop(); }
-        try foreach(thread; procThreads_)
+        foreach(thread; procThreads_) if(thread.state != ProcessThread.State.Stopped)
         {
-            thread.join();
-        }
-        catch(Throwable e)
-        {
-            // TODO: Logging 2014-09-17
-            import std.stdio;
-            writeln("EntityManager thread terminated with an error:").assumeWontThrow;
-            writeln(e).assumeWontThrow;
-            assert(false);
+            thread.stop(); 
         }
 
         import core.stdc.stdlib: free;
@@ -801,6 +850,28 @@ private:
     /// BEGIN CODE CALLED BY executeFrame() ///
     ///////////////////////////////////////////
 
+
+    /// Ensure only the threads with processes scheduled to them will run.
+    void updateThreads() @trusted nothrow
+    {
+        foreach(idx, thread; procThreads_) with(ProcessThread.State)
+        {
+            // If a thread is idle for this many frames, we can stop it.
+            enum idleFramesTillStop = 4;
+            // 0 is the main thread, which is always running
+            const threadIdx = idx + 1;
+            const state = thread.state;
+            if(state != Stopped && scheduler_.idleFrames(threadIdx) >= idleFramesTillStop)
+            {
+                thread.stop();
+            }
+            else if(state == Stopped && scheduler_.idleFrames(threadIdx) == 0)
+            {
+                thread.start().assumeWontThrow;
+            }
+        }
+    }
+
     /// Run all processes; called by executeFrame();
     void executeProcesses() @system nothrow
     {
@@ -812,11 +883,16 @@ private:
         }
 
         import core.atomic;
+        updateThreads();
+
         // Ensure any memory ops finish before finishing the new game update.
         atomicFence();
 
         // Start running Processes in ProcessThreads.
-        foreach(thread; procThreads_) { thread.startUpdate(); }
+        foreach(thread; procThreads_) if(thread.state != ProcessThread.State.Stopped)
+        {
+            thread.startUpdate(); 
+        }
 
         // The main thread (this thread) has index 0.
         executeProcessesOneThread(0, profilerMainThread_);
