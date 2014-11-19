@@ -16,7 +16,6 @@ import tharsis.entity.entitypolicy;
 
 
 
-
 /// Diagnostics info about a Tharsis process.
 struct ProcessDiagnostics
 {
@@ -60,6 +59,36 @@ struct SchedulerDiagnostics
 
     /// Estimated time of the next frame in hnsecs.
     ulong estimatedFrameTime;
+
+    /// Time estimator diagnostics (duh).
+    TimeEstimatorDiagnostics timeEstimator;
+}
+
+/** Diagnostics info for the Scheduler's TimeEstimator.
+ *
+ * The 'underestimate' values measure how much did the estimator underestimate the
+ * execution time of a process. Positive underestimate means the process took longer than
+ * estimated, negative means it took less time.
+ */
+struct TimeEstimatorDiagnostics 
+{
+    /// Absolute total time estimate error for all processes in hectonanoseconds.
+    ulong totalProcessError;
+    /// Absolute total *underestimate* for all processes in hectonanoseconds.
+    long totalProcessUnderestimate;
+    /// The max (worst) underestimate of all processes in hectonanoseconds.
+    long maxProcessUnderestimate = long.min;
+
+    /// Average estimate error *ratio* (estimate error relative to process run time).
+    double averageProcessErrorRatio = 0.0;
+    /// Average *underestimate* ratio.
+    double averageProcessUnderestimateRatio = 0.0;
+    /** The max (worst) underestimate ratio.
+     *
+     * Note that a high ratio doesn't necessarily mean the process took long; for the
+     * longest *absolute* underestimate see maxProcessUnderestimate.
+     */
+    double maxProcessUnderestimateRatio = cast(double)int.min;
 }
 
 /// Diagnostics info for EntityManager.
@@ -181,14 +210,14 @@ struct EntityManagerDiagnostics(Policy)
     size_t pastMemoryAllocatedTotal() @safe pure nothrow const
     {
         return componentTypes[].map!(a => a.pastMemoryAllocated)
-                                .reduce!((a, b) => a + b).assumeWontThrow;
+                               .reduce!((a, b) => a + b).assumeWontThrow;
     }
 
     /// Get the total past memory used by components in bytes.
     size_t pastMemoryUsedTotal() @safe pure nothrow const
     {
         return componentTypes[].map!(a => a.pastMemoryUsed)
-                                .reduce!((a, b) => a + b).assumeWontThrow;
+                               .reduce!((a, b) => a + b).assumeWontThrow;
     }
 
     /// Get the average memory used by an entity in bytes.

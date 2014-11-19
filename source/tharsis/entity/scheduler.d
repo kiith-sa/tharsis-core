@@ -49,7 +49,7 @@ private:
     // Number of threads used (including the main thread).
     size_t threadCount_;
 
-    // TODO: Use manual allocation here and throughout the module 
+    // TODO: Use manual allocation here and throughout the module
     //  (ideally std.container.Array+std.allocator *after released*) 2014-09-15
     /* Maps processes to threads.
      *
@@ -777,6 +777,44 @@ public:
     ~this()
     {
         destroy(timeEstimates_);
+    }
+
+    /** Get diagnostics such as estimation errors.
+     *
+     * Params:
+     *
+     * entityManager = Entity manager diagnostics from previous frame such as process durations.
+     * scheduler     = Scheduler diagnostics from previous frame.
+     */
+    TimeEstimatorDiagnostics diagnostics(Policy)
+        (ref const EntityManagerDiagnostics!Policy entityManager,
+         ref const SchedulerDiagnostics scheduler)
+        @trusted pure nothrow @nogc
+    {
+        import std.math: abs;
+        TimeEstimatorDiagnostics result;
+        double underestimateRatioSum = 0.0;
+        double errorRatioSum = 0.0;
+        size_t processCount;
+        foreach(id, ref process; entityManager.processes) if(!process.isNull())
+        {
+            ++processCount;
+            const duration         = cast(long)process.duration;
+            const underestimatedBy = duration - cast(long)timeEstimates_[id];
+            result.totalProcessError         += abs(underestimatedBy);
+            result.totalProcessUnderestimate += underestimatedBy;
+            result.maxProcessUnderestimate = max(underestimatedBy,
+                                                 result.maxProcessUnderestimate);
+
+            const underestimateRatio = underestimatedBy / cast(double)timeEstimates_[id];
+            errorRatioSum         += abs(underestimateRatio);
+            underestimateRatioSum += underestimateRatio;
+            result.maxProcessUnderestimateRatio = max(result.maxProcessUnderestimateRatio,
+                                                      underestimateRatio);
+        }
+        result.averageProcessErrorRatio         = errorRatioSum / processCount;
+        result.averageProcessUnderestimateRatio = underestimateRatioSum / processCount;
+        return result;
     }
 
     /// Update time estimates based on process diagnostics from the last game update.
