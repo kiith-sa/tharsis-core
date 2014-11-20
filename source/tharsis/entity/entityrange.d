@@ -403,11 +403,12 @@ package:
         }.format(bufferName!Component));
     }
 
-    /// Access past multi components of one type in the current entity.
-    ///
-    /// Params: Component = Type of components to access.
-    ///
-    /// Returns: An immutable slice to the past components.
+    /** Access past multi components of one type in the current entity.
+     *
+     * Params: Component = Type of components to access.
+     *
+     * Returns: An immutable slice to the past components.
+     */
     immutable(Component)[] pastComponent(Component)() @system nothrow const
         if(isMultiComponent!Component)
     {
