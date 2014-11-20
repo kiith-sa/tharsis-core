@@ -224,10 +224,14 @@ private:
     /// Used to update ComponentTypeStateT.offsets .
     uint futureComponentOffset_ = 0;
 
-    /// Buffer and component count for future components written by Process.
-    ///
-    /// We can't keep a typed slice as the internal buffer may get reallocated; so we
-    /// cast on every future component access.
+    /** Buffer and component count for future components written by Process.
+     *
+     * We can't keep a typed slice as the internal buffer may get reallocated; so we
+     * cast on every future component access.
+     *
+     * Note that the counts/offsets buffers in futureComponents_ are *uninitialized* and
+     * may contain random values. They should never be read, only written.
+     */
     EntityManager.ComponentTypeStateT* futureComponents_;
 
     }
@@ -276,7 +280,7 @@ private:
                 immutable(ComponentCount[]) %s;
                 }.format(countsName!(Component.ComponentTypeID));
             }
-            else 
+            else
             {
                 parts ~= q{
                 immutable(ComponentCount*) %s;
@@ -369,7 +373,7 @@ package:
         version(assert)
         {
             const past = front().id;
-            const future = futureEntities_[futureEntityIndex_].id; 
+            const future = futureEntities_[futureEntityIndex_].id;
             assert(past == future,
                    "Past:%s and future:%s entity is not the same. Maybe we forgot to skip a "
                    "dead past entity, or we copied a dead entity into future entities, or we "
@@ -546,15 +550,14 @@ private:
     {
         static if(!noFuture)
         {
+            // The item in offsets/counts we're setting is uninitialized before we set it.
             futureComponents_.offsets[futureEntityIndex_] = futureComponentOffset_;
-            assert(futureComponents_.counts[futureEntityIndex_] == 0,
-                    "Default component count must be 0 so we can avoid writing "
-                    "component count futureComponentCount_ is 0");
+            futureComponents_.counts[futureEntityIndex_]  = futureComponentCount_;
+
             // No need to run this if futureComponentCount_ is 0.
             if(futureComponentCount_ != 0)
             {
                 futureComponentOffset_ += futureComponentCount_;
-                futureComponents_.counts[futureEntityIndex_] = futureComponentCount_;
                 futureComponents_.buffer.commitComponents(futureComponentCount_);
             }
 

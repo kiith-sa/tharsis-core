@@ -106,12 +106,19 @@ private:
             offsets.reserve(count, profiler);
         }
         const oldSize = counts.length;
+
         counts.growUninitialized(count);
         offsets.growUninitialized(count);
+        // In debug mode, pre-initialize counts/offsets to help detect bugs.
+        // In release mode, counts/offsets will be uninitialized (to be overwritten as the
+        // process runs)
+        //
+        // With ~70 component types, this takes ~4ms per frame so it's not viable in
+        // release mode.
+        debug
         {
-            auto zoneInit = Zone(profiler, "init");
-            counts[oldSize .. $]  = cast(ComponentCount)0;
-            // Ensure memset is used (setting to uint.max might not use memset).
+            auto zoneInit = Zone(profiler, "dbgInit");
+            counts[oldSize .. $] = cast(ComponentCount)0;
             (cast(ubyte[])offsets[oldSize .. $])[] = ubyte.max;
         }
     }
@@ -345,7 +352,7 @@ struct GameState(Policy)
     }
 
     /// Get entities added during this (starting) game update.
-    Entity[] addedEntities() @safe pure nothrow @nogc 
+    Entity[] addedEntities() @safe pure nothrow @nogc
     {
         return entities[entityCountNoAdded .. $];
     }
@@ -380,7 +387,7 @@ void initNewEntities(Policy)
     Entity[] targetPast = newPast.addedEntities;
     // Future entities to add the newly created entities to. (They need to be added for
     // processes to run; processes running during the next frame will then decide whether
-    // or not they will continue to live). 
+    // or not they will continue to live).
     Entity[] targetFuture = newFuture.addedEntities;
 
     const(ComponentTypeInfo)[] compTypeInfo = componentTypeMgr.componentTypeInfo;
