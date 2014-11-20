@@ -10,20 +10,20 @@ module tharsis.util.typetuple;
 public import std.typetuple;
 
 
-/// Create a tuple of indices from 0 to the length of passed tuple.
-///
-/// Useful in combination with std.traits.staticMap - mapping indices to results
-/// of a more complex template, which, having index as a template argument, can
-/// index multiple enum arrays or TypeTuples.
-///
-/// For an example of where this is useful, see
-/// tharsis.entity.processtypeinfo.processMethodParamInfo.
-///
-/// Examples:
-/// --------------------
-/// static assert(tupleIndices!(TypeTuple!(int, long, char)) ==
-///               TypeTuple!(0, 1, 2));
-/// --------------------
+/** Create a tuple of indices from 0 to the length of passed tuple.
+ *
+ * Useful in combination with std.traits.staticMap - mapping indices to results of a more
+ * complex template, which, having index as a template argument, can index multiple enum
+ * arrays or TypeTuples.
+ *
+ * For an example of where this is useful, see
+ * tharsis.entity.processtypeinfo.processMethodParamInfo.
+ *
+ * Examples:
+ * --------------------
+ * static assert(tupleIndices!(TypeTuple!(int, long, char)) == TypeTuple!(0, 1, 2));
+ * --------------------
+ */
 template tupleIndices(Head, Tail ...)
 {
     static if(Tail.length == 0)
