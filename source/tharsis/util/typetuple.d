@@ -36,3 +36,17 @@ template tupleIndices(Head, Tail ...)
         alias tupleIndices = TypeTuple!(tailResult, tailResult[$ - 1] + 1);
     }
 }
+
+/// Generate a compile-time sequence TypeTuple of integers from min to max.
+template Sequence(int min, int max)
+{
+    static assert(min <= max, "min must not be greater than max");
+    static if(min == max)
+    {
+        alias Sequence = TypeTuple!();
+    }
+    else
+    {
+        alias Sequence = TypeTuple!(min, Sequence!(min + 1, max));
+    }
+}
