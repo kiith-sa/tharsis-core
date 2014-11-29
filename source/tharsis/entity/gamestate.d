@@ -98,12 +98,11 @@ private:
      */
     void growEntityCount(const size_t count, Profiler profiler)
     {
-        auto zone = Zone(profiler, "ComponentTypeState.growEntityCount()");
+        auto zone = Zone(profiler, "growEntityCount");
         assert(enabled_, "This ComponentTypeState is not enabled");
         {
-            auto zoneReserve = Zone(profiler, "reserve");
-            counts.reserve(count, profiler);
-            offsets.reserve(count, profiler);
+            counts.reserve(count);
+            offsets.reserve(count);
         }
         const oldSize = counts.length;
 
@@ -117,7 +116,7 @@ private:
         // release mode.
         debug
         {
-            auto zoneInit = Zone(profiler, "dbgInit");
+            auto zoneInit = Zone(profiler, "init");
             counts[oldSize .. $] = cast(ComponentCount)0;
             (cast(ubyte[])offsets[oldSize .. $])[] = ubyte.max;
         }
