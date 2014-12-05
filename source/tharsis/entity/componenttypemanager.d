@@ -135,7 +135,7 @@ protected:
 
 private:
     /// AbstracComponentTypeManager constructor, called only by ComponentTypeManager.
-    this() @safe pure nothrow
+    this() @safe pure nothrow @nogc
     {
         componentTypeInfo_ = componentTypeInfoStorage();
     }
@@ -458,7 +458,7 @@ public:
 
 protected:
     final override ComponentTypeInfo[] componentTypeInfoStorage()
-        @safe pure nothrow
+        @safe pure nothrow @nogc
     {
         return componentTypeInfoStorage_[];
     }
