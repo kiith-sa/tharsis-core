@@ -19,10 +19,9 @@ import tharsis.util.mallocarray;
 
 /** A buffer storing all (either past or future) components of one component type.
  *
- * The components are stored as plain bytes. Components are written by accessing unused
- * memory with unusedSpace(), writing the components, and "comitting" them with
- * commitComponents(). If there's not enough space for new components, the buffer must be
- * reallocated with reserveComponentSpace().
+ * Components are stored as raw bytes. They are written by writing to memory accessed
+ * through unusedSpace() and "comitting" with commitComponents(). If there's not enough
+ * space for new components, the buffer must be reallocated with reserveComponentSpace().
  */
 struct ComponentBuffer(Policy)
 {
@@ -84,18 +83,19 @@ public:
         enabled_           = true;
     }
 
-    /// Get the memory that's not used yet.
-    ///
-    /// Components can be written to this memory, and then committed using
-    /// commitComponents().
+    /** Get the memory that's not used yet.
+     *
+     * Components can be written to this memory and then committed with commitComponents().
+     */
     ubyte[] uncommittedComponentSpace() @safe pure nothrow @nogc
     {
         assert(enabled_, "Can't get data of a buffer that is not enabled");
         return storage_[committedBytes_ .. $];
     }
 
-    /// Get the memory used for the _committed_ components, i.e. those that
-    /// have been written and exist as a part of one or another entity.
+    /** Get memory storing _committed_ components, i.e. those that have been written
+     *  and exist as a part of an entity.
+     */
     const(ubyte)[] committedComponentSpace() const pure nothrow @safe @nogc
     {
         assert(enabled_, "Can't get data of a buffer that is not enabled");
@@ -125,14 +125,13 @@ public:
         committedBytes_      = committedComponents_ * componentSize;
     }
 
-    /** Same as uncommittedComponentSpace, but reallocates if there's less than specified
-     * space.
+    /** Like uncommittedComponentSpace, but reallocates if there's less than specified space.
      *
-     * Params:  minLength = Min number of components we need space for. If greater than
-     *                      available uncommitted space, the buffer will be reallocated,
-     *                      invalidating slices returned by previous method calls and
-     *                      printing a warning to stdout so the user knows they need to 
-     *                      preallocate more memory; reallocations should be uncommon.
+     * Params:  minLength = Number of components we need space for. If greater than current
+     *                      uncommitted space, the buffer is reallocated, invalidating
+     *                      slices returned by previous calls and printing a warning to
+     *                      stdout telling the user to preallocate more memory; reallocs
+     *                      should be uncommon.
      *
      * Returns: Uncommitted space, possibly after a reallocation.
      */
@@ -164,14 +163,14 @@ public:
         return uncommittedComponentSpace;
     }
 
-    /// Add a component to the buffer by copying a raw component.
-    ///
-    /// Usually, components should be added by getting uncommittedSpace(),
-    /// directly writing to it and then committing the components. For cases
-    /// where the component is added from an existing buffer (entity
-    /// prototypes), a copy is unavoidable; this method is used in this case.
-    ///
-    /// Params: component = The component to add as a raw, untyped component.
+    /** Add a component to the buffer by copying a raw component.
+     *
+     * Usually, components are added by getting uncommittedSpace(), writing to it and
+     * committing. If adding the component from an existing buffer (entity prototypes),
+     * a copy is unavoidable; this method is used in this case.
+     *
+     * Params: component = The component to add as a raw, untyped component.
+     */
     void addComponent(ref const(RawComponent) component)
     {
         assert(component.typeID == componentTypeID_ &&
@@ -184,13 +183,13 @@ public:
         commitComponents(1);
     }
 
-    /// Reserve space for more components.
-    ///
-    /// Must be called if uncomittedComponentSpace() is not long enough to store
-    /// components we need to add. Invalidates any slices returned by previous
-    /// method calls.
-    ///
-    /// Params: componentCount = Number of components to allocate space for.
+    /** Reserve space for more components.
+     *
+     * Must be called if uncomittedComponentSpace() is not long enough to store components
+     * we need to add. Invalidates any slices returned by previous method calls.
+     *
+     * Params: componentCount = Number of components to allocate space for.
+     */
     void reserveComponentSpace(const size_t componentCount) @trusted nothrow
     {
         assert(enabled_, "Calling reserveComponentSpace on a non-enabled buffer");
