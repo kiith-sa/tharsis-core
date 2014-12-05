@@ -55,6 +55,8 @@ private:
     // ID of the type of stored components.
     ushort componentTypeID_;
 
+    // Name of the component type.
+    string componentTypeName_;
 
     // Disable copying.
     @disable void opAssign(ref ComponentBuffer);
@@ -68,19 +70,18 @@ public:
         storage_.destroy();
     }
 
-    /// Enable the ComponentBuffer, meaning some component type uses it.
-    ///
-    /// Params: componentTypeID    = ID of the type of stored components.
-    ///         componentSizeBytes = Size of a single stored component.
-    void enable(const ushort componentTypeID, const size_t componentSizeBytes)
-        @safe pure nothrow @nogc
+    /** Enable the ComponentBuffer, meaning some component type uses it.
+     *
+     * Params: typeInfo = Info about the type of components to store.
+     */
+    void enable(ref const(ComponentTypeInfo) typeInfo) @safe pure nothrow @nogc
     {
-        assert(!enabled_, "Trying to enable a component buffer that's "
-                          "already enabled. Maybe two components with "
-                          "the same ComponentTypeID?");
-        componentTypeID_ = componentTypeID;
-        componentSize_   = componentSizeBytes;
-        enabled_         = true;
+        assert(!enabled_, "Trying to enable a component buffer that's already enabled. "
+                          "Maybe two components with the same ComponentTypeID?");
+        componentTypeID_   = typeInfo.id;
+        componentTypeName_ = typeInfo.name;
+        componentSize_     = typeInfo.size;
+        enabled_           = true;
     }
 
     /// Get the memory that's not used yet.
@@ -139,13 +140,24 @@ public:
         @trusted nothrow
     {
         assert(enabled_, "Can't commit components to a buffer that's not enabled");
-        if(allocatedComponents_ - committedComponents_ >= minLength) 
+        if(allocatedComponents_ - committedComponents_ >= minLength)
         {
             return storage_[committedBytes_ .. $];
         }
 
         writefln("WARNING: Buffer reallocation for component type %s: consider "
-                 "preallocating more space ", componentTypeID_).assumeWontThrow();
+                 "preallocating more space by setting compile-time tweakables "
+                 "in EntityPolicy or the component type, or increasing "
+                 "EntityManager.allocMult.\n"
+                 "EntityPolicy allocation tweakables:\n"
+                 "  uint minComponentPrealloc\n"
+                 "  float reallocMult\n"
+                 "  float minComponentPerEntityPrealloc\n"
+                 "Component type tweakables:\n"
+                 "  uint minPrealloc\n"
+                 "  float minPreallocPerEntity\n"
+                 "See Component and EntityPolicy documentation for updated information.",
+                 componentTypeName_).assumeWontThrow();
         const components = max(minLength, to!size_t(allocatedComponents_ * Policy.reallocMult)
                            .assumeWontThrow);
         reserveComponentSpace(components);

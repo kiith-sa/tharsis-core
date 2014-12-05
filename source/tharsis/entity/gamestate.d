@@ -79,7 +79,7 @@ public:
         assert(!enabled_, "Trying to enable ComponentTypeState that's already enabled. "
                           " Maybe 2 component types use the same type ID?");
 
-        buffer.enable(typeInfo.id, typeInfo.size);
+        buffer.enable(typeInfo);
         enabled_ = true;
     }
 
