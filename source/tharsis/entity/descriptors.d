@@ -173,9 +173,7 @@ private:
 public:
     /** Construct a CombinedDescriptor describing resource in specified file.
      *
-     * Params:
-     *
-     * fileName = Name of file to load the resource from.
+     * Params:  fileName = Name of file to load the resource from.
      */
     this(string fileName) @safe pure nothrow @nogc
     {
@@ -191,8 +189,7 @@ public:
     /** Load a descriptor from a Source such as YAML.
      *
      * Params:  source = Source to load from.
-     *          result = The descriptor will be written here, if loaded
-     *                   succesfully.
+     *          result = The descriptor will be written here, if loaded succesfully.
      *
      * Returns: true if succesfully loaded, false otherwise.
      */
@@ -215,13 +212,12 @@ public:
 
     /** Determine if this descriptor maps to the same resource handle as another descriptor.
      *
-     * Usually, this returns true if two descriptors describe the same resource
-     * (e.g. if the descriptors are equal).
+     * Usually, this returns true if two descriptors describe the same resource (e.g. if
+     * the descriptors are equal).
      *
-     * The resource manager uses this when a resource handle is requested to
-     * decide whether to load a new resource or to reuse an existing one
-     * (if a descriptor maps to the same handle as a descriptor of already
-     * existing resource).
+     * The resource manager uses this when a resource handle is requested to decide 
+     * whether to load a new resource or to reuse an existing one (if a descriptor maps
+     * to the same handle as a descriptor of an already existing resource).
      */
     bool mapsToSameHandle(ref const(CombinedDescriptor) rhs) @safe pure nothrow const @nogc
     {
@@ -236,8 +232,7 @@ public:
     import tharsis.entity.componenttypemanager;
     /** Access the wrapped source.
      *
-     * This should be used to initialize the resource described by this
-     * descriptor.
+     * This should be used to initialize the resource described by this descriptor.
      */
     Source source(Source)(ref Source.Loader loader) @safe nothrow
     {
@@ -254,10 +249,11 @@ import tharsis.entity.entityprototype;
 static assert(CombinedDescriptor!EntityPrototypeResource.sizeof <= 32,
               "CombinedDescriptor struct is unexpectedly large");
 
-/// The default descriptor type used by builtin resource managers.
-///
-/// Resources using this descriptor can be loaded both from separate files and from
-/// inline Source nodes (e.g. YAML mappings with YAMLSource).
+/** The default descriptor type used by builtin resource managers.
+ *
+ * Resources using this descriptor can be loaded both from separate files and from inline
+ * Source nodes (e.g. YAML mappings with YAMLSource).
+ */
 template DefaultDescriptor(Resource)
 {
     alias DefaultDescriptor = CombinedDescriptor!Resource;
