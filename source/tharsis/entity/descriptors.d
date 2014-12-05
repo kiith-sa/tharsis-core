@@ -9,65 +9,64 @@
 /// import tharsis.defaults.descriptors instead of this module.
 module tharsis.entity.descriptors;
 
-/// A resource descriptor represented by a single string.
-///
-/// Used e.g. for resources loaded from files with file name as the descriptor.
-///
-/// Params: Resource = The resource type the descriptor describes. Templating by
-///                    the resource type avoids accidental assignments between
-///                    descriptors of different resource types.
+/** A resource descriptor represented by a single string.
+ *
+ * Used e.g. for resources loaded from files with file name as the descriptor.
+ *
+ * Params: Resource = Resource type the descriptor describes. Templating by resource type
+ *                    prevents assignments between descriptors of different resource types.
+ */
 struct StringDescriptor(Resource)
 {
     /// The string describing a resource.
     string fileName;
 
-    /// Load a StringDescriptor from a Source such as YAML.
-    ///
-    /// Params:  source = Source to load from.
-    ///          result = The descriptor will be written here, if loaded
-    ///                   succesfully.
-    ///
-    /// Returns: true if succesfully loaded, false otherwise.
+    /** Load a StringDescriptor from a Source such as YAML.
+     *
+     * Params:  source = Source to load from.
+     *          result = The descriptor will be written here, if loaded succesfully.
+     *
+     * Returns: true if succesfully loaded, false otherwise.
+     */
     static bool load(Source)(ref Source source, out StringDescriptor result)
         @safe nothrow
     {
         return source.readTo(result.fileName);
     }
 
-    /// Determine if this descriptor maps to the same resource handle as another
-    /// descriptor.
-    ///
-    /// Usually, this returns true if two descriptors describe the same resource
-    /// (e.g. if the descriptors are equal).
-    ///
-    /// The resource manager uses this when a resource handle is requested to
-    /// decide whether to load a new resource or to reuse an existing one
-    /// (if a descriptor maps to the same handle as a descriptor of already
-    /// existing resource).
+    /** Determine if this descriptor maps to the same resource handle as another descriptor.
+     *
+     * Usually, this returns true if two descriptors describe the same resource (e.g. if
+     * the descriptors are equal).
+     *
+     * The resource manager uses this when a resource handle is requested to decide
+     * whether to load a new resource or to reuse an existing one (if a descriptor maps to
+     * the same handle as a descriptor of already existing resource).
+     */
     bool mapsToSameHandle(ref const(StringDescriptor) rhs) @safe pure nothrow const @nogc
     {
         return fileName == rhs.fileName;
     }
 }
 
-/// A resource descriptor storing a Source (such as YAML).
-///
-/// Used when a resource is defined inline in a source file
-/// (e.g. the 'override' section of a spawner component).
-///
-/// Params: Resource = The resource type the descriptor describes. Templating by
-///                    the resource type avoids accidental assignments between
-///                    descriptors of different resource types.
+/** A resource descriptor storing a Source (such as YAML).
+ *
+ * Used when a resource is defined inline in a source file (e.g. the 'override' section of
+ * a spawner component).
+ *
+ * Params: Resource = Resource type the descriptor describes. Templating by resource type
+ *                    prevents assignments between descriptors of different resource types.
+ */
 struct SourceWrapperDescriptor(Resource)
 {
 private:
     /// Common parent class for source wrappers.
     class AbstractSourceWrapper {}
 
-    /// Wraps a Source of a concrete type and provides access to it.
-    ///
-    /// Necessary to support any possible Source type without templating
-    /// the descriptor itself.
+    /** Wraps a Source of a concrete type and provides access to it.
+     *
+     * Necessary to support any possible Source type without templating the descriptor itself.
+     */
     class SourceWrapper(Source): AbstractSourceWrapper
     {
         /// Construct a SourceWrapper wrapping a source of type Source.
@@ -77,18 +76,18 @@ private:
         Source source;
     }
 
-    /// The wrapped source. Yes, this does use the GC (or rather, new).
-    ///
-    /// It's unlikely to cause significant overhead, however, since resources
-    /// are shared. We may wrap Sources without using the GC in future,
-    /// but this may require tricky memory allocation.
+    /** The wrapped source. Yes, this does use the GC (or rather, new).
+     *
+     * It's unlikely to cause significant overhead, since resources are shared. We may
+     * wrap Sources without GC in future, but that may require tricky memory allocation.
+     */
     AbstractSourceWrapper wrappedSource;
 
 public:
-    /// Access the wrapped source.
-    ///
-    /// This should be used to initialize the resource described by this
-    /// descriptor.
+    /** Access the wrapped source.
+     *
+     * This should be used to initialize the resource described by this descriptor.
+     */
     @property ref Source source(Source)() @trusted pure nothrow
     {
         auto wrapper = cast(SourceWrapper!Source)wrappedSource;
@@ -98,15 +97,15 @@ public:
         return wrapper.source;
     }
 
-    /// Load a SourceWrapperDescriptor from a Source such as YAML.
-    ///
-    /// Used by Tharsis to initialize the descriptor.
-    ///
-    /// Params:  source = Source to load from.
-    ///          result = The descriptor will be written here, if loaded
-    ///                   succesfully.
-    ///
-    /// Returns: true if succesfully loaded, false otherwise.
+    /** Load a SourceWrapperDescriptor from a Source such as YAML.
+     *
+     * Used by Tharsis to initialize the descriptor.
+     *
+     * Params:  source = Source to load from.
+     *          result = The descriptor will be written here, if loaded succesfully.
+     *
+     * Returns: true if succesfully loaded, false otherwise.
+     */
     static bool load(Source)(ref Source source,
                              out SourceWrapperDescriptor result)
         @safe nothrow
@@ -115,48 +114,40 @@ public:
         return true;
     }
 
-    /// Determine if this descriptor maps to the same resource handle as another
-    /// descriptor.
-    ///
-    /// Usually, this returns true if two descriptors describe the same resource
-    /// (e.g. if the descriptors are equal). SourceWrapperDescriptors are
-    /// assumed to never map to the same handle (the resource is loaded
-    /// directly from a source fragment of a larger resource's definition).
-    ///
-    /// The resource manager uses this when a resource handle is requested to
-    /// decide whether to load a new resource or to reuse an existing one
-    /// (if a descriptor maps to the same handle as a descriptor of already
-    /// existing resource).
+    /** Determine if this descriptor maps to the same resource handle as another descriptor.
+     *
+     * Usually, this returns true if two descriptors describe one resource (e.g. if they
+     * are equal). SourceWrapperDescriptors are assumed to never map to the same handle 
+     * (the resource is loaded directly from a subnode of a larger resource's definition).
+     *
+     * The resource manager uses this when a resource handle is requested to decide
+     * whether to load a new resource or to reuse an existing one (if a descriptor maps to
+     * the same handle as a descriptor of already existing resource).
+     */
     bool mapsToSameHandle(ref const(SourceWrapperDescriptor) rhs)
         @safe pure nothrow const @nogc
     {
-        // Handles to resources using SourceWrapperDescriptors are initialized
-        // as members of components where those resources are defined inline.
-        // That is, they are initialized together with the entity prototype of
-        // the entities containing the component which has the resource handle
-        // as a data member. Therefore, all entities created from the same
-        // prototype (usually corresponding to one source file) are going to
-        // have copies of an already initialized handle, with no need to call
-        // handle() of the resource manager managing the resource.  Because of
-        // this, even if we assume any two SourceWrapperDescriptors (even
-        // identical) never map to the same handle, the resource manager will
-        // only load a resource from one descriptor once (per prototype) instead
-        // of loading it for every single entity.
+        // Handles to resources using SourceWrapperDescriptors are initialized component
+        // members where those resources are defined inline. I.e. they are initialized
+        // together with the prototype of entities containing the component which has
+        // a resource handle data member. All entities created from the same prototype
+        // (usually stored in one source file) are going to have copies of an initialized
+        // handle, with no need to call handle() of the resource manager. Because of this,
+        // even if we assume any two SourceWrapperDescriptors (even identical) never map
+        // to the same handle, the resource manager will only load a resource from one
+        // descriptor once per prototype instead of loading it for every single entity.
         return false;
     }
 }
 
-/**
- * A resource descriptor that can store either a filename to load a resource from or a
+/**A resource descriptor that can store either a filename to load a resource from or a
  * Source to load the resource directly.
  *
- * Used when a resource may be defined directly in a subnode of a source (e.g. YAML)
- * file, but we also want to be able to define it in a separate file and just use
- * a filename to it.
+ * Used when a resource may be defined directly in a subnode of a source (e.g. YAML) file,
+ * but we also want to be able to define it in a separate file and use its filename.
  *
  * Params: Resource = Resource type described by the descriptor. Templating by resource
- *                    type avoids accidental assignments between descriptors of
- *                    different resource types.
+ *                    type prevents assignments between descriptors of different resource types.
  */
 struct CombinedDescriptor(Resource)
 {
