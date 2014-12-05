@@ -440,7 +440,6 @@ public:
             thread.stop(); 
         }
 
-        import core.stdc.stdlib: free;
         .destroy(scheduler_);
         foreach(wrapper; processes_) { .destroy(wrapper); }
     }
