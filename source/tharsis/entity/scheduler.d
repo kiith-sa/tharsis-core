@@ -776,7 +776,7 @@ public:
     /// Destroy the TimeEstimator, freeing any resources used.
     ~this()
     {
-        destroy(timeEstimates_);
+        timeEstimates_.free();
     }
 
     /** Get diagnostics such as estimation errors.
