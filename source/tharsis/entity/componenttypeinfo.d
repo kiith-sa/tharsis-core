@@ -549,7 +549,7 @@ public:
 
     public:
         /// Get the current element of the range.
-        ref const(ComponentPropertyInfo) front()  @safe pure nothrow const
+        ref const(ComponentPropertyInfo) front() @safe pure nothrow const @nogc
         {
             assert(!empty, "Can't get front of an empty range");
             return properties_.front;
@@ -564,7 +564,7 @@ public:
         }
 
         /// Is the range empty? (No more elements)
-        bool empty() @safe pure nothrow const { return properties_.empty(); }
+        bool empty() @safe pure nothrow const @nogc { return properties_.empty(); }
 
     private:
         /* Construct a ComponentProperty iterating over properties with specified attrib.
