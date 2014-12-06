@@ -25,6 +25,8 @@ struct DefaultEntityPolicy
     /// ComponentTypeIDs of user-defined component types must be
     /// >= maxReservedComponentTypes and
     /// <  maxReservedComponentTypes + maxUserComponentTypes.
+    ///
+    /// If changed, update doc in tharsis/entity/componenttypemanager.d
     enum maxUserComponentTypes = 256;
 
     /// Maximum entities added during one frame.
