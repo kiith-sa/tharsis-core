@@ -80,11 +80,11 @@ package:
      *
      * The thread alternates between states:
      *
-     * When a game update starts, EntityManager changes the state to Executing (by a
-     * startUpdate() call), which is detected by the ProcessThread which then begins
-     * executing Processes (as determined by the Scheduler) for the game update. Once
-     * the ProcessThread is done running the Processes, it sets its state to Waiting.
-     * EntityManager waits until all ProcessThreads are Waiting to end the game update.
+     * When a game update starts, EntityManager changes state to Executing (by a call to 
+     * startUpdate()), which is detected by the ProcessThread which then begins executing
+     * Processes (as determined by the Scheduler) for the update. Once the ProcessThread
+     * is done running the Processes, it sets its state to Waiting. EntityManager waits
+     * until all ProcessThreads are Waiting to end the game update.
      *
      * On the next game update, this sequence repeats.
      *
@@ -473,7 +473,7 @@ public:
      *
      * Calling this during an update will return incomplete data.
      */
-    Diagnostics diagnostics() @safe pure nothrow const @nogc { return diagnostics_; }
+    Diagnostics diagnostics() @trusted pure nothrow const @nogc { return diagnostics_; }
 
     /** Add a new entity, using components from specified prototype.
      *
