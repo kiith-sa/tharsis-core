@@ -34,17 +34,16 @@ package enum ushort maxDefaultsComponentTypes = 24;
 
 /** Number of component type IDs reserved for Tharsis builtins and the defaults package.
  *
- * Component type IDs of user-defined components should use userComponentTypeID to
- * avoid collisions with builtin components.
+ * Component type IDs of user-defined components should use userComponentTypeID to avoid\
+ * collisions with builtin components.
  */
 enum ushort maxReservedComponentTypes = maxBuiltinComponentTypes + maxDefaultsComponentTypes;
 
 /** Generate a component type ID for a user-defined component type.
  *
- * Params: base = The base component type ID specified by the user. Must be different
- *                for every user-defined component type and must be less than the
- *                maxUserComponentTypes enum in the Policy parameter of EntityManager;
- *                by default, this is 64.
+ * Params: base = Base component type ID specified by user. Must be different for every
+ *                user-defined component type, must be less than the maxUserComponentTypes
+ *                enum in the Policy parameter of EntityManager; by default, this is 64.
  */
 enum userComponentTypeID(ushort base) = maxBuiltinComponentTypes +
                                         maxDefaultsComponentTypes + base;
@@ -61,10 +60,11 @@ ushort[] componentIDs(ComponentTypes...)() @trusted
     return ids;
 }
 
-/// Get the maximum possible components of this type at entity may have.
-///
-/// Used mainly by MultiComponents. For normal Components this is a minimum
-/// number of free preallocated components.
+/** Get the maximum possible components of this type at entity may have.
+ *
+ * Used mainly by MultiComponents. For normal Components this is a minimum number of free
+ * preallocated components.
+ */
 auto maxComponentsPerEntity(ComponentType)() @safe pure nothrow
 {
     static if(__traits(hasMember, ComponentType, "maxComponentsPerEntity"))
@@ -96,23 +96,23 @@ mixin template validateComponent(Component)
                   "= <number>'");
     static assert(!isMultiComponent!Component ||
                   __traits(hasMember, Component, "maxComponentsPerEntity"),
-                  "MultiComponent types must specify max component count per entity: "
-                  "add 'enum maxComponentsPerEntity = <number>'");
+                  "MultiComponent types must specify max component count per entity: add "
+                  "'enum maxComponentsPerEntity = <number>'");
     static assert(!std.traits.hasElaborateDestructor!Component,
-                  "Component type with an elaborate destructor: Neither a component "
-                  "type nor any of its data members may define a destructor.");
+                  "Component type with an elaborate destructor: Neither a component type "
+                  "nor any of its data members may define a destructor.");
     //TODO annotation allowing the user to force a pointer/slice/class reference
     //     data member (e.g. to data allocated by a process).
     static assert(!std.traits.hasIndirections!Component,
-                  "Component type with indirections (e.g. a pointer, slice or class "
-                  "data member) Components may not own dynamically allocated memory; "
-                  "MultiComponents can be used to emulate arrays. Pointers or slices "
-                  "to externally allocated data, or class references may be allowed in "
-                  "future with a special annotation, but this is not implemented yet");
+                  "Component type with indirections (e.g. pointer, slice or class field) "
+                  "Components may not own dynamically allocated memory; MultiComponents "
+                  "can be used to emulate arrays. Pointers or slices to externally "
+                  "allocated data, or class references may be allowed in future with a "
+                  "special annotation, but this is not implemented yet");
 }
 
-/** Used as an user-defined attribute for component properties to override the
- * name of the property in the Source it's loaded from (e.g. YAML).
+/** Used as an user-defined attribute for component properties to override the name of the
+ * property in the Source it's loaded from (e.g. YAML).
  */
 struct PropertyName
 {
@@ -122,8 +122,8 @@ struct PropertyName
 
 /** Stores a component of any component type as raw data.
  *
- * This is a dumb struct. The code that constructs a RawComponent must make sure the
- * type and data used actually makes sense (also e.g. that data size matches the type).
+ * This is a dumb struct. The code that constructs a RawComponent must make sure the type
+ * and data used actually makes sense (also e.g. that data size matches the type).
  */
 struct RawComponent
 {
@@ -149,9 +149,8 @@ public:
      *
      * Params:
      *
-     * Component = Component type to read the component as. Must be the actual type of
-     *             the RawComponent (i.e. its ComponentTypeID must match typeID of this
-     *             RawComponent).
+     * Component = Component type to read the component as. Must be the actual type of the
+     *             RawComponent (its ComponentTypeID must match typeID of this RawComponent).
      */
     ref Component as(Component)() @trusted pure nothrow @nogc 
     {
@@ -202,13 +201,12 @@ private:
      *
      * ubyte[]:          Component with the property to load, as a raw byte array.
      * void*:            Source to load the property from, e.g. a YAML node defining the
-     *                   component. Although we use a void pointer, the source must 
-     *                   match the type of the source used with the construct() function
-     *                   that created this ComponentPropertyInfo.
-     * GetResourceHandle A deleg that, given a resource type ID and descriptor, returns
-     *                   a raw resource handle. Used to initialize properties that are
-     *                   resource handles. Always passed but not every property will use
-     *                   this.
+     *                   component. Although we use a void pointer, the source must match
+     *                   the type of the source used with the construct() function that
+     *                   created this ComponentPropertyInfo.
+     * GetResourceHandle A deleg that, given resource type ID and descriptor, returns a
+     *                   raw resource handle. Used to init properties that are resource
+     *                   handles. Always passed but not every property will use this.
      * string            A string to write any loading errors to. If there are no 
      *                   errors, this is not touched.
      *
@@ -216,57 +214,59 @@ private:
      */
     alias LoadProperty = bool function(ubyte[], void*, GetResourceHandle, ref string) nothrow;
 
-    /// A function type to add the value of this property in right to the value in left.
-    ///
-    /// See_Also: addRightToLeft
+    /* A function type to add the value of this property in right to the value in left.
+     *
+     * See_Also: addRightToLeft
+     */
     alias AddRightToLeft = void function(ref RawComponent left, ref const(RawComponent) right)
                            @safe pure nothrow;
 
 
-    /// The function to load the property.
-    ///
-    /// See_Also: LoadProperty
+    /* The function to load the property.
+     *
+     * See_Also: LoadProperty
+     */
     LoadProperty loadProperty;
 
-    /// See_Also: customAttributes
+    // See_Also: customAttributes
     string[8] customAttributes_;
 
-    /// A function that adds the value of this property in one component to the
-    /// value of this property in another component.
-    ///
-    /// See_Also: addRightToLeft
+    /* A function that adds the value of this property in one component to the value of
+     * this property in another component.
+     *
+     * See_Also: addRightToLeft
+     */
     AddRightToLeft addRightToLeft_;
 
 public:
-    /// Custom attributes of the property.
-    ///
-    /// For example, @("relative") .
-    /// Processes can access propeties with a specific custom attribute using the
-    /// properties() method of ComponentTypeInfo. This is used e.g. in
-    /// tharsis.defaults.processes.SpawnerProcess to implement relative properties
-    /// where a property of a spawned entity is affected by the same property of
-    /// the spawner.
-    const(string)[] customAttributes() @safe pure nothrow const
+    /** Custom attributes of the property.
+     *
+     * For example, @("relative") .
+     * Processes can get propeties with a specific custom attribute using the properties()
+     * method of ComponentTypeInfo. This is used e.g. in
+     * tharsis.defaults.processes.SpawnerProcess to implement relative properties where a
+     * property of a spawned entity is affected by the same property of the spawner.
+     */
+    const(string)[] customAttributes() @safe pure nothrow const @nogc
     {
         return customAttributes_[];
     }
 
-    /// Add the value of this property in the right component to this property in
-    /// the left component.
-    ///
-    /// If "property" is the property (data member) represented by this
-    /// ComponentPropertyInfo, this is an equivalent of
-    /// "left.property += right.property". Both components must be of the component
-    /// type that has this property.
-    ///
-    /// May only be called for properties where "left.property += right.property"
-    /// compiles. This can be used to implement relative properties to e.g. spawn
-    /// new entities at relative positions.
-    ///
-    /// Params: left  = The component to add to. Must be a component of the
-    ///                 component type that has this property.
-    ///         right = The component to get the value to add from. Must be a
-    ///                 component of the component type that has this property.
+    /** Add the value of this property in the right component to this property in the left
+     * component.
+     *
+     * If "property" is the property (data member) represented by this ComponentPropertyInfo,
+     * this is an equivalent of "left.property += right.property". Both components must be
+     * of the component type that has this property.
+     *
+     * May only be called for properties where "left.property += right.property" compiles.
+     * Used to implement relative properties to e.g. spawn new entities at relative positions.
+     *
+     * Params: left  = The component to add to. Must be a component of the component type
+     *                 that has this property.
+     *         right = The component to get the value to add from. Must be a component of
+     *                 the component type that has this property.
+     */
     void addRightToLeft(ref RawComponent left, ref const(RawComponent) right)
         @safe pure nothrow const
     {
@@ -274,15 +274,13 @@ public:
     }
 
 private:
-    /// Construct ComponentPropertyInfo describing a property (field) of a
-    /// component type.
-    ///
-    /// Params:  Source    = Source type we're loading components from, e.g.
-    ///                      YAMLSource.
-    ///          Component = Component type the property belongs to.
-    ///          fieldName = Name of the field (property) in the component type.
-    ///                      E.g. for PhysicsComponent.position this would be
-    ///                      "position".
+    /** Construct ComponentPropertyInfo describing a property (field) of a component type.
+     *
+     * Params:  Source    = Source type we're loading components from, e.g. YAMLSource.
+     *          Component = Component type the property belongs to.
+     *          fieldName = Name of the field (property) in the component type. E.g. for
+     *                      PhysicsComponent.position this would be "position".
+     */
     this(Source, Component, string fieldName)() @safe pure nothrow @nogc
     {
         auto loadPropDg = &implementLoadProperty!(Source, Component, fieldName);
@@ -310,11 +308,12 @@ private:
         }
     }
 
-    /// Get the name of a property used in a Source such as YAML.
-    ///
-    /// The property name in a Source is, by default, the name of the property in
-    /// the component struct, but it can be overridden by a PropertyName attribute.
-    /// This is useful e.g. if a property name would collide with a D keyword.
+    /** Get the name of a property used in a Source such as YAML.
+     *
+     * Property name in a Source is by default the name of the property in the component
+     * struct, but it can be overridden by a PropertyName attribute. This is useful e.g.
+     * if a property name would collide with a D keyword.
+     */
     static string fieldNameSource(Component, string fieldNameInternal)()
     {
         string result;
@@ -334,18 +333,18 @@ private:
         return result is null ? fieldNameInternal : result;
     }
 
-    /// This template generates an implementation of addRightToLeft for property
-    /// fieldNameInternal of component type Component.
-    ///
-    /// When a component type is registered, this template is instantiated for all
-    /// its properties to implement addRightToLeft for every one of them.
-    ///
-    /// Params: Component         = The component type to which the property belongs.
-    ///         fieldNameInternal = The name of the property (field) in the
-    ///                             component struct (as opposed to its name in a Source
-    ///                             such as YAML).
-    ///
-    /// See_Also: addRightToLeft
+    /** This template generates an implementation of addRightToLeft for property
+     * fieldNameInternal of component type Component.
+     *
+     * When a component type is registered, this template is instantiated for all its
+     * properties to implement addRightToLeft for every one of them.
+     *
+     * Params: Component         = The component type to which the property belongs.
+     *         fieldNameInternal = The name of the property (field) in the component 
+     *                             struct (as opposed to its name in a Source such as YAML).
+     *
+     * See_Also: addRightToLeft
+     */
     static void implementAddRightToLeft
         (Component, string fieldNameInternal)
         (ref RawComponent left, ref const(RawComponent) right) @trusted pure nothrow
@@ -369,19 +368,20 @@ private:
     }
 
 
-    /// This template generates an implementation of loadProperty loading property
-    /// fieldNameInternal of component type Component from source type Source.
-    ///
-    /// When a component type is registered, this template is instantiated for all its
-    /// properties to implement loadProperty for every one of them.
-    ///
-    /// Params: Source            = The Source type to load from (e.g. YAMLSource).
-    ///         Component         = Component type we're loading.
-    ///         fieldNameInternal = Name of the property in the Component struct to load
-    ///                             (which may differ from the name of the same property
-    ///                             in component source).
-    ///
-    /// See_Also: LoadProperty
+    /** This template generates an implementation of loadProperty loading property
+     * fieldNameInternal of component type Component from source type Source.
+     *
+     * When registering a component type, this template is instantiated for its properties
+     * to implement loadProperty for every one of them.
+     *
+     * Params: Source            = The Source type to load from (e.g. YAMLSource).
+     *         Component         = Component type we're loading.
+     *         fieldNameInternal = Name of the property in the Component struct to load
+     *                             (may differ from the name of the same property in
+     *                             component source).
+     *
+     * See_Also: LoadProperty
+     */
     static bool implementLoadProperty
         (Source, Component, string fieldNameInternal)
         (ubyte[] componentRaw, void* sourceRaw, GetResourceHandle getHandle,
@@ -483,25 +483,27 @@ public:
     /// Size of a single component of this type in bytes.
     size_t size;
 
-    /// Maximum possible components of this type in a single entity.
-    ///
-    /// Used mainly by MultiComponents. Used by EntitySystem to ensure there are
-    /// always enough components preallocated for the next entity to process.
+    /** Maximum possible components of this type in a single entity.
+     *
+     * Used mainly by MultiComponents. Used by EntitySystem to ensure there are always
+     * enough components preallocated for the next entity to process.
+     */
     size_t maxPerEntity = 1;
 
     /// Is this a MultiComponent type?
     bool isMulti = false;
 
-    /// Name of the component type.
-    ///
-    /// This is the component struct name without the 'Component' suffix.
-    /// E.g. for "PhysicsComponent" this would be "Physics"
+    /** Name of the component type.
+     *
+     * This is the component struct name without the 'Component' suffix. E.g. for
+     * "PhysicsComponent" this would be "Physics"
+     */
     string name = "";
 
-    /// Name of the component when accessed in a Source (e.g. YAML).
-    ///
-    /// Usually this is equal to the name member with the first character forced to
-    /// lowercase.
+    /** Name of the component when accessed in a Source (e.g. YAML).
+     *
+     * Usually this is equal to name with the first character forced to lowercase.
+     */
     string sourceName = "";
 
     /// Minimum number of components to preallocate between game updates.
@@ -511,17 +513,18 @@ public:
     double minPreallocPerEntity = 0;
 
 private:
-    /// Type info of the Source (e.g. YAML) type the components are loaded from.
-    ///
-    /// Ensures that a correct Source is passed to loadComponent.
+    /** Type info of the Source (e.g. YAML) type the components are loaded from.
+     *
+     * Ensures that a correct Source is passed to loadComponent.
+     */
     TypeInfo sourceType_;
 
     /// Information about all properties (data members) in the component type.
     ComponentPropertyInfo[] properties_;
 
 public:
-    /** A range used to iterate over type information of properties (aka fields or data
-     * members) of a Component type.
+    /** A range that iterates over type info of properties (aka fields or data members) of
+     * a Component type.
      *
      * The range element type is ComponentPropertyInfo.
      */
@@ -564,11 +567,11 @@ public:
         bool empty() @safe pure nothrow const { return properties_.empty(); }
 
     private:
-        /** Construct a ComponentProperty iterating over properties with specified attrib.
+        /* Construct a ComponentProperty iterating over properties with specified attrib.
          *
          * Params: properties = A slice of all properties of the component type.
-         *         attribute  = Only the properties with this user-defined attribute
-         *                      will be iterated by the range.
+         *         attribute  = Only properties with this user-defined attribute will be
+         *                      iterated by the range.
          */
         this(const(ComponentPropertyInfo)[] properties, string attribute)
             @safe pure nothrow
@@ -578,8 +581,9 @@ public:
             skipToNextMatch();
         }
 
-        /// Skip to the next property with user-defined attribute filterAttribute_ or to
-        /// the end of the range.
+        /* Skip to next property with user-defined attribute filterAttribute_ or to the
+         * end of the range.
+         */
         void skipToNextMatch() @safe pure nothrow
         {
             while(!properties_.empty &&
@@ -590,8 +594,7 @@ public:
         }
     }
 
-   /** Get a range of all properties in the component type with specified user-defined
-    * attribute.
+   /** Get a range of properties of a component type with specified user-defined attribute.
     *
     * Example:
     * --------------------
@@ -619,12 +622,12 @@ public:
         @safe pure nothrow const
     {
         //TODO Maybe build a range storing an array of properties with specified attrib,
-        //     and cache the range between calls. Would be faster but use more memory
-        //     than ComponentPropertyRange, which filters on-the-fly. To avoid threading
-        //     issues we can use a static array (static is per-thread and this is a
-        //     template func so there'd be a separate array per attrib - but we'd need
-        //     separate entries per component type. We may even build all these arrays
-        //     at startup since we know which attribs are being used at compile-time).
+        //     and cache the range between calls. Faster, but more memory than
+        //     ComponentPropertyRange, which filters on-the-fly. To avoid thread issues we
+        //     can use a static array (static is per-thread and this is a template func so
+        //     there'd be a separate array per attrib - but we'd need separate entries per
+        //     component type. We may even build all these arrays at startup as we know
+        //     which attribs are being used at compile-time).
         return ComponentPropertyRange(properties_, attribute);
     }
 
@@ -636,13 +639,13 @@ public:
      *
      * Params:
      *
-     * Source        = Type of Source (e.g. YAML node) to load from. Must be the same
-     *                 Source type that was used when the type info was initialized 
-     *                 (i.e. the Source parameter of ComponentTypeManager).
+     * Source        = Type of Source (e.g. YAML) to load from. Must be the same Source
+     *                 type that was used when the type info was initialized (i.e. the
+     *                 Source parameter of ComponentTypeManager).
      * componentData = Component to load into, as a byte array.
      * source        = Source to load the component from (e.g. a component stored as YAML).
-     * entityManager = Entity manager (needed to get access to resource management -
-     *                 to initialize any resource handles in the component).
+     * entityManager = Entity manager (needed to get access to resource management - to
+     *                 initialize any resource handles in the component).
      * errorLog      = A string to write any loading errors to. If there are no errors,
      *                 this is not touched.
      */
