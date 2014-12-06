@@ -145,17 +145,17 @@ private:
 enum maxSourceBytes = 512;
 
 
-/++ Manages component type information and loading.
+/++ Manages component type information and component loading.
  +
- + Before creating an EntityManager, all component types must be registered with a
- + ComponentTypeManager that will be passed to the constructor of an EntityManager.
+ + All component types must be registered with a ComponentTypeManager that will be passed
+ + to the constructor of an EntityManager.
  +
- + Params: Source = Struct to read components with. May be e.g a YAML or XML node or an
- *                  INI section. $(B tharsis-full) provides a Source implementation based
- *                  on YAML. If you need to create your own implementation, see below.
- +         Policy = Specifies compile-time parameters such as the maximum number of
- +                  component types. See tharsis.entity.entitypolicy.d for the default
- +                  Policy type.
+ + Params:
+ + Source = Struct to read components with, e.g a YAML or XML node or an INI section.
+ +          $(B tharsis-full) provides a YAML-based Source implementation. For details,
+ +          see $(LINK2 ../../../concepts/source.html, Source concept documentation).
+ + Policy = Specifies compile-time parameters such as the max number of component types.
+ +          See tharsis.entity.entitypolicy for the default Policy type.
  +
  + Example:
  + --------------------
@@ -164,177 +164,16 @@ enum maxSourceBytes = 512;
  + // AComponent, BComponent, CComponent
  +
  + // Construct the component type manager
- + auto componentTypes = new ComponentTypeManager!SomeSource(loader);
+ + auto componentTypeMgr = new ComponentTypeManager!SomeSource(loader);
  + // Register a component type
- + componentTypes.registerComponentTypes!AComponent();
+ + componentTypeMgr.registerComponentTypes!AComponent();
  + // Register 2 component types at the same time
- + componentTypes.registerComponentTypes!(BComponent, CComponent);
+ + componentTypeMgr.registerComponentTypes!(BComponent, CComponent);
  + // Lock to disallow further component type changes.
  + // Must be called before passing to EntityManager.
- + componentTypes.lock();
+ + componentTypeMgr.lock();
  + // Construct the entity manager.
- + auto entityManager = new EntityManager(componentTypes);
- + --------------------
- +
- + Limitations of a Source struct:
- +
- + sizeof of a Source can be at most maxSourceBytes (512 at the moment). A Source must be
- + copyable; if it includes nested data (e.g. JSON/XML/YAML subnodes), copying a Source
- + must either also copy this nested data or share it by using e.g. reference counting or
- + GC storage.
- +
- + Skeleton of a Source struct:
- + --------------------
- + // Note that some manual casting might be required to ensure that methods of a Source
- + // struct have required attributes (such as pure, nothrow, etc.).
- + //
- + // This can be done safely by ensuring that the method indeed obeys the attribute (e.g.
- + // ensuring that all exceptions are caught) and manually casting any functions that
- + // don't obey the attribute.
- + //
- + // For example:
- + //
- + // (cast(void delegate(int, int) @safe nothrow)&methodThatDoesntThrow)()
- + struct Source
- + {
- + public:
- +     /// Handles loading of Sources.
- +     struct Loader
- +     {
- +     public:
- +         /** Load a Source with specified name (e.g. entity file name).
- +          *
- +          *
- +          * Params: name      = Name to identify the source by (e.g. a file name).
- +          *         logErrors = If true, errors generated during the use of the Source
- +          *                     (such as loading errors, conversion errors etc.) should
- +          *                      be logged, accessible through errorLog().
- +          *
- +          * There is no requirement to load from actual files; this may be implemented
- +          * by loading from some archive file or from memory.
- +          */
- +         TestSource loadSource(string name, bool logErrors) @safe nothrow
- +         {
- +             assert(false);
- +         }
- +     }
- +
- +     /** If true, the Source is 'null' and doesn't store anything.
- +      *
- +      * A null Source may be returned when loading a Source with Loader.loadSource() fails.
- +      */
- +     bool isNull() @safe nothrow const
- +     {
- +         assert(false);
- +     }
- +
- +     /** If logging is enabled, returns errors logged during construction and use
- +      * of this Source. Otherwise returns a warning message.
- +      */
- +     string errorLog() @safe pure nothrow const
- +     {
- +         assert(false);
- +     }
- +
- +     /** Read a value of type T to target.
- +      *
- +      * Returns: true if the value was successfully read.
- +      *          false if the Source isn't convertible to specified type.
- +      */
- +     bool readTo(T)(out T target) @safe nothrow
- +     {
- +         assert(false);
- +     }
- +
- +     /** Get a nested Source from a 'sequence' Source.
- +      *
- +      * (Get a value from a Source that represents an array of Sources)
- +      *
- +      * Can only be called on if the Source is a sequence (see isSequence()).
- +      *
- +      * Params:  index  = Index of the Source to get in the sequence.
- +      *          target = Target to read the Source to.
- +      *
- +      * Returns: true on success, false if index is out of range.
- +      */
- +     bool getSequenceValue(size_t index, out TestSource target) @safe nothrow
- +     {
- +         assert(false);
- +     }
- +
- +
- +     /** Get a nested Source from a 'mapping' Source.
- +      *
- +      * (Get a value from a Source that maps strings to Sources)
- +      *
- +      * Can only be called on if the Source is a mapping (see isMapping()).
- +      *
- +      * Params: key    = Key identifying the nested source..
- +      *         target = Target to read the nested source to.
- +      *
- +      * Returns: true on success, false if there is no such key in the mapping.
- +      */
- +     bool getMappingValue(string key, out TestSource target) @safe nothrow
- +     {
- +         assert(false);
- +     }
- +
- +     /// Is this a scalar source? A scalar is any source that is not a sequence or a mapping.
- +     bool isScalar() @safe nothrow const
- +     {
- +         assert(false);
- +     }
- +
- +     /// Is this a sequence source? A sequence acts as an array of values of various types.
- +     bool isSequence() @safe nothrow const
- +     {
- +         return yaml_.isSequence();
- +     }
- +
- +     /// Is this a mapping source? A mapping acts as an associative array of various types.
- +     bool isMapping() @safe nothrow const
- +     {
- +         return yaml_.isMapping();
- +     }
- + }
- + --------------------
- + TODO once default values are supported, mention how that is handled here.
- + Format of components in a Source struct:
- +
- + A Source storing an entity must be a mapping where keys are lower-case component type 
- + names without the "Component" suffix. The values corresponding to these keys must be
- + mappings containing the component's properties.
- +
- + E.g. to load an int property "awesomeness" of an ExampleComponent, Tharsis will use
- + the Source API roughly in the following way:
- +
- + --------------------
- + bool getAwesomeness(ref const(Source) components, out int awesomeness)
- + {
- +     if(components.isNull())
- +     {
- +         writeln("components is null");
- +         return false;
- +     }
- +     Source exampleComponent;
- +     if(!component.getMappingValue("example", exampleComponent))
- +     {
- +         writeln("could not find ExampleComponent in components");
- +         return false;
- +     }
- +     Source awesomenessSource;
- +     if(!exampleComponent.getMappingValue("awesomeness", awesomenessSource))
- +     {
- +         writeln("could not find awesomeness in ExampleComponent");
- +         return false;
- +     }
- +     if(!awesomenessSource.readTo(awesomeness))
- +     {
- +         writeln("awesomeness could not be read to int");
- +         return false;
- +     }
- +     return true;
- + }
+ + auto entityManager = new EntityManager(componentTypeMgr);
  + --------------------
  +
  + Example Policy type:
@@ -353,7 +192,7 @@ enum maxSourceBytes = 512;
  +     /// The multiplier to increase allocated size during an emergency reallocation.
  +     enum reallocMult = 2.5;
  +
- +     /** Minimum number of components of every component type to preallocate space for 
+ +     /** Minimum number of components of every component type to preallocate space for
  +      * relative to entity count.
  +      */
  +     enum minComponentPerEntityPrealloc = 0.05;
@@ -396,21 +235,18 @@ public:
         sourceLoader_      = loader;
     }
 
-    /** Register specified component types.
+    /** Register specified $(LINK2 component ../../../concepts/component.html) types.
      *
-     * Every component type used by any Process used with the EntityManager must be
-     * registered. The ComponentTypeID enum member of the component type should be set by
-     * the userComponentTypeID template with an integer parameter of at least 0 and at
-     * most Policy.maxUserComponentTypes (64 by default).
-     *
-     * TODO this should link to an .rst article describing the Component concept and
-     * showing example component structs.
+     * Every component type used by any Process must be registered. The ComponentTypeID
+     * enum member of the component type should be set by the userComponentTypeID template
+     * with an integer parameter of at least 0 and at most Policy.maxUserComponentTypes
+     * (256 by default).
      *
      * Example:
      * --------------------
-     * // ComponentTypeManager!SomeSource componentTypes
+     * // ComponentTypeManager!SomeSource componentTypeMgr
      * // struct HealthComponent, struct PhysicsComponent
-     * componentTypes.registerComponentTypes!(HealthComponent, PhysicsComponent);
+     * componentTypeMgr.registerComponentTypes!(HealthComponent, PhysicsComponent);
      * --------------------
      */
     void registerComponentTypes(Types ...)() @safe pure nothrow

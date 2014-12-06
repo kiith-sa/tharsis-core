@@ -3,10 +3,11 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-/// Resource descriptors used by builtin resources.
-///
-/// These descriptors can also be used by user code, but it is recommended to
-/// import tharsis.defaults.descriptors instead of this module.
+/** Resource descriptors used by builtin resources.
+ *
+ * These descriptors can be used by user code, but it is recommended to import
+ * tharsis.defaults.descriptors instead of this module.
+ */
 module tharsis.entity.descriptors;
 
 /** A resource descriptor represented by a single string.
@@ -39,9 +40,9 @@ struct StringDescriptor(Resource)
      * Usually, this returns true if two descriptors describe the same resource (e.g. if
      * the descriptors are equal).
      *
-     * The resource manager uses this when a resource handle is requested to decide
-     * whether to load a new resource or to reuse an existing one (if a descriptor maps to
-     * the same handle as a descriptor of already existing resource).
+     * The resource manager uses this to figure whether to load a new resource or reuse an
+     * existing one (if a descriptor maps to the same handle as a descriptor of already
+     * existing resource) when a resource handle is requested.
      */
     bool mapsToSameHandle(ref const(StringDescriptor) rhs) @safe pure nothrow const @nogc
     {
@@ -78,8 +79,8 @@ private:
 
     /** The wrapped source. Yes, this does use the GC (or rather, new).
      *
-     * It's unlikely to cause significant overhead, since resources are shared. We may
-     * wrap Sources without GC in future, but that may require tricky memory allocation.
+     * It's unlikely to cause measurable overhead, since resources are shared. We may wrap
+     * Sources without GC in future, but that may require tricky memory allocation.
      */
     AbstractSourceWrapper wrappedSource;
 
@@ -106,8 +107,7 @@ public:
      *
      * Returns: true if succesfully loaded, false otherwise.
      */
-    static bool load(Source)(ref Source source,
-                             out SourceWrapperDescriptor result)
+    static bool load(Source)(ref Source source, out SourceWrapperDescriptor result)
         @safe nothrow
     {
         result.wrappedSource = new SourceWrapper!Source(source);
@@ -117,25 +117,24 @@ public:
     /** Determine if this descriptor maps to the same resource handle as another descriptor.
      *
      * Usually, this returns true if two descriptors describe one resource (e.g. if they
-     * are equal). SourceWrapperDescriptors are assumed to never map to the same handle 
+     * are equal). SourceWrapperDescriptors are assumed to never map to the same handle
      * (the resource is loaded directly from a subnode of a larger resource's definition).
      *
-     * The resource manager uses this when a resource handle is requested to decide
-     * whether to load a new resource or to reuse an existing one (if a descriptor maps to
-     * the same handle as a descriptor of already existing resource).
+     * The resource manager uses this to figure whether to load a new resource or reuse an
+     * existing one (if a descriptor maps to the same handle as a descriptor of already
+     * existing resource) when a resource handle is requested.
      */
     bool mapsToSameHandle(ref const(SourceWrapperDescriptor) rhs)
         @safe pure nothrow const @nogc
     {
-        // Handles to resources using SourceWrapperDescriptors are initialized component
-        // members where those resources are defined inline. I.e. they are initialized
-        // together with the prototype of entities containing the component which has
-        // a resource handle data member. All entities created from the same prototype
-        // (usually stored in one source file) are going to have copies of an initialized
-        // handle, with no need to call handle() of the resource manager. Because of this,
-        // even if we assume any two SourceWrapperDescriptors (even identical) never map
-        // to the same handle, the resource manager will only load a resource from one
-        // descriptor once per prototype instead of loading it for every single entity.
+        // Handles to resources using SourceWrapperDescriptors are initialized together
+        // with the entity prototype containing the component which has the resource 
+        // handle property. All entities created from the same prototype (usually stored
+        // in one source file) are going to have copies of an initialized handle, with no
+        // need to call handle() of the resource manager. Because of this, even if we
+        // assume any two SourceWrapperDescriptors (even identical) never map to the same
+        // handle, the resource manager will only load a resource from one descriptor once
+        // per prototype instead of loading it for every single entity.
         return false;
     }
 }
@@ -215,9 +214,9 @@ public:
      * Usually, this returns true if two descriptors describe the same resource (e.g. if
      * the descriptors are equal).
      *
-     * The resource manager uses this when a resource handle is requested to decide 
-     * whether to load a new resource or to reuse an existing one (if a descriptor maps
-     * to the same handle as a descriptor of an already existing resource).
+     * The resource manager uses this to figure whether to load a new resource or reuse an
+     * existing one (if a descriptor maps to the same handle as a descriptor of already
+     * existing resource) when a resource handle is requested.
      */
     bool mapsToSameHandle(ref const(CombinedDescriptor) rhs) @safe pure nothrow const @nogc
     {
