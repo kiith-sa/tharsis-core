@@ -41,9 +41,6 @@ struct ProcessDiagnostics
     /** Time this process spent executing this frame in hectonanoseconds.
      */
     ulong duration;
-
-    /// Is this a 'null' struct that doesn't store valid data?
-    bool isNull() @safe pure nothrow const @nogc { return name is null; }
 }
 
 /// Diagnostics info for Scheduler.
@@ -145,20 +142,32 @@ struct EntityManagerDiagnostics(Policy)
      * diagnostics of process with ID (index) $(D i). If $(D processes[i].isNull) is true,
      * there is no process with ID $(D i) and the curresponding entry is invalid.
      */
+
+    // Stores process diagnostics (accessed through a slice with processes()).
     // There may be more processes than this but it's highly unlikely.
-    ProcessDiagnostics[componentTypes.length * 2 + 4] processes;
+    ProcessDiagnostics[componentTypes.length * 2 + 4] processesStorage;
+    // Get diagnostics for all used processes.
+    inout(ProcessDiagnostics)[] processes() @safe pure nothrow inout @nogc
+    {
+        return processesStorage[0 .. processCount];
+    }
 
     /** Diagnostics for individual (used) execution threads.
      *
      * As at least 1 process runs whole in one thread, there are at most as many used
      * threads as processes.
      */
-    Thread[processes.length] threads;
+    Thread[processesStorage.length] threadStorage;
+    // Get diagnostics for all threads.
+    inout(Thread)[] threads() @safe pure nothrow inout @nogc
+    {
+        return threadStorage[0 .. threadCount];
+    }
 
     /// Diagnostics for the scheduler.
     SchedulerDiagnostics scheduler;
 
-    // TODO after tested, add resource manager diagnostics 
+    // TODO resource manager diagnostics 
     // (memory allocated/used by this manager, new/loading/loaded/loadfailed counts)
     // 2014-08-28
 

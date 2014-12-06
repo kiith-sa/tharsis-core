@@ -149,7 +149,7 @@ public:
         diagnostics_.timeEstimator = timeEstimator_.diagnostics(diagnostics, diagnostics_);
 
         // Estimate execution times for the next frame.
-        timeEstimator_.updateEstimates(diagnostics.processes[]);
+        timeEstimator_.updateEstimates(diagnostics.processes);
 
         {
             Zone schedulePrep = Zone(profiler, "scheduling preparation");
@@ -176,10 +176,10 @@ public:
             diagnostics_.approximate = algorithm_.endScheduling(timeEstimator_);
         }
 
-        diagnostics_.estimatedFrameTime =
-            iota(threadCount_).map!(t => algorithm_.estimatedThreadUsage(t))
-                              .reduce!max
-                              .assumeWontThrow;
+        diagnostics_.estimatedFrameTime = iota(threadCount_)
+                                          .map!(t => algorithm_.estimatedThreadUsage(t))
+                                          .reduce!max
+                                          .assumeWontThrow;
 
         // For each non-bound process, get the thread it should run in.
         foreach(uint i, proc; processes) if(proc.boundToThread == uint.max)
@@ -796,7 +796,8 @@ public:
         double underestimateRatioSum = 0.0;
         double errorRatioSum = 0.0;
         size_t processCount;
-        foreach(id, ref process; entityManager.processes) if(!process.isNull())
+        // The if() is needed to handle the first frame, before we have any estimates.
+        if(!timeEstimates_[].empty) foreach(id, ref process; entityManager.processes)
         {
             ++processCount;
             const duration         = cast(long)process.duration;
@@ -838,7 +839,7 @@ final class SimpleTimeEstimator: TimeEstimator
         while(timeEstimates_.length < procCount) { timeEstimates_.put(0); }
         timeEstimates_.length = procCount;
 
-        foreach(id, ref proc; processes) if(!proc.isNull())
+        foreach(id, ref proc; processes)
         {
             timeEstimates_[id] = proc.duration;
         }
@@ -891,7 +892,7 @@ public:
         timeEstimates_.length = procCount;
 
         // Update estimates for all processes.
-        foreach(id, ref proc; processes) if(!proc.isNull())
+        foreach(id, ref proc; processes)
         {
             const prevEst = timeEstimates_[id];
             const duration = proc.duration;

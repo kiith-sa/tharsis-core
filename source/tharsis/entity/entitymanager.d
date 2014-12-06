@@ -374,6 +374,9 @@ public:
         @trusted nothrow
     {
         scheduler_ = new Scheduler(overrideThreadCount);
+
+        // Ensure diagnostics_.threadCount is valid even before the first frame.
+        diagnostics_.threadCount  = scheduler_.threadCount;
         // Construct process threads.
         // 0 is the main thread, so we only need to add threads other than 0.
         foreach(threadIdx; 1 .. scheduler_.threadCount)
@@ -719,6 +722,9 @@ private:
 
         // Add a wrapper for the process,
         processes_ ~= new ProcessWrapper!(P, Policy)(process, &runProcess);
+
+        // Ensure diagnostics_.processCount is valid even before the first frame.
+        diagnostics_.processCount = processes_.length;
     }
 
     // TODO a "locked" EntityManager state when no new stuff can be registered.
@@ -958,6 +964,9 @@ private:
         {
             auto procDiagZone = Zone(profilerMainThread_, "process diagnostics");
 
+            diagnostics_.processCount = processes_.length;
+            diagnostics_.threadCount  = scheduler_.threadCount;
+
             // Get process diagnostics.
             foreach(idx, process; processes_)
             {
@@ -977,9 +986,6 @@ private:
 
                 diagnostics_.threads[threadIdx].processesDuration += duration;
             }
-
-            diagnostics_.processCount = processes_.length;
-            diagnostics_.threadCount  = scheduler_.threadCount;
         }
 
         {

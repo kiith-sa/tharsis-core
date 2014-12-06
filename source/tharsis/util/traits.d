@@ -6,6 +6,7 @@
 /// Templates extracting type information ala std.traits.
 module tharsis.util.traits;
 
+// TODO: eventually move this and similar modules to tharsis.std
 
 import std.algorithm;
 import std.array;
@@ -13,6 +14,11 @@ import std.string;
 import std.traits;
 import std.typetuple;
 
+// TODO: Turn tharsis.util into a separate DUB package and remove copied code
+//       (FieldNamesTuple) from gfmod.opengl.uniform in tharsis-game and
+//       tharsis-despiker.
+//       Ensure that tharsis.util has no dependencies on tharsis-core.
+//       2014-09-24
 
 /// Get a compile-time tuple containing names of all fields in a struct.
 template FieldNamesTuple(S)
