@@ -83,8 +83,8 @@ public:
         threadCount_ = overrideThreadCount == 0 ? autodetectThreadCount()
                                                 : overrideThreadCount;
 
-        // algorithm_  = new LPTScheduling(threadCount_);
-        algorithm_     = new RandomBacktrackScheduling(threadCount_, 400, 3);
+        algorithm_  = new LPTScheduling(threadCount_);
+        // algorithm_     = new RandomBacktrackScheduling(threadCount_, 400, 3);
         // timeEstimator_ = new SimpleTimeEstimator();
         // timeEstimator_ = new StepTimeEstimator(0.1);
         timeEstimator_ = new StepTimeEstimator(0.2);
