@@ -101,6 +101,7 @@ public:
     /// Get the number of threads we're scheduling for.
     size_t threadCount() @safe pure nothrow const @nogc { return threadCount_; }
 
+package:
     /// Get the index of the thread a process with index processIndex should run in.
     uint processToThread(size_t processIndex) @safe pure nothrow const @nogc
     {
@@ -207,7 +208,7 @@ struct ProcessInfo
 }
 
 
-/** Base class for scheduling algorithm.
+/** Base class for scheduling algorithms. Can be derived to implement custom algorithms.
  *
  * The actual algorithms are used by calling beginScheduling(), passing parameters by
  * addProcess()/increaseThreadUsage() and running the algorithm itself in endScheduling().
@@ -224,28 +225,28 @@ private:
     bool scheduling_ = false;
 
 protected:
-    // Number of threads we're scheduling for.
+    /// Number of threads we're scheduling for.
     const size_t threadCount_;
-    // Estimated usage (run time) of inidivual threads (depends on which processes run where).
+    /// Estimated usage (run time) of inidivual threads (depends on which processes run where).
     ulong[] threadUsage_;
 
-    // Default storage for procInfo_.
+    /// Default storage for procInfo_.
     ProcessInfo[64] procInfoScratch_;
-    // Information about processes to schedule (added by addProcess(), cleared by
-    // beginScheduling()).
-    //
-    // Order of processes here may not match their IDs/indices, see procIDToProcInfo_.
+    /** Info about processes to schedule (added by addProcess(), cleared by beginScheduling()).
+     *
+     * Order of processes here may not match their IDs/indices, see procIDToProcInfo_.
+     */
     ScopeBuffer!ProcessInfo procInfo_;
 
-    // Default storage for procIDToProcInfo_.
+    /// Default storage for procIDToProcInfo_.
     uint[64] procIDToProcInfoScratch_;
-    // Translates process IDs (indices) to their corresponding procInfo_ elements.
-    //
-    // procIDToProcInfo_[processID] is the procInfo_ index of process with that ID.
-    // Note that this relies on process IDs being 'small', as they are now since they
-    // are indices of those processes as stored by EntityManager.
+    /** Translates process IDs (indices) to their corresponding procInfo_ elements.
+     *
+     * procIDToProcInfo_[processID] is the procInfo_ index of process with that ID.
+     * Note that this relies on process IDs being 'small', as they are now since they
+     * are indices of those processes as stored by EntityManager.
+     */
     ScopeBuffer!uint procIDToProcInfo_;
-
 
 public:
     /** Construct a scheduling algorithm for specified number of threads.
@@ -266,7 +267,7 @@ public:
     }
 
     /// Must be called to free resources used by the algorithm.
-    ~this()
+    ~this() nothrow
     {
         procInfo_.free();
         procIDToProcInfo_.free();
@@ -303,76 +304,6 @@ public:
         return procInfo(process).assignedThread;
     }
 
-    /** Increase thread usage (estimated run time) for specified thread.
-     *
-     * Can only be called between beginScheduling() and endScheduling(). Used to tell the
-     * scheduling algorithm about thread usage by processes that are not scheduled by the
-     * algorithm (e.g. processes fixed to specific threads).
-     */
-    final void increaseThreadUsage(size_t thread, ulong usage) @safe pure nothrow @nogc
-    {
-        assert(scheduling_, "Can only increase baseline thread usage while scheduling");
-        threadUsage_[thread] += usage;
-    }
-
-    /** Add a process for the algorithm to schedule.
-     *
-     * Most be used to add all processes to schedule after each call to beginScheduling().
-     *
-     * Params:
-     *
-     * process = ID (index) of the process.
-     */
-    final void addProcess(size_t process) @trusted nothrow
-    {
-        assert(scheduling_, "Can only addProcess() while scheduling");
-        if(knowProcess(process)) { return; }
-
-        // Don't know this process yet, add it.
-
-        // Lengthten the proc ID -> proc info lookup table if needed.
-        while(procIDToProcInfo_.length <= process) { procIDToProcInfo_.put(uint.max); }
-        procIDToProcInfo_[process] = cast(uint)procInfo_.length;
-        procInfo_.put(ProcessInfo.init);
-        assert(knowProcess(process),
-               "Setting procIDToProcInfo_ must result in knowing the process");
-        procInfo(process).processIdx = process;
-    }
-
-    /** Begin passing arguments to the scheduling algorithm.
-     *
-     * Forgets all processes added since the last beginScheduling() call; information
-     * about processes must be readded through addProcess() before doing the actual
-     * scheduling in endScheduling().
-     */
-    final void beginScheduling() @trusted pure nothrow @nogc
-    {
-        assert(!scheduling_, "Called beginScheduling twice");
-        procInfo_.length         = 0;
-        procIDToProcInfo_.length = 0;
-        scheduling_    = true;
-        threadUsage_[] = 0;
-    }
-
-    /** End scheduling, running the actual scheduling algorithm.
-     *
-     * Schedules all processes passed through addProcess() calls. After calling this,
-     * threads assigned to processes and estimated thread runtime can be read through
-     * assignedThread() and estimatedThreadUsage().
-     *
-     * beginScheduling() must be called first.
-     *
-     * Params:
-     *
-     * estimator = Estimates execution times of Processes.
-     */
-    final Flag!"approximate" endScheduling(TimeEstimator estimator) @safe nothrow
-    {
-        assert(scheduling_, "Called endScheduling when not scheduling");
-        scope(exit) { scheduling_ = false; }
-        return doScheduling(estimator);
-    }
-
 protected:
     /// Internal implementation of endScheduling(). Runs the scheduling algorithm.
     Flag!"approximate" doScheduling(TimeEstimator estimator) @safe nothrow
@@ -392,6 +323,77 @@ protected:
     {
         assert(knowProcess(process), "Can't get procInfo for process we don't know");
         return procInfo_[procIDToProcInfo_[process]];
+    }
+
+package final:
+    /* Increase thread usage (estimated run time) for specified thread.
+     *
+     * Can only be called between beginScheduling() and endScheduling(). Used to tell the
+     * scheduling algorithm about thread usage by processes that are not scheduled by the
+     * algorithm (e.g. processes fixed to specific threads).
+     */
+    void increaseThreadUsage(size_t thread, ulong usage) @safe pure nothrow @nogc
+    {
+        assert(scheduling_, "Can only increase baseline thread usage while scheduling");
+        threadUsage_[thread] += usage;
+    }
+
+    /* Add a process for the algorithm to schedule.
+     *
+     * Most be used to add all processes to schedule after each call to beginScheduling().
+     *
+     * Params:
+     *
+     * process = ID (index) of the process.
+     */
+    void addProcess(size_t process) @trusted nothrow
+    {
+        assert(scheduling_, "Can only addProcess() while scheduling");
+        if(knowProcess(process)) { return; }
+
+        // Don't know this process yet, add it.
+
+        // Lengthten the proc ID -> proc info lookup table if needed.
+        while(procIDToProcInfo_.length <= process) { procIDToProcInfo_.put(uint.max); }
+        procIDToProcInfo_[process] = cast(uint)procInfo_.length;
+        procInfo_.put(ProcessInfo.init);
+        assert(knowProcess(process),
+               "Setting procIDToProcInfo_ must result in knowing the process");
+        procInfo(process).processIdx = process;
+    }
+
+    /* Begin passing arguments to the scheduling algorithm.
+     *
+     * Forgets all processes added since the last beginScheduling() call; information
+     * about processes must be readded through addProcess() before doing the actual
+     * scheduling in endScheduling().
+     */
+    void beginScheduling() @trusted pure nothrow @nogc
+    {
+        assert(!scheduling_, "Called beginScheduling twice");
+        procInfo_.length         = 0;
+        procIDToProcInfo_.length = 0;
+        scheduling_    = true;
+        threadUsage_[] = 0;
+    }
+
+    /* End scheduling, running the actual scheduling algorithm.
+     *
+     * Schedules all processes passed through addProcess() calls. After calling this,
+     * threads assigned to processes and estimated thread runtime can be read through
+     * assignedThread() and estimatedThreadUsage().
+     *
+     * beginScheduling() must be called first.
+     *
+     * Params:
+     *
+     * estimator = Estimates execution times of Processes.
+     */
+    Flag!"approximate" endScheduling(TimeEstimator estimator) @safe nothrow
+    {
+        assert(scheduling_, "Called endScheduling when not scheduling");
+        scope(exit) { scheduling_ = false; }
+        return doScheduling(estimator);
     }
 }
 
@@ -498,7 +500,7 @@ public:
     }
 
     /// Free resources.
-    ~this()
+    ~this() nothrow
     {
         procThreads_.free();
         coverBuffers_.free();
@@ -706,7 +708,7 @@ public:
     }
 
     /// Free resources used by the algorithm.
-    ~this() { procIndex_.free(); }
+    ~this() nothrow { procIndex_.free(); }
 
     override string name() @safe pure nothrow const @nogc { return "LPT"; }
 
@@ -774,7 +776,7 @@ public:
     }
 
     /// Destroy the TimeEstimator, freeing any resources used.
-    ~this()
+    ~this() nothrow
     {
         timeEstimates_.free();
     }
