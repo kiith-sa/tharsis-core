@@ -30,6 +30,9 @@ struct DefaultEntityPolicy
      */
     enum maxUserComponentTypes = 256;
 
+    /// Maximum possible number of Processes.
+    enum maxProcesses = 256;
+
     /// Maximum entities added during one frame.
     enum maxNewEntitiesPerFrame = 4096;
 

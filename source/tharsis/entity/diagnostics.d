@@ -145,7 +145,7 @@ struct EntityManagerDiagnostics(Policy)
 
     // Stores process diagnostics (accessed through a slice with processes()).
     // There may be more processes than this but it's highly unlikely.
-    ProcessDiagnostics[componentTypes.length * 2 + 4] processesStorage;
+    ProcessDiagnostics[Policy.maxProcesses] processesStorage;
     // Get diagnostics for all used processes.
     inout(ProcessDiagnostics)[] processes() @safe pure nothrow inout @nogc
     {

@@ -617,6 +617,9 @@ package:
 private:
     /** Register a Process.
      *
+     * At most Policy.maxProcesses Processes can be registered (256 by default). Override
+     * the Policy template parameter to increase this limit.
+     *
      * Params: process = Process to register. There may be at most 1 process writing any
      *                   single component type (specifying it as its FutureComponent).
      *                   The FutureComponent of the process must be registered with the
@@ -627,6 +630,11 @@ private:
     void registerProcess(P)(P process) @trusted nothrow
     {
         mixin validateProcess!P;
+
+        assert(processes_.length < Policy.maxProcesses,
+               "Can't register more Processes than Policy.maxProcesses (256 by default). "
+               "To increase this limit, override the Policy template parameter of "
+               "ComponentTypeManager/EntityManager.");
 
         auto registerZone = Zone(profilerMainThread_, "EntityManager.registerProcess");
         // True if the Process does not write to any future component. Usually processes
