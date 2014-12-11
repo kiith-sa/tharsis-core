@@ -71,7 +71,7 @@ public:
      *
      * Called when an existing component type will use this ComponentTypeState.
      *
-     * Params: typeInfo = Type information about the type of components stored in this
+     * Params: typeInfo = Type information for the type of components stored in this
      *                    ComponentTypeState.
      */
     void enable(ref const(ComponentTypeInfo) typeInfo) @safe pure nothrow
@@ -87,14 +87,15 @@ public:
     bool enabled() @safe pure nothrow const @nogc { return enabled_; }
 
 private:
-    /** Grow the number of entities to store component counts for.
+    /** Grow the number of entities to store component counts/offsets for.
      *
-     * Can only be used to _increase_ the number of entities. Component counts for the new
+     * Can only be used to $(I increase) the entity count. Component counts for the new
      * entities are set to 0. Used by EntityManager e.g. after determining the number of
      * future entities and before adding newly created entities.
      *
-     * Params: count = New entity count. Must be greater than the current entity count
-     *                 (set by a previous call to reset or growEntityCount).
+     * Params: count    = New entity count. Must be greater than the current entity count
+     *                    (set by a previous call to reset or growEntityCount).
+     *         Profiler = Profiler... to profile this code.
      */
     void growEntityCount(const size_t count, Profiler profiler)
     {
@@ -108,9 +109,8 @@ private:
 
         counts.growUninitialized(count);
         offsets.growUninitialized(count);
-        // In debug mode, pre-initialize counts/offsets to help detect bugs.
-        // In release mode, counts/offsets will be uninitialized (to be overwritten as the
-        // process runs)
+        // In debug mode, pre-initialize counts/offsets to help detect bugs. In release,
+        // counts/offsets will be uninitialized (to be overwritten as the process runs)
         //
         // With ~70 component types, this takes ~4ms per frame so it's not viable in
         // release mode.
@@ -186,22 +186,22 @@ struct GameState(Policy)
      *
      * For every component type, there is a buffer of entityID-componentIdx pairs.
      *
-     * A pair says 'this entity has this component'. If an entity has more than 1
-     * component, have multiple pairs. (Or, MultiComponents, use triplets instead of
-     * pairs, with the last member of the triplet being component count)
+     * A pair says 'this entity has this component'. If an entity has multiple components,
+     * have multiple pairs. (Or: MultiComponents use triplets instead of pairs, with the
+     * last member of the triplet being component count)
      *
-     * When running a process, we run only through buffers of the relevant component
-     * types. Meaning we don't run over _all_ entities. Especially relevant for systems
-     * processing unusual components.
+     * When running a process, we run only through buffers of relevant component types.
+     * I.e. we don't run over _all_ entities. Especially relevant for systems processing
+     * uncommon components.
      *
      * Implement this and compare speed. Perhaps even have 2 switchable implementations.
      */
     /// Stores components of all entities.
     ComponentState!Policy components;
 
-    //TODO entities should be manually allocated.
-    /**
-     * All existing entities (either past or future).
+    //TODO entities should be manually allocated 
+    //     (once we either have better containers or the D GC/manual alloc changes are done)
+    /** All existing entities (either past or future).
      *
      * Ordered by entity ID. This is necessary to enable direct component access through
      * EntityAccess.
@@ -213,16 +213,15 @@ struct GameState(Policy)
     /** Number of entities *before* adding new entities for the current frame.
      *
      * For past state, this is the number of entities from the last frame.
-     * For future state, this is the number of *surviving* entities that didn't die during
-     * the last frame.
+     * For future state, number of *surviving* entities that didn't die during the last frame.
      */
     size_t entityCountNoAdded;
 
 
-    /* TODO: May add a structure to access entities by entityID to speed up direct
-     * component access with EntityAccess (currently using binary search). Could use some
-     * hash map, or a multi-level bucket-sorted structure (?) (E.g. 65536 buckets for the
-     * first 16 bits of the entity ID, and arrays/slices in the buckets)
+    /* TODO: May add structure to access entities by entityID to speed up direct component
+     * access with EntityAccess (currently using binary search). Could be a hash map, or a
+     * multi-level bucket-sorted structure (?) (E.g. 65536 buckets for the first 16 bits
+     * of the entity ID, and arrays/slices in the buckets)
      *
      * Would have to be updated with the entity array between frames.
      */
@@ -305,8 +304,8 @@ struct GameState(Policy)
      * Executed between frames in EntityManager.executeFrame().
      *
      * Params: past   = New past, former future state.
-     *         future = New future, former past state. future.entities must be exactly
-     *                  as long as past.entities. Surviving entities will be copied here.
+     *         future = New future, former past state. future.entities must be exactly as
+     *                  long as past.entities. Surviving entities will be copied here.
      *
      * Returns: The number of surviving entities written to futureEntities.
      */

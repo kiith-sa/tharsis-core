@@ -8,11 +8,11 @@ module tharsis.entity.entity;
 import tharsis.entity.entityid;
 
 
-/// An entity consisting of components.
-/// 
-/// The entity itself does not store any components; it only has an identifier 
-/// and information about what components it consists of.
-struct Entity 
+/** An entity consisting of components.
+ *
+ * The entity itself does not store any components; only an identifier.
+ */
+struct Entity
 {
     union
     {

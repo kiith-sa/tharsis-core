@@ -683,8 +683,8 @@ private:
                 {
                     static assert(params.length == 1 && is(params[0] == Profiler),
                                   "preProcess() method of a process must either have no "
-                                  "parameters, or exactly one Profiler parameter "
-                                  "(for one of the thread profilers attached by the "
+                                  "parameters, or exactly one Profiler parameter (for "
+                                  "one of the thread profilers attached by the "
                                   "EntityManager.attachPerThreadProfilers())");
                     process.preProcess(threadProfiler);
                 }

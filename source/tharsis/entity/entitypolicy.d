@@ -13,6 +13,7 @@ import std.traits;
 import tharsis.entity.componenttypeinfo;
 
 
+
 //TODO if minComponentPerEntityPrealloc is >= 1 specify for MultiComponents that we
 //     never run out of component space during a frame, which allows us to simplify some
 //     componentIterator code (e.g. no branch to check if we've ran out of space).
@@ -20,44 +21,44 @@ import tharsis.entity.componenttypeinfo;
 /// Default policy controlling compile-time parameters to the entity system.
 struct DefaultEntityPolicy
 {
-    /// Maximum possible number of user-defined component types.
-    ///
-    /// ComponentTypeIDs of user-defined component types must be
-    /// >= maxReservedComponentTypes and
-    /// <  maxReservedComponentTypes + maxUserComponentTypes.
-    ///
-    /// If changed, update doc in tharsis/entity/componenttypemanager.d
+    /** Maximum possible number of user-defined component types.
+     *
+     * ComponentTypeIDs of user-defined component types must be
+     * >= maxReservedComponentTypes and < maxReservedComponentTypes + maxUserComponentTypes.
+     *
+     * If changed, update doc in tharsis/entity/componenttypemanager.d
+     */
     enum maxUserComponentTypes = 256;
 
     /// Maximum entities added during one frame.
     enum maxNewEntitiesPerFrame = 4096;
 
-    /// Minimum size of component buffers (in components) for every component type to
-    /// preallocate.
+    /// Min size of component buffers (in components) for every component type to preallocate.
     enum minComponentPrealloc = 1024;
 
     /// The multiplier to increase allocated size during an emergency reallocation.
     enum reallocMult = 2.5;
 
-    /// Minimum relative size of component buffers (in components) for every component
-    /// type compared to entity count.
+    /** Minimum relative size of component buffers (in components) for every component type
+     * compared to entity count.
+     */
     enum minComponentPerEntityPrealloc = 0.05;
 
     /** Process names longer than this will be cut to this length for profiling purposes.
      *
-     * Note that Tharsis uses internal profiling to balance load of Processes between
-     * threads. Using Processes with names longer than this will not break Tharsis but it
-     * may result in suboptimal performance if two Processes end up being confused after
-     * their names are cut.
+     * Tharsis uses internal profiling to balance load of Processes between threads. Using
+     * Processes with names longer than this will work but may result in suboptimal
+     * performance if two Processes end up being confused after their names are cut.
      *
      * Can be at most 255.
      */
     enum profilerNameCutoff = 128;
 
-    /// Data type used internally for component counts in an entity.
-    ///
-    /// The maximum number of components of one type in an entity is ComponentCount.max.
-    /// Using data types such as uint or ulong will increase memory usage.
+    /** Data type used internally for component counts in an entity.
+     *
+     * The maximum number of components of one type in an entity is ComponentCount.max.
+     * Using data types such as uint or ulong will increase memory usage.
+     */
     alias ushort ComponentCount;
 }
 
@@ -71,8 +72,9 @@ template validateEntityPolicy(Policy)
                   "profilerNameCutoff must not be more than 255");
 }
 
-/// The maximum possible number of component types when using specified entity
-/// policy, including builtins, defaults and user defined.
+/** The maximum possible number of component types when using specified entity policy,
+ * including builtins, defaults and user defined.
+ */
 template maxComponentTypes(Policy)
 {
     enum maxComponentTypes = maxReservedComponentTypes + Policy.maxUserComponentTypes;
