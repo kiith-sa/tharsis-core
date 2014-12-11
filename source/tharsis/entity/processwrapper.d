@@ -54,10 +54,9 @@ public:
     /// Construct the process wrapper. Initializes the process profiler.
     this() @trusted nothrow
     {
-        // For now, assume 32kiB is enough for the Process. (TODO) Once we finish TimeStep
-        // replacement in Tharsis.prof, even 4k or less (static buffer) will be enough.
+        // 4kiB should be enough (profiler_ should only have one zone).
         import core.stdc.stdlib;
-        profilerStorage_ = (cast(ubyte*)malloc(32 * 1024))[0 .. 32 * 1024];
+        profilerStorage_ = (cast(ubyte*)malloc(4 * 1024))[0 .. 4 * 1024];
         profiler_        = new Profiler(profilerStorage_);
     }
 
