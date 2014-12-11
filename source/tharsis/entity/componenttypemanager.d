@@ -74,7 +74,7 @@ public:
      *
      * Can only be called after this manager is locked.
      */
-    final size_t maxEntityBytes() @safe pure nothrow const
+    final size_t maxEntityBytes() @safe pure nothrow const @nogc
     {
         assert(locked, "Can't determine max bytes per entity before locking "
                        "ComponentTypeManager");
@@ -91,7 +91,7 @@ public:
      *
      * Can only be called after this manager is locked.
      */
-    final size_t maxEntityComponents() @safe pure nothrow const
+    final size_t maxEntityComponents() @safe pure nothrow const @nogc
     {
         assert(locked, "Can't determine max components per entity before locking "
                        "ComponentTypeManager");

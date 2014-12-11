@@ -128,7 +128,7 @@ public:
 
 package:
     /// Construct an EntityAccess for entities of specified entity manager.
-    this(EntityManager entityManager) @safe pure nothrow
+    this(EntityManager entityManager) @trusted pure nothrow @nogc
     {
         pastEntities_     = entityManager.past_.entities;
         if(!pastEntities_.empty) { currentEntity_ = pastEntities_[0]; }

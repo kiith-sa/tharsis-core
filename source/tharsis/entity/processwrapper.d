@@ -11,6 +11,7 @@ import std.algorithm;
 
 import tharsis.entity.entitymanager;
 
+package:
 
 /// Abstract parent class to allow storing all process wrappers in a single array.
 class AbstractProcessWrapper(Policy)
@@ -61,7 +62,7 @@ public:
     }
 
     /// Destroy the process wrapper. Must be called.
-    ~this() nothrow
+    ~this() nothrow @nogc
     {
         import core.stdc.stdlib;
         free(profilerStorage_.ptr);

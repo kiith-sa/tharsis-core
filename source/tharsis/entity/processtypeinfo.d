@@ -105,9 +105,8 @@ template RawFutureComponentType(alias ProcessFunc)
     }
     else
     {
-        pragma(msg, "Can't get future component type of a process() method "
-                    "writing no future component: ", typeof(ProcessFunc).stringof);
-        static assert(false);
+        static assert(false, "Can't get a process() method %s writes no future component"
+                             .format(typeof(ProcessFunc).stringof));
     }
 }
 
@@ -144,8 +143,7 @@ template hasFutureComponent(alias ProcessFunc)
 /// Does a Process write to some future component?
 template hasFutureComponent(Process)
 {
-    enum hasFutureComponent =
-        __traits(compiles, Process.FutureComponent.sizeof);
+    enum hasFutureComponent = __traits(compiles, Process.FutureComponent.sizeof);
 }
 
 /** Does a process() method write to a future component by pointer?
@@ -156,8 +154,7 @@ template hasFutureComponent(Process)
 template futureComponentByPointer(alias ProcessFunc)
 {
     enum futureComponentByPointer =
-        hasFutureComponent!ProcessFunc &&
-        isPointer!(RawFutureComponentType!ProcessFunc);
+        hasFutureComponent!ProcessFunc && isPointer!(RawFutureComponentType!ProcessFunc);
 }
 
 /** If ProcessFunc writes to a future component, return its index in the parameter list.
@@ -171,14 +168,11 @@ size_t futureComponentIndex(alias ProcessFunc)()
     {
         // Future component is either passed by out, or by a ref pointer, or
         // (MultiComponent types) by a ref slice (array).
-        if(paramStorage & ParameterStorageClass.out_ ||
-           (isPointer!(ParamTypes[idx]) &&
-            paramStorage & ParameterStorageClass.ref_) ||
-           (isArray!(ParamTypes[idx]) &&
-            paramStorage & ParameterStorageClass.ref_))
+        if(paramStorage & ParameterStorageClass.out_
+           || (isPointer!(ParamTypes[idx]) && paramStorage & ParameterStorageClass.ref_)
+           || (isArray!(ParamTypes[idx]) && paramStorage & ParameterStorageClass.ref_))
         {
-            assert(result == size_t.max,
-                   "process() method with multiple future components");
+            assert(result == size_t.max, "process() method with multiple future components");
             result = idx;
         }
     }

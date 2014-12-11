@@ -118,7 +118,7 @@ public:
          *          componentTypeInfo = Type info about all registered component types.
          */
         this(ref Prototype prototype, const(ComponentTypeInfo)[] componentTypeInfo)
-            pure nothrow
+            pure nothrow @nogc
         {
             assert(prototype.locked_, "ComponentRange needs a locked EntityPrototype");
             prototype_         = &prototype;
@@ -127,10 +127,11 @@ public:
         }
 
     public:
-        /// Get the current component.
-        ///
-        /// Must not be called if the range is empty.
-        ref inout(RawComponent) front() @safe pure nothrow inout
+        /** Get the current component.
+         *
+         * Must not be called if the range is empty.
+         */
+        ref inout(RawComponent) front() @safe pure nothrow inout @nogc
         {
             assert(!empty, "Can't get front of an empty range");
             return front_;
@@ -150,21 +151,20 @@ public:
         }
 
         /// Is the range empty (no more components) ?
-        bool empty() @safe pure nothrow const
+        bool empty() @safe pure nothrow const @nogc
         {
             return componentIndex_ >= prototype_.componentTypeIDs_.length;
         }
 
     private:
         /// Update the front_ data member.
-        void updateFront() @trusted pure nothrow
+        void updateFront() @trusted pure nothrow @nogc
         {
             // front_ is invalid when the range is empty.
             if(empty) { return; }
             const type = prototype_.componentTypeIDs_[componentIndex_];
             const size = componentTypeInfo_[type].size;
-            auto  data = prototype_.components_[componentOffset_ ..
-                                                componentOffset_ + size];
+            auto  data = prototype_.components_[componentOffset_ ..  componentOffset_ + size];
 
             // The cast is OK if isConst == true; front() will only allow const access.
             front_ = RawComponent(type, cast(ubyte[])data);
@@ -198,7 +198,7 @@ public:
 
     /// Ditto.
     ConstComponentRange constComponentRange
-        (const(ComponentTypeInfo)[] componentTypeInfo) pure nothrow const
+        (const(ComponentTypeInfo)[] componentTypeInfo) pure nothrow const @nogc
     {
         return ConstComponentRange(this, componentTypeInfo);
     }
@@ -237,7 +237,7 @@ public:
      *                                component types are registered.
      */
     static size_t maxPrototypeBytes(AbstractComponentTypeManager componentTypeManager)
-        @safe pure nothrow
+        @safe pure nothrow @nogc
     {
         return componentTypeManager.maxEntityBytes + 32 +
                componentTypeManager.maxEntityComponents * ushort.sizeof;
@@ -268,8 +268,7 @@ public:
         components_ = storage_[0 .. components_.length + info.size];
 
         // Position to write the component type ID at.
-        const componentIDIndex = (cast(ushort[])storage_).length -
-                                 componentTypeIDs_.length - 1;
+        const componentIDIndex = (cast(ushort[])storage_).length - componentTypeIDs_.length - 1;
         componentTypeIDs_ = (cast(ushort[])storage_)[componentIDIndex .. $];
         componentTypeIDs_[0] = info.id;
         return components_[$ - info.size .. $];

@@ -61,7 +61,7 @@ public:
     @disable this();
 
     /// Destroy the ComponentTypeState.
-    ~this()
+    ~this() @nogc
     {
         // Not necessary, but useful to catch bugs.
         if(enabled_) { reset(); }
@@ -74,10 +74,10 @@ public:
      * Params: typeInfo = Type information for the type of components stored in this
      *                    ComponentTypeState.
      */
-    void enable(ref const(ComponentTypeInfo) typeInfo) @safe pure nothrow
+    void enable(ref const(ComponentTypeInfo) typeInfo) @safe pure nothrow @nogc
     {
         assert(!enabled_, "Trying to enable ComponentTypeState that's already enabled. "
-                          " Maybe 2 component types use the same type ID?");
+                          "Maybe 2 component types use the same type ID?");
 
         buffer.enable(typeInfo);
         enabled_ = true;
@@ -126,7 +126,7 @@ private:
      *
      * Sets the entity count to 0.
      */
-    void reset() @safe pure nothrow
+    void reset() @safe pure nothrow @nogc
     {
         assert(enabled_, "This ComponentTypeState is not enabled");
         buffer.reset();
@@ -158,7 +158,7 @@ private:
      *
      * Used to clear future component buffers when starting a frame.
      */
-    void resetBuffers()
+    void resetBuffers() @nogc
     {
         foreach(ref data; this) if(data.enabled) { data.reset(); }
     }
@@ -208,7 +208,12 @@ struct GameState(Policy)
      *
      * The entire length of this array is used; it doesn't have a unused part at the end.
      */
-    Entity[] entities;
+    union
+    {
+        // Hack to guarantee zero getter overhead (since there's no getter)
+        public const(Entity[]) entities;
+        private Entity[] entities_;
+    }
 
     /** Number of entities *before* adding new entities for the current frame.
      *
@@ -238,7 +243,7 @@ struct GameState(Policy)
      */
     void preallocateComponents(float allocMult,
                                const(AbstractComponentTypeManager) componentTypeMgr)
-        @safe nothrow
+        @trusted nothrow
     {
         // Prealloc space for components based on hints in Policy and component type info.
         const entityCount    = entities.length;
@@ -267,7 +272,7 @@ struct GameState(Policy)
      */
     void updateDiagnostics(ref EntityManagerDiagnostics!Policy diagnostics,
                            const(AbstractComponentTypeManager) componentTypeMgr)
-        @safe pure nothrow const @nogc
+        @trusted pure nothrow const @nogc
     {
         const pastEntityCount = entities.length;
         diagnostics.pastEntityCount = pastEntityCount;
@@ -310,11 +315,11 @@ struct GameState(Policy)
      * Returns: The number of surviving entities written to futureEntities.
      */
     void copyLiveEntitiesToFuture(ref GameState future)
-        @system pure nothrow const
+        @system pure nothrow const @nogc
     {
-        future.entities = future.entities[0 .. entities.length];
+        future.entities_ = future.entities_[0 .. entities.length];
         // Clear the future (recycled from former past) entities to help detect bugs.
-        future.entities[] = Entity.init;
+        future.entities_[] = Entity.init;
 
         import tharsis.entity.lifecomponent;
         // Get the past LifeComponents.
@@ -326,11 +331,11 @@ struct GameState(Policy)
         size_t aliveEntities = 0;
         foreach(i, pastEntity; entities) if(lifeComponents[i].alive)
         {
-            future.entities[aliveEntities++] = pastEntity;
+            future.entities_[aliveEntities++] = pastEntity;
         }
 
         future.components.resetBuffers();
-        future.entities = future.entities[0 .. aliveEntities];
+        future.entities_ = future.entities_[0 .. aliveEntities];
     }
 
     /** Add specified number of new entities, without initializing them or their components.
@@ -341,18 +346,18 @@ struct GameState(Policy)
     {
         auto zone = Zone(profiler, "GameState.addNewEntitiesNoInit()");
         entityCountNoAdded = entities.length;
-        entities.assumeSafeAppend();
+        entities_.assumeSafeAppend();
         {
             auto zoneEntitiesRealloc = Zone(profiler, "entities potential realloc");
-            entities.length = entities.length + addedCount;
+            entities_.length = entities_.length + addedCount;
         }
         components.growEntityCount(entities.length, profiler);
     }
 
     /// Get entities added during this (starting) game update.
-    Entity[] addedEntities() @safe pure nothrow @nogc
+    Entity[] addedEntities() @trusted pure nothrow @nogc
     {
-        return entities[entityCountNoAdded .. $];
+        return entities_[entityCountNoAdded .. $];
     }
 }
 
