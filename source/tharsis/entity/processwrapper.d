@@ -144,3 +144,110 @@ public:
         diagnostics_ = runProcess_(entities, process_, extProfiler);
     }
 }
+
+
+import std.algorithm: join;
+import std.string: format;
+import std.traits;
+
+import tharsis.entity.processtypeinfo;
+import tharsis.entity.componenttypeinfo;
+
+/** Calls specified process() method of a Process.
+ *
+ * Params: F           = The process() method to call.
+ *         process     = Process with the process() method.
+ *         entityRange = Entity range to get the components to pass from.
+ */
+void callProcessMethod(alias F, P, ERange)(P process, ref ERange entityRange) nothrow
+{
+    alias ComponentCount = ERange.Policy.ComponentCount;
+
+    // True if the Process does not write to any future component. Usually these processes
+    // read past components and produce some kind of output.
+    enum noFuture   = !hasFutureComponent!P;
+    alias PastTypes = PastComponentTypes!F;
+
+    /* Generate a string with arguments to pass to a process() method.
+     *
+     * Mixed into the process() call at compile time. Should correctly handle past/future
+     * component and EntityAccess arguments regardless of their order.
+     *
+     * Params: futureStr = String to mix in to pass future component/s (should be the name
+     *                     of a variable defined where the mixed in). Should be null if
+     *                     process() writes no future component/s.
+     */
+    string processArgs(string futureStr = null)()
+    {
+        string[] parts;
+        size_t pastIndex = 0;
+
+        foreach(Param; processMethodParamInfo!F)
+        {
+            static if(Param.isEntityAccess)
+            {
+                parts ~= "entityRange.entityAccess";
+            }
+            else static if(Param.isComponent)
+            {
+                static if(isMutable!(Param.Component))
+                {
+                    assert(futureStr !is null, "future component not specified");
+                    parts ~= futureStr;
+                }
+                else
+                {
+                    parts ~= q{entityRange.pastComponent!(PastTypes[%s])}.format(pastIndex);
+                    ++pastIndex;
+                }
+            }
+            else static assert(false, "Unsupported process() parameter: " ~ Param.stringof);
+        }
+        return parts.join(", ");
+    }
+
+    // Call a process() method that does not write a future component.
+    static if(noFuture)
+    {
+        mixin(q{process.process(%s);}.format(processArgs()));
+    }
+    // The process() method writes a slice of multicomponents of some type.
+    else static if(isMultiComponent!(P.FutureComponent))
+    {
+        // Pass a slice by ref (checked by process validation). The process will downsize
+        // the slice to the size it uses.
+        P.FutureComponent[] future = entityRange.futureComponent();
+        // For the assert below to check that process() doesn't do anything funky like
+        // change the slice to point elsewhere.
+        debug { auto old = future; }
+
+        // Call the process() method.
+        mixin(q{ process.process(%s); }.format(processArgs!"future"()));
+
+        // For some reason, this is compiled in release mode; we use 'debug' to explicitly
+        // make it debug-only.
+        debug assert(old.ptr == future.ptr && old.length >= future.length,
+                     "Process writing a future MultiComponent either changed the passed "
+                     "future MultiComponent slice to point elsewhere, or enlarged it");
+
+        // The number of components written.
+        const componentCount = cast(ComponentCount)future.length;
+        entityRange.setFutureComponentCount(componentCount);
+    }
+    // If the future component is passed by pointer, process() may refuse to write a
+    // future component.
+    else static if(futureComponentByPointer!F)
+    {
+        // Pass pointer by reference; allows process() to set this to null.
+        P.FutureComponent* future = entityRange.futureComponent();
+        mixin(q{ process.process(%s); }.format(processArgs!"future"()));
+        // If set to null, the future component was not written.
+        if(future !is null) { entityRange.setFutureComponentCount(1); }
+    }
+    // Call a process() method that takes the future component by reference.
+    else
+    {
+        mixin(q{process.process(%s);}.format(processArgs!"*entityRange.futureComponent"()));
+        entityRange.setFutureComponentCount(1);
+    }
+}
