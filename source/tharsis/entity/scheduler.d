@@ -745,7 +745,7 @@ public:
             index.popBack();
         }
 
-        return No.approximate;
+        return Yes.approximate;
     }
 }
 
