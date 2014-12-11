@@ -78,7 +78,7 @@ public:
      *                       Otherwise, it will be autodetected (e.g. 4 on a quad-core,
      *                       8 on an octal-core or on a quad-core with hyper threading)
      */
-    this(size_t overrideThreadCount) @system nothrow
+    this(size_t overrideThreadCount = 0) @safe nothrow
     {
         threadCount_ = overrideThreadCount == 0 ? autodetectThreadCount()
                                                 : overrideThreadCount;
