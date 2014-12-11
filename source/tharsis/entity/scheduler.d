@@ -92,10 +92,29 @@ public:
     }
 
     /// Destroy the scheduler. Must be called to free used resources.
-    ~this()
+    ~this() nothrow
     {
-        destroy(algorithm_);
-        destroy(timeEstimator_);
+        destroy(algorithm_).assumeWontThrow;
+        destroy(timeEstimator_).assumeWontThrow;
+    }
+
+    /** Set the scheduling algorithm to use.
+     *
+     * Note: destroys the previously used scheduling algorithm (either default or passed
+     * in previous schedulingAlgorithm call.)
+     *
+     * Must not be called while EntityManager.executeFrame() is running.
+     * 
+     * Params:
+     *
+     * algorithm = The algorithm to use. Note that the Scheduler takes an ownership of
+     *             this object, and will handle its destruction. Once passed, the
+     *             algorithm must not be modified by the user.
+     */
+    void schedulingAlgorithm(SchedulingAlgorithm algorithm) @trusted nothrow
+    {
+        destroy(algorithm_).assumeWontThrow;
+        algorithm_ = algorithm;
     }
 
     /// Get the number of threads we're scheduling for.
