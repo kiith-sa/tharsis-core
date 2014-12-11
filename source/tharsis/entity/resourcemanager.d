@@ -19,29 +19,28 @@ public:
     /// Get the resource type managed by this resource manager.
     TypeInfo managedResourceType() @safe pure nothrow const;
 
-    /// Clear the resource manager, deleting all resources.
-    ///
-    /// Must not be called while the EntityManager where the resource manager
-    /// is registered runs.
+    /** Clear the resource manager, deleting all resources.
+     *
+     * Must not be called while the EntityManager.executeFrame() is running.
+     */
     void clear() @safe;
 
 protected:
-    /// Called by EntityManager between game updates.
-    ///
-    /// Can handle e.g. resource loading.
-    /// Called between game updates when the processes don't run, so
-    /// implementations don't need to synchronize data written to by processes.
+    /** Called by EntityManager between game updates.
+     *
+     * May handle e.g. resource loading. Called between game updates when the processes
+     * don't run, so implementations don't need to synchronize data written by processes.
+     */
     void update_() @trusted nothrow;
 
-    /// Get a raw (untyped) handle to a resource described by a descriptor.
-    ///
-    /// Params: descriptor = An untyped pointer to the descriptor. The
-    ///                      descriptor must be of type Resource.Descriptor
-    ///                      where Resource is the resource type managed by this
-    ///                      resource manager.
-    ///
-    /// Returns: A raw handle to the resource (which is in the ResourceState.New
-    ///          state).
+    /** Get a raw (untyped) handle to a resource described by a descriptor.
+     *
+     * Params: descriptor = An untyped pointer to the descriptor. The descriptor must be
+     *                      of type Resource.Descriptor where Resource is the resource 
+     *                      type managed by this resource manager.
+     *
+     * Returns: A raw handle to the resource (which is in the ResourceState.New state).
+     */
     RawResourceHandle rawHandle_(void* descriptor) @trusted nothrow;
 
 package:
@@ -55,34 +54,33 @@ package:
     }
 }
 
-/// An "untyped" resource handle, used where resource type is not known at
-/// compile-time.
+/// An untyped resource handle, used where resource type is not known at compile-time.
 package alias uint RawResourceHandle;
 
-/// A type of delegates used to get a resource handles without compile-time
-/// type information.
-///
-/// Used when initializing handles in components to avoid passing compile-time
-/// resource type parameters all over the place.
-///
-/// Params: TypeInfo = Type of resource to get the handle for.
-///         void*    = A void pointer to the resource descriptor.
-///                    The descriptor must be of the Descriptor type specified
-///                    in the resource type.
-///
-/// Returns: A raw handle to the resource.
+/** Type of delegates used to get a resource handle without compile-time type information.
+ *
+ * Used when initializing handles in components to avoid passing compile-time resource
+ * type parameters all over the place.
+ *
+ * Params: TypeInfo = Type of resource to get the handle for.
+ *         void*    = A void pointer to the resource descriptor. The descriptor must be of
+ *                    the Descriptor type specified in the resource type.
+ *
+ * Returns: A raw handle to the resource.
+ */
 package alias RawResourceHandle delegate(TypeInfo, void*) nothrow GetResourceHandle;
 
-/// Resource handle.
-///
-/// Templated by the resource type.
+/** Resource handle.
+ *
+ * Templated by the resource type the handle is used for.
+ */
 struct ResourceHandle(R)
 {
 public:
-    /// The resource type this handle is used with.
-    ///
-    /// Public to allow generic code to determine the resource type a handle
-    /// points to.
+    /** The resource type this handle is used with.
+     *
+     * Public to allow generic code to determine the resource type a handle points to.
+     */
     alias Resource = R;
 
     /// Construct from a raw handle.
@@ -91,10 +89,10 @@ public:
         resourceID_ = raw;
     }
 
-    /// Get the raw resource handle.
-    ///
-    /// May be used e.g. as an index into an array of resources in a resource
-    /// manager.
+    /** Get the raw resource handle.
+     *
+     * May be used e.g. as an index into an array of resources in a resource manager.
+     */
     @property RawResourceHandle rawHandle() @safe const pure nothrow
     {
         return resourceID_;
@@ -106,11 +104,11 @@ package:
 }
 
 
-/// Base class for resource managers managing a specific Resource type.
-///
-/// Any Resource type must define a Descriptor type, which stores the data
-/// needed for the ResourceManager to initialize the Resource (e.g. a file
-/// name).
+/** Base class for resource managers managing a specific Resource type.
+ *
+ * Any Resource type must define a Descriptor type, which stores the data needed for the
+ * ResourceManager to initialize the Resource (e.g. a file name).
+ */
 abstract class ResourceManager(Resource) : AbstractResourceManager
 {
     /// Shortcut alias.
@@ -130,58 +128,58 @@ public:
         return typeid(Resource);
     }
 
-    /// Get a handle to resource defined with specified descriptor.
-    ///
-    /// If the resource doesn't exist yet, this will create it.
-    /// The resource may or may not be loaded. Use the loaded() method to
-    /// determine that.
+    /** Get a handle to resource defined with specified descriptor.
+     *
+     * If the resource doesn't exist yet, this will create it. The resource may or may not
+     * be loaded. Use the loaded() method to determine that.
+     */
     Handle handle(ref Descriptor descriptor) @safe nothrow;
 
-    /// Get the current state of the resource with specified handle.
-    ///
-    /// All resources are New at the beginning, and may be requested to load
-    /// asynchronously, which means $(B no) resource is available immediately
-    /// during the first frame it exists.
-    ///
-    /// The resource may be Loaded at some later time, or loading may fail,
-    /// resulting in a LoadFailed state.
-    ///
-    /// This method is not const to allow for non-const internal operations
-    /// (such as mutex locking), but it should be logically const from the
-    /// user's point of view.
+    /** Get the current state of the resource with specified handle.
+     *
+     * All resources are New at the beginning, and may be requested to load asynchronously,
+     * which means $(B no) resource is available immediately the first frame it exists.
+     *
+     * The resource may be Loaded at some later time, or loading may fail, resulting in a
+     * LoadFailed state.
+     *
+     * This method is not const to allow for non-const internal operations (such as mutex
+     * locking), but it should be logically const from the user's point of view.
+     */
     ResourceState state(const Handle handle) @safe nothrow;
 
-    /// Request the resource with specified handle to be loaded by the manager.
-    ///
-    /// The ResourceManager will try to load the resource asynchronously.
-    /// If the resource is already loaded, requestLoad() will do nothing.
-    ///
-    /// There is no way to force a resource to be loaded immediately; the
-    /// resource may or may not be loaded by the next frame; it may even fail
-    /// to load.
-    ///
-    /// See_Also: state
+    /** Request the resource with specified handle to be loaded by the manager.
+     *
+     * The ResourceManager will try to load the resource asynchronously. If the resource
+     * is already loaded, requestLoad() will do nothing.
+     *
+     * There is no way to force a resource to be loaded immediately; the resource may or
+     * may not be loaded by the next frame; it may even fail to load.
+     *
+     * See_Also: state
+     */
     void requestLoad(const Handle handle) @safe nothrow;
 
-    /// Get an immutable reference to resource with specified handle.
-    ///
-    /// This can only be called if the state of the resource is
-    /// ResourceState.Loaded.
-    ///
-    /// This method is not const to allow for non-const internal operations
-    /// (such as mutex locking), but it should be logically const from the
-    /// user's point of view.
+    /** Get an immutable reference to resource with specified handle.
+     *
+     * This can only be called if the state of the resource is ResourceState.Loaded.
+     *
+     * This method is not const to allow for non-const internal operations (such as mutex
+     * locking), but it should be logically const from the user's point of view.
+     */
     ref immutable(Resource) resource(const Handle handle) @safe nothrow;
 
-    /// Access descriptors of all resources that failed to load.
-    ///
-    /// Used for debugging.
+    /** Access descriptors of all resources that failed to load.
+     *
+     * Used for debugging.
+     */
     Foreachable!(const(Descriptor)) loadFailedDescriptors() 
         @safe pure nothrow const;
 
-    /// Get a detailed string log of all loading errors. 
-    ///
-    /// Used for debugging.
+    /** Get a detailed string log of all loading errors. 
+     *
+     * Used for debugging.
+     */
     string errorLog() @safe pure nothrow const;
 }
 
@@ -198,46 +196,49 @@ public:
 abstract class MallocResourceManager(Resource) : ResourceManager!Resource 
 {
 private:
-    // Loads a resource, setting its state to Loaded on success, LoadFailed on failure.
-    //
-    // Using a deleg allows loadResource_ to be defined in a templated ctor without
-    // adding template parameters to the class (avoiding e.g. templating the prototype
-    // manager with Source).
+    /* Loads a resource, setting its state to Loaded on success, LoadFailed on failure.
+     *
+     * Using a deleg allows loadResource_ to be defined in a templated ctor without adding
+     * template params to the class (avoiding e.g. templating the prototype manager
+     * with Source).
+     */
     LoadResource loadResource_;
 
     import tharsis.util.pagedarray;
-    // Resources are stored here.
-    //
-    // When a handle for any single descriptor is first requested, an empty resource
-    // with that descriptor is added to resourcesToAdd_. Between game updates, those
-    // resources are moved to resources_. This allows us to avoid locking every read
-    // from resources_, instead only locking resourcesToAdd_ when read/written. State of
-    // added resources is ResourceState.New. Once in resources_, resource manager can
-    // load (modify) the resources (even asynchronously). After loading, resource state
-    // is changed to ResourceState.Loaded on success or ResourceState.LoadFailed if
-    // loading failed. Once loaded, a resource is immutable and may not be modified,
-    // allowing lock-less reading from multiple threads.
+    /* Resources are stored here.
+     *
+     * When a handle for any single descriptor is first requested, an empty resource with
+     * that descriptor is added to resourcesToAdd_. Between game updates, those resources
+     * are moved to resources_. This allows us to avoid locking every read from resources_,
+     * instead only locking resourcesToAdd_ when read/written. State of added resources is
+     * ResourceState.New. Once in resources_, resource manager can load (modify) the
+     * resources (even asynchronously). After loading, resource state is changed to Loaded
+     * on success or LoadFailed if loading failed. Once loaded, a resource is immutable
+     * and may not be modified, allowing lock-less reading from multiple threads.
+     */
     PagedArray!Resource resources_;
 
     import core.sync.rwmutex;
     import tharsis.util.mallocarray;
     import tharsis.util.qualifierhacks;
     import tharsis.util.typecons;
-    // Resources are staged here from creation in a handle() call with a new descriptor
-    // until the game update ends. Then they are moved to resources_. Shared; may be
-    // written/read by multiple threads. Class wrapper is used since dtors can't destroy
-    // shared struct members as of DMD 2.054.
-    //
-    // See_Also: resources_
+    /* Resources are staged here from creation in a handle() call with a new descriptor
+     * until the game update ends. Then they are moved to resources_. Shared; may be
+     * written/read by multiple threads. Class wrapper is used since dtors can't destroy
+     * shared struct members as of DMD 2.054.
+     *
+     * See_Also: resources_
+     */
     shared(Class!(MallocArray!Resource)) resourcesToAdd_;
     // Mutex used to lock resourcesToAdd_.
     ReadWriteMutex resourcesToAddMutex_;
 
-    // Indices of resources requested to be loaded by the user.
-    //
-    // May contain duplicates or indices of already loaded resources; these will be
-    // ignored. Shared; may be written/read by multiple threads. Class wrapper is used
-    // since dtors can't destroy shared struct members as of DMD 2.054.
+    /* Indices of resources requested to be loaded by the user.
+     *
+     * May contain duplicates or indices of already loaded resources; these will be
+     * ignored. Shared; may be written/read by multiple threads. Class wrapper is used
+     * since dtors can't destroy shared struct members as of DMD 2.054.
+     */
     shared(Class!(MallocArray!uint)) indicesToLoad_;
     // Mutex used to lock indicesToLoad_.
     ReadWriteMutex indicesToLoadMutex_;
@@ -264,8 +265,8 @@ public:
 
         loadResource_ = loadDeleg;
 
-        // 4 kiB won't kill us and it's likely that we won't load this many new
-        // resources during one game update.
+        // 4 kiB won't kill us and it's likely that we won't load this many new resources
+        // during one game update.
         indicesToLoad_.assumeUnshared.reserve(1024);
     }
 
@@ -281,11 +282,12 @@ public:
         destroy(resources_);
     }
 
-    // Lock-free unless requesting a handle to an unknown resource (first time a handle
-    // is requested for any given descriptor), or requesting a handle to a resource that
-    // became known only during the current game update.
-    //
-    // May be used outside of a Process directly by the user.
+    /* Lock-free unless requesting a handle to an unknown resource (first time a handle is
+     * requested for any given descriptor), or requesting a handle to a resource that
+     * became known only during the current game update.
+     *
+     * May be used outside of a Process directly by the user.
+     */
     override Handle handle(ref Descriptor descriptor) @trusted nothrow
     {
         // If the resource already exists, return a handle to it.
@@ -297,9 +299,9 @@ public:
             }
         }
 
-        // The descriptor may have been used to create a new resource earlier during
-        // this game update, so we need to check if it's already in resourcesToAdd.
-        // This should happen very rarely.
+        // The descriptor may have been used to create a new resource earlier during this
+        // game update, so we need to check if it's already in resourcesToAdd. This should
+        // happen very rarely.
         return
         {
             auto resourcesToAdd = resourcesToAdd_.assumeUnshared;
@@ -318,8 +320,8 @@ public:
             synchronized(mutex.writer)
             {
                 resourcesToAdd ~= Resource(descriptor);
-                // Will be at this index once contents of resourcesToAdd_ are appended
-                // to resources_ when the next game update starts.
+                // Will be at this index once contents of resourcesToAdd_ are appended to
+                // resources_ when the next game update starts.
                 return Handle(cast(RawResourceHandle)(resourceCount - 1));
             }
         }().assumeWontThrow;
@@ -329,12 +331,12 @@ public:
     final override ResourceState state(const Handle handle) @trusted nothrow
     {
         const rawHandle = handle.rawHandle;
-        // Usually the handle points to a resource created before the current game
-        // update, which would be in resources_ by now instead of resourcesToAdd_.
+        // Usually the handle points to a resource created before the current game update,
+        // which would be in resources_ by now instead of resourcesToAdd_.
         if(rawHandle < resources_.length) { return resources_.atConst(rawHandle).state; }
 
-        // This can only happen with a newly added resource that's still in
-        // resourcesToAdd_, meaning it's New at least until the next game update starts.
+        // This can only happen with a newly added resource that's still in resourcesToAdd_,
+        // meaning it's New at least until the next game update starts.
         delegate
         {
             synchronized(resourcesToAddMutex_.reader)
@@ -422,11 +424,11 @@ protected:
         // No need for synchronization here; this runs between game updates when process
         // threads don't run.
 
-        // Need to add resources repeatedly; newly loaded resources (e.g. prototypes)
-        // may contain handles adding new resources to resourcesToAdd_.
+        // Need to add resources repeatedly; newly loaded resources (e.g. prototypes) may
+        // contain handles adding new resources to resourcesToAdd_.
         //
-        // Even if there are no newly added resources, there may be resources requested
-        // to be loaded (indicesToLoad_).
+        // Even if there are no newly added resources, there may be resources requested to
+        // be loaded (indicesToLoad_).
         while(!resourcesToAdd_.assumeUnshared.empty || !indicesToLoad_.assumeUnshared.empty)
         {
             foreach(ref resource; resourcesToAdd_.assumeUnshared)
@@ -440,8 +442,8 @@ protected:
             // reference here.
             // foreach(index; indicesToLoad_)
 
-            // Load resources at indices from indicesToLoad_ (if not loaded already).
-            // May add new resources to resourcesToAdd_.
+            // Load resources at indices from indicesToLoad_ (if not loaded already). May
+            // add new resources to resourcesToAdd_.
             foreach(ref index; indicesToLoad_.assumeUnshared)
             {
                 const resource = &resources_.atConst(index);
@@ -460,10 +462,11 @@ protected:
     }
 
 private:
-    // Get the total number of resources, loaded or not.
-    //
-    // Note: Reads resourcesToAdd_ which may be read/modified by multiple threads. Any
-    //       use of this method should be synchronized.
+    /* Get the total number of resources, loaded or not.
+     *
+     * Note: Reads resourcesToAdd_ which may be read/modified by multiple threads. Any use
+     *       of this method should be synchronized.
+     */
     size_t resourceCount() @trusted pure nothrow const
     {
         return resources_.length + resourcesToAdd_.assumeUnshared.length;
@@ -471,9 +474,10 @@ private:
 }
 
 
-/// Enumerates resource states.
-///
-/// See ResourceManager.state.
+/** Enumerates resource states.
+ *
+ * See ResourceManager.state.
+ */
 enum ResourceState
 {
     /// The resource has not been loaded yet.

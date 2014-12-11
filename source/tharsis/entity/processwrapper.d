@@ -11,10 +11,6 @@ import std.algorithm;
 
 import tharsis.entity.entitymanager;
 
-// TODO: Allow processes to specify the maximum number of skipped updates
-//       (default 0), as well as CPU overhead hints
-//       (using an enum (trivial, cheap, medium, expensive, bottleneck))
-
 
 /// Abstract parent class to allow storing all process wrappers in a single array.
 class AbstractProcessWrapper(Policy)
@@ -45,7 +41,7 @@ public:
      *
      * Params:
      *
-     * entities    = Entity manager used to read entities, the "self" parameter for the
+     * entities    = Entity manager used to get entities; the "self" parameter for the
      *               generated runProcess() function.
      * extProfiler = External profiler, if provided by the user.
      */
@@ -54,7 +50,7 @@ public:
         assert(false, "DMD (2065) bug workaround - should never happen");
     }
 
-    /// Construct the process wrapper. Initializes the process profiler
+    /// Construct the process wrapper. Initializes the process profiler.
     this() @trusted nothrow
     {
         // For now, assume 32kiB is enough for the Process. (TODO) Once we finish TimeStep
@@ -86,11 +82,11 @@ public:
         return profiler_;
     }
 
-    /** If the process must run in a specific thread, returns its index, otherwise uint.max.
+    /** Get index of the thread the process is bound to if bound, or uint.max otherwise.
      *
-     * Note: the actual index of the thread the process will run in is
+     * Note: the actual thread (index) the process will run in is
      *       $(D boundToThread % threadCount), where $(D threadCount) is the number of
-     *       threads used by EntityManager.
+     *       threads used.
      */
     uint boundToThread() @safe pure nothrow const @nogc
     {
@@ -111,9 +107,9 @@ private:
 public:
     /** A generated function that runs the process on all matching entities.
      *
-     * The EntityManager parameter provides the entities to process; the Process parameter
-     * is the process who's process() method/s will be called. The Profiler parameter is 
-     * the external profiler for the thread the Process runs in, if attached through
+     * The EntityManager param provides entities to the process; the Process param is the
+     * process who's process() method/s will be called. The Profiler parame is an external
+     * profiler for the thread the Process runs in, if attached through
      * $(D EntitityManager.attachPerThreadProfilers()).
      *
      * Can be changed into delegate if needed, but try to keep it a function.

@@ -55,9 +55,10 @@ unittest
     static assert(AllPastComponentTypes!S.length == 3);
 }
 
-/// Is the specified type an EntityAccess type?
-///
-/// (Passed to some process() functions to access entity info.)
+/** Is the specified type an EntityAccess type?
+ *
+ * EntityAccess is passed to some process() functions to access entity info.
+ */
 template isEntityAccess(T)
 {
     alias isEntityAccess = hasMember!(T, "isEntityAccess_");
@@ -91,10 +92,10 @@ template pastComponentIDs(alias ProcessFunc)
     enum pastComponentIDs = componentIDs!(PastComponentTypes!ProcessFunc);
 }
 
-/// Get the raw future component type written by a process() method
-///
-/// The raw type includes any qualifiers, ref/pointer/slice, as specified in the 
-/// signature
+/** Get the raw future component type written by a process() method
+ *
+ * The raw type includes any qualifiers, ref/pointer/slice, as specified in the signature
+ */
 template RawFutureComponentType(alias ProcessFunc)
 {
     static if(futureComponentIndex!ProcessFunc != size_t.max)
@@ -147,10 +148,11 @@ template hasFutureComponent(Process)
         __traits(compiles, Process.FutureComponent.sizeof);
 }
 
-/// Does a process() method write to a future component by pointer?
-///
-/// Writing by pointer allows to null the pointer, allowing to remove/not add
-/// the component into the future entity.
+/** Does a process() method write to a future component by pointer?
+ *
+ * Writing by pointer allows nulling it, allowing to remove/not add the component into the
+ * future entity.
+ */
 template futureComponentByPointer(alias ProcessFunc)
 {
     enum futureComponentByPointer =
@@ -158,8 +160,9 @@ template futureComponentByPointer(alias ProcessFunc)
         isPointer!(RawFutureComponentType!ProcessFunc);
 }
 
-/// If ProcessFunc writes to a future component, return its index in the
-/// parameter list. Otherwise return size_t.max.
+/** If ProcessFunc writes to a future component, return its index in the parameter list.
+ * Otherwise return size_t.max.
+ */
 size_t futureComponentIndex(alias ProcessFunc)()
 {
     size_t result = size_t.max;
@@ -182,18 +185,17 @@ size_t futureComponentIndex(alias ProcessFunc)()
     return result;
 }
 
-/// Get a tuple containing type information for every parameter of a process()
-/// method.
-///
-/// Each element of a tuple is a ParamInfo template, which contains various type
-/// information about the corresponding parameter of the process() method.
+/** Get a tuple containing type information for every parameter of a process() method.
+ *
+ * Each element of a tuple is a ParamInfo template, which contains various type
+ * information about the corresponding parameter of the process() method.
+ */
 template processMethodParamInfo(alias Method)
 {
     alias ParamTypes          = ParameterTypeTuple!Method;
     alias ParamStorageClasses = ParameterStorageClassTuple!Method;
 
-    /// Information about the process() method parameter at specified index
-    /// in ParamTypes.
+    /// Information about the process() method parameter at specified index in ParamTypes.
     template ParamInfo(int i)
     {
         /// Type of the parameter.
@@ -214,8 +216,9 @@ template processMethodParamInfo(alias Method)
         enum isEntityAccess = .isEntityAccess!Param;
         /// Is the parameter a component?
         enum isComponent    = !isEntityAccess;
-        /// If the parameter is a component, the Component alias specifies the
-        /// component type (with any slice or pointer information removed).
+        /** If the parameter is a component, the Component alias specifies the component
+         * type (with any slice or pointer information removed).
+         */
         static if(isComponent)
         {
             // Get the actual component type (Param may be a pointer or slice).
@@ -231,8 +234,8 @@ template processMethodParamInfo(alias Method)
 /// Validate a process() method.
 template validateProcessMethod(alias Function)
 {
-    // The return type does not matter; it just allows us to call this method with CTFE
-    // when this mixin is used.
+    // Return type does not matter; it just allows us to call this method with CTFE when
+    // this mixin is used.
     typeof(null) validate()
     {
         uint futureCount = 0;
@@ -244,16 +247,14 @@ template validateProcessMethod(alias Function)
             // If slice is used, the param is a MultiComponent. ref is required to allow
             // the Process to downsize the slice.
             assert(!Info.isSlice || Info.isRef,
-                   "Slice for a future MultiComponent of a process() method must be "
-                   "'ref'");
+                   "Slice for a future MultiComponent of a process() method must be 'ref'");
             // Slice is not used; the param is not a MultiComponent out is used when the
-            // future component is always written, ref pointer also allows _not to
-            // write_ the component into future state.
-            assert(Info.isSlice ||
-                   (Info.isPtr && Info.isRef) || (!Info.isPtr && Info.isOut),
-                   "Future non-multi component of a process() method must be 'out' or "
-                   "a 'ref' pointer (" ~ Info.ParamTypeName ~ ") - or maybe this "
-                   "is not supposed to be a future component but you forgot 'const'?");
+            // future component is always written, ref pointer also allows _not to write_
+            // the component into future state.
+            assert(Info.isSlice || (Info.isPtr && Info.isRef) || (!Info.isPtr && Info.isOut),
+                   "Future non-multi component of a process() method must be 'out' or a "
+                   "'ref' pointer (" ~ Info.ParamTypeName ~ ") - or maybe this is not "
+                   "supposed to be a future component but you forgot 'const'?");
         }
 
         void testPastComponent(alias Info)()
@@ -276,7 +277,7 @@ template validateProcessMethod(alias Function)
             // Remember this past component to check for duplicates.
             pastIDs[Info.Component.ComponentTypeID] = true;
         }
-        
+
         alias paramInfo = processMethodParamInfo!Function;
         size_t countMutable;
         foreach(Info; paramInfo) static if(Info.isComponent)
@@ -287,8 +288,8 @@ template validateProcessMethod(alias Function)
             }
         }
         assert(countMutable <= 1,
-               "More than 1 mutable Component parameter in a process() method; only "
-               "one parameter (the future component) may be mutable");
+               "More than 1 mutable Component parameter in a process() method; only one "
+               "parameter (the future component) may be mutable");
 
         foreach(Info; paramInfo)
         {
@@ -300,12 +301,12 @@ template validateProcessMethod(alias Function)
             {
                 alias Component = Info.Component;
                 assert((Unqual!Component).stringof.endsWith("Component"),
-                       "A non-Context parameter type to a process() method with name "
-                       "not ending by \"Component\": " ~ Info.ParamTypeName);
+                       "A non-Context parameter type to a process() method with name not "
+                       "ending by \"Component\": " ~ Info.ParamTypeName);
                 // MultiComponents must be passed by slices.
                 assert(!Info.isSlice || isMultiComponent!Component,
-                       "A non-MultiComponent passed by slice as a future component "
-                       "of a process() method");
+                       "A non-MultiComponent passed by slice as a future component of a "
+                       "process() method");
                 // Other component types may _not_ be passed by slices.
                 assert(Info.isSlice || !isMultiComponent!Component,
                        "A MultiComponent not passed by slice as a past component of a "
@@ -316,8 +317,7 @@ template validateProcessMethod(alias Function)
             }
             else
             {
-                assert(false, "A process() method with a non-Context, non-Component "
-                              "parameter");
+                assert(false, "A process() method with a non-Context, non-Component param");
             }
         }
         assert(futureCount <= 1,
@@ -340,7 +340,7 @@ mixin template validateProcess(Process)
         "A Process must have at least one process() method");
 
     // Validate process() methods. Mixins don't work in CTFE; directly call validate().
-    enum dummyValidateOverloads = 
+    enum dummyValidateOverloads =
     {
         foreach(o; overloads) { validateProcessMethod!o.validate(); }
         return true;
@@ -350,16 +350,16 @@ mixin template validateProcess(Process)
     {
         // Ensure all process() methods write the Process-specified FutureComponent.
         alias FutureComponent = Process.FutureComponent;
-        enum dummyCheckFutureComponent = 
+        enum dummyCheckFutureComponent =
         {
             foreach(o; overloads)
             {
                 static assert(is(FutureComponentType!o == FutureComponent),
-                    "Every process() method of a Process with a FutureComponent must "
-                    "write that FutureComponent (have exactly one non-const reference, "
-                    "pointer or slice (for MultiComponents) parameter, which must be "
-                    "of that future component type). \nMethod breaking this rule: %s\n"
-                    "Future component type written by that method: %s\n"
+                    "process() method of a Process with a FutureComponent must write that "
+                    "FutureComponent (have exactly one non-const reference, pointer or "
+                    "slice (for MultiComponents) parameter, which must be of that future "
+                    "component type). \nMethod breaking this rule: %s\n Future component "
+                    "type written by that method: %s\n"
                     .format(typeof(o).stringof, (FutureComponentType!o).stringof));
             }
             return true;
@@ -368,7 +368,7 @@ mixin template validateProcess(Process)
     else
     {
         // Ensure no process() methods write any FutureComponent.
-        enum dummyCheckFutureComponent = 
+        enum dummyCheckFutureComponent =
         {
             foreach(o; overloads)
             {
@@ -384,52 +384,48 @@ mixin template validateProcess(Process)
 }
 
 
-/// Prioritize overloads of the process() method from process P.
-///
-/// Returns: An array of 2-tuples sorted from the most specific process()
-///          overload (i.e. the one that reads the most past components) to the
-///          most general (reads the fewest past components).
-///          The first member of each 2-tuple is a string containing
-///          comma-separated IDs of past component types the overload reads; the
-///          second member is the index of the overload in processOverloads!P.
-///
-/// Note:
-///
-/// All process overloads in a Process write to the same future component but
-/// may read different past components.
-///
-/// Which overload to call is ambiguous if there are two overloads with
-/// different past components but no overload handling the union of these
-/// components, since there might be an entity with components matching both
-/// overloads.
-///
-/// Example: if one process() method reads components A and B, another reads
-/// B and C, and an entity has components A, B and C, we don't know which
-/// overload to call. This will trigger an error, requiring the user to define
-/// another process() overload reading A, B and C. This overload will take
-/// precedence as it is unambiguosly more specific than both previous overloads.
+/** Prioritize overloads of the process() method from process P.
+ *
+ * Returns: Array of 2-tuples sorted from the most specific process() overload (the one
+ *          that reads the most past components) to the most general (reads the fewest
+ *          past components). The first member of each 2-tuple is a string containing
+ *          comma-separated IDs of past component types the overload reads; the second
+ *          member is the index of the overload in processOverloads!P.
+ *
+ * Note:
+ *
+ * All process overloads in a Process write to the same future component but may read
+ * different past components.
+ *
+ * Which overload to call is ambiguous if there are two overloads with different past
+ * components but no overload handling the union of these components, since there might be
+ * an entity with components matching both overloads.
+ *
+ * Example: if one process() method reads components A and B, another reads B, C, and an
+ * entity has A, B, C, we don't know which overload to call. This will trigger an error,
+ * requiring the user to define another process() overload reading A, B, C. This overload
+ * will take precedence as it is unambiguosly more specific than both previous overloads.
+ */
 Tuple!(string, size_t)[] prioritizeProcessOverloads(P)()
 {
     // All overloads of the process() method in P.
     alias overloads = processOverloads!P;
 
-    // Keys are component combinations handled by process() overloads, values
-    // are the indices of process() overloads handling each combination.
+    // Keys are component combinations handled by process() overloads, values are the
+    // indices of process() overloads handling each combination.
     size_t[immutable(ushort)[]] cases;
 
     // For each pair of process() overloads (even if o1 and o2 are the same):
     foreach(i1, o1; overloads) foreach(i2, o2; overloads)
     {
         // A union of IDs of the past component types read by o1 and o2.
-        auto combined = pastComponentIDs!o1.setUnion(pastComponentIDs!o2)
-                        .uniq.array;
+        auto combined = pastComponentIDs!o1.setUnion(pastComponentIDs!o2).uniq.array;
 
         // We've already found an overload for this combination.
         if((combined in cases) != null) { continue; }
 
-        // Find the overload handling the combined past components read by o1
-        // and o2. (If o1 and o2 are the same, this will also find the same
-        // overload).
+        // Find the overload handling the combined past components read by o1 and o2. (If
+        // o1 and o2 are the same, this will also find the same overload).
         size_t handlerOverload = size_t.max;
         foreach(i, ids; staticMap!(pastComponentIDs, overloads))
         {
@@ -440,10 +436,9 @@ Tuple!(string, size_t)[] prioritizeProcessOverloads(P)()
             }
         }
 
-        assert(handlerOverload != size_t.max, "Ambigous process() overloads in "
-               "%s: %s, %s. Add an overload handling past components processed "
-               "by both overloads %s.".format(P.stringof, typeof(o1).stringof,
-                                              typeof(o2).stringof, combined));
+        assert(handlerOverload != size_t.max, "Ambigous process() overloads in %s: %s, "
+               "%s. Add overload handling past components processed by both overloads: %s"
+               .format(P.stringof, typeof(o1).stringof, typeof(o2).stringof, combined));
 
         cases[cast(immutable(ushort)[])combined] = handlerOverload;
     }
@@ -453,14 +448,12 @@ Tuple!(string, size_t)[] prioritizeProcessOverloads(P)()
     foreach(ids, overload; cases)
     {
         assert(!result.canFind!(pair => pair[1] == overload),
-               "Same overload assigned to multiple component combinations\n"
-               "result: %s\n ids: %s\n overload: %s\n"
-               .format(result, ids, overload));
+               "Same overload assigned to multiple component combinations\n result: %s\n "
+               "ids: %s\n overload: %s\n".format(result, ids, overload));
 
         result ~= tuple(ids.map!(to!string).join(", "), overload);
     }
-    // Sort from most specific (reading most past components) to least specific
-    // process() functions.
+    // Sort from most specific (reading most past components) to most general process() methods.
     result.sort!((a, b) => a[0].split(",").length > b[0].split(",").length);
     return result;
 }

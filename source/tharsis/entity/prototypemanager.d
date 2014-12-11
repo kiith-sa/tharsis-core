@@ -18,9 +18,10 @@ import tharsis.util.interfaces;
 import tharsis.util.qualifierhacks;
 
 
-// TODO: Add a method to specify resources to preload at start instead of always
-//       loading on demand. Try to find a generic way to do this for all or most
-//       (e.g. only with StringDescriptors-files) resources/resourcemanagers.
+// TODO: Add a method to specify resources to preload at start instead of always loading
+//       on demand. Try to find a generic way to do this for all or most (e.g. only with
+//       StringDescriptors-files) resources/resourcemanagers. Maybe force-loading could
+//       be enough without preloading, especially if running outside EntityManager frame.
 
 /** Base class for resource managers managing entity prototypes.
  *
@@ -57,17 +58,16 @@ public:
      * Params:
      *
      * Source               = Type of source to load prototypes from (e.g. YAMLSource).
-     * Policy               = Policy used with the entity manager, specifying
-     *                        compile-time tweakables.
+     * Policy               = Policy used with the entity manager, specifying compile-time
+     *                        tweakables.
      * componentTypeManager = Component type manager where all used component types are
      *                        registered.
      * entityManager        = The entity manager.
      * getPrototypeSource   = A deleg that takes a resource descriptor (which has the
-     *                        Descriptor type as defined by the Resource type parameter
-     *                        of BasePrototypeManager) and returns a Source storing an
-     *                        entity prototype.
-     *                        Returned source may be null (Source.isNull == true) if the
-     *                        source could not be loaded.
+     *                        Resource.Descriptor type of the Resource type parameter of
+     *                        BasePrototypeManager) and returns a Source storing an entity
+     *                        prototype. Returned source may be null
+     *                        (Source.isNull == true) if the source could not be loaded.
      */
     this(Source, Policy)(ComponentTypeManager!(Source, Policy) componentTypeManager,
                          EntityManager!Policy entityManager,
@@ -109,11 +109,10 @@ public:
          * errorLog      = A string to write any loading errors to. If there are no
          *                 errors, this is not touched.
          *
-         * Returns: true if all components successfully loaded, false if either a) there
-         *          are zero components (empty sequence), b) a component could not be
-         *          loaded, or c) there are more components than the max number of
-         *          components of type componentType per entity (this limit is specified
-         *          in the component struct).
+         * Returns: true if all components successfully loaded, false if a) there are zero
+         *          components (empty sequence), b) failed to load a component, or c)
+         *          there are more components than the max number of components of type
+         *          componentType per entity (this limit is specified in the component struct).
          */
         bool loadMultiComponent(ref const(ComponentTypeInfo) componentType,
                                 ref Source sequence, ref EntityPrototype prototype,
@@ -220,8 +219,7 @@ class PrototypeManager: BasePrototypeManager!EntityPrototypeResource
 public:
     /** Construct a PrototypeManager.
      *
-     * Params: Source               = Type of source to load prototypes from (e.g.
-     *                                YAMLSource)
+     * Params: Source               = Type of source to load prototypes from (e.g. YAMLSource)
      *         Policy               = Policy used with the entity manager, specifying
      *                                compile-time tweakables.
      *         componentTypeManager = Component type manager where all used component
@@ -232,9 +230,8 @@ public:
         (ComponentTypeManager!(Source, Policy) componentTypeManager,
          EntityManager!Policy entityManager) @safe nothrow
     {
-        // An EntityPrototypeResource descriptor contains the file name where the
-        // prototype is defined. The prototype manager gets the prototype source by
-        // loading source from that file.
+        // An EntityPrototypeResource descriptor contains the filename where the prototype
+        // is defined. The prototype manager loads prototype source from that file.
         super(componentTypeManager, entityManager,
               (ref Descriptor d) => d.source!Source(componentTypeManager.sourceLoader));
     }

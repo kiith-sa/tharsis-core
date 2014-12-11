@@ -11,9 +11,10 @@ import std.string;
 import std.traits;
 
 
-/// Validate a Source at compile-time.
-///
-/// Should be mixed in to types that use a Source template parameter.
+/** Validate a Source at compile-time.
+ *
+ * Should be mixed in to types that use a Source template parameter.
+ */
 mixin template validateSource(Source)
 {
     import std.array;
