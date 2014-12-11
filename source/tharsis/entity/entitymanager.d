@@ -366,14 +366,12 @@ public:
      *
      * componentTypeManager = Component type manager storing component type information.
      *                        Must be locked.
-     * overrideThreadCount  = If nonzero, the EntityManager will always use the specified
-     *                        number of threads (even if there are too few processes to
-     *                        use them) instead of autodetecting optimal thread count.
+     * scheduler            = Scheduler to schedule Processes with.
      */
-    this(AbstractComponentTypeManager componentTypeManager, size_t overrideThreadCount = 0)
+    this(AbstractComponentTypeManager componentTypeManager, Scheduler scheduler)
         @trusted nothrow
     {
-        scheduler_ = new Scheduler(overrideThreadCount);
+        scheduler_ = scheduler;
 
         // Ensure diagnostics_.threadCount is valid even before the first frame.
         diagnostics_.threadCount  = scheduler_.threadCount;

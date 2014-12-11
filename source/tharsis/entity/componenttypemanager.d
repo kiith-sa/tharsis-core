@@ -172,8 +172,10 @@ enum maxSourceBytes = 512;
  + // Lock to disallow further component type changes.
  + // Must be called before passing to EntityManager.
  + componentTypeMgr.lock();
+ + // Construct a Scheduler
+ + auto scheduler = new Scheduler();
  + // Construct the entity manager.
- + auto entityManager = new EntityManager(componentTypeMgr);
+ + auto entityManager = new EntityManager(componentTypeMgr, scheduler);
  + --------------------
  +
  + Example Policy type:
