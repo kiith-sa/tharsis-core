@@ -1,0 +1,457 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Process &mdash; Tharsis Core 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/redcloud.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Noticia+Text|Open+Sans|Droid+Sans+Mono" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/cloud.js"></script>
+    <link rel="top" title="Tharsis Core 0.1 documentation" href="../index.html" />
+    <link rel="next" title="Component" href="component.html" />
+    <link rel="prev" title="Tharsis Core documentation" href="../index.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head>
+  <body>
+    <div class="relbar-top">
+        
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../contents.html" title="Table Of Contents"
+             accesskey="C">toc</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="component.html" title="Component"
+             accesskey="N">next</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../index.html" title="Tharsis Core documentation"
+             accesskey="P">previous</a> &nbsp; &nbsp;</li>
+    <li><a href="../index.html">Tharsis Core 0.1 documentation</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="process">
+<h1>Process<a class="headerlink" href="#process" title="Permalink to this headline">¶</a></h1>
+<p>A Process is a &#8216;functionality block&#8217; in Tharsis; implemented as a class with
+a <a class="reference internal" href="#process-method"><em>process()</em></a> method that reads <a class="reference internal" href="../architecture/gamestate.html#game-state"><em>past</em></a>
+<a class="reference internal" href="component.html#component"><em>components</em></a> of one or more types and optionally writes a <a class="reference internal" href="../architecture/gamestate.html#game-state"><em>future</em></a> component/s of a single component type.  A Process is usually used to
+implement a single piece of functionality or behavior that an entity may have, such as
+movement, collision, graphics, weapons, and so on.</p>
+<p>The Process only affects entities that have <strong>all</strong> past components read by the
+<a class="reference internal" href="#process-method"><em>process()</em></a> method.  Multiple <a class="reference internal" href="#process-method"><em>process()</em></a>
+methods can be used handling different component combinations, and <a class="reference internal" href="#context">Context</a> allows to
+access <em>all</em> past components of an entity at the cost of some overhead.</p>
+<div class="admonition-database-analogy admonition">
+<p class="first admonition-title">Database Analogy</p>
+<p>This is somewhat similar to a SELECT in a relational database that selects components
+(columns) from only those entities (rows) that have all specified components.</p>
+<div class="admonition-example last admonition">
+<p class="first admonition-title">Example</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="17%" />
+<col width="28%" />
+<col width="28%" />
+<col width="28%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>Entity</td>
+<td>AComponent</td>
+<td>BComponent</td>
+<td>CComponent</td>
+</tr>
+<tr class="row-even"><td>01</td>
+<td>Yes</td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+<tr class="row-odd"><td>02</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr class="row-even"><td><strong>03</strong></td>
+<td><strong>Yes</strong></td>
+<td><strong>Yes</strong></td>
+<td><strong>No</strong></td>
+</tr>
+<tr class="row-odd"><td><strong>04</strong></td>
+<td><strong>Yes</strong></td>
+<td><strong>Yes</strong></td>
+<td><strong>Yes</strong></td>
+</tr>
+<tr class="row-even"><td>05</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr class="row-odd"><td>06</td>
+<td>No</td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+<tr class="row-even"><td><strong>07</strong></td>
+<td><strong>Yes</strong></td>
+<td><strong>Yes</strong></td>
+<td><strong>No</strong></td>
+</tr>
+<tr class="row-odd"><td>08</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+<p class="last">A <a class="reference internal" href="#process-method"><em>process()</em></a> method with signature
+<tt class="docutils literal"><span class="pre">void</span> <span class="pre">process(ref</span> <span class="pre">const</span> <span class="pre">AComponent,</span> <span class="pre">ref</span> <span class="pre">const</span> <span class="pre">BComponent)</span></tt> will be called for
+entities <strong>03</strong>, <strong>04</strong> and <strong>07</strong>.</p>
+</div>
+</div>
+<p>All Processes used must be <strong>registered</strong> with the <a class="reference external" href="../../api/tharsis/entity/entitymanager/EntityManager.html">EntityManager</a>.</p>
+<div class="section" id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<p>To create a Process, we first need some <a class="reference internal" href="component.html#component"><em>components</em></a> for it to process:</p>
+<div class="highlight-d"><div class="highlight"><pre><span class="k">struct</span> <span class="n">PositionComponent</span>
+<span class="p">{</span>
+    <span class="kt">float</span> <span class="n">x</span> <span class="p">=</span> <span class="mf">0.0f</span><span class="p">;</span>
+    <span class="kt">float</span> <span class="n">y</span> <span class="p">=</span> <span class="mf">0.0f</span><span class="p">;</span>
+    <span class="k">enum</span> <span class="kt">ushort</span> <span class="n">ComponentTypeID</span> <span class="p">=</span> <span class="n">userComponentTypeID</span><span class="p">!</span><span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="k">struct</span> <span class="n">DynamicComponent</span>
+<span class="p">{</span>
+    <span class="kt">float</span> <span class="n">velocityX</span> <span class="p">=</span> <span class="mf">0.0f</span><span class="p">;</span>
+    <span class="kt">float</span> <span class="n">velocityY</span> <span class="p">=</span> <span class="mf">0.0f</span><span class="p">;</span>
+    <span class="k">enum</span> <span class="kt">ushort</span> <span class="n">ComponentTypeID</span> <span class="p">=</span> <span class="n">userComponentTypeID</span><span class="p">!</span><span class="mi">2</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>This Process will update the position of any entity that has both a <tt class="docutils literal"><span class="pre">PositionComponent</span></tt>
+and a <tt class="docutils literal"><span class="pre">DynamicComponent</span></tt>, and keep the position of any entity that only has
+a <tt class="docutils literal"><span class="pre">PositionComponent</span></tt>:</p>
+<div class="highlight-d"><div class="highlight"><pre><span class="c1">/// Applies DynamicComponents to PositionComponents, updating entity positions.</span>
+<span class="k">final</span> <span class="k">class</span> <span class="n">PositionProcess</span>
+<span class="p">{</span>
+    <span class="c1">/// This Process writes future PositionComponents.</span>
+    <span class="k">alias</span> <span class="n">FutureComponent</span> <span class="p">=</span> <span class="n">PositionComponent</span><span class="p">;</span>
+
+    <span class="c1">// Nothing to construct here.</span>
+    <span class="k">this</span><span class="p">()</span> <span class="p">{</span> <span class="p">}</span>
+
+    <span class="c1">/// Update position of an entity with a dynamic component.</span>
+    <span class="kt">void</span> <span class="n">process</span><span class="p">(</span><span class="k">ref</span> <span class="k">const</span> <span class="n">PositionComponent</span> <span class="n">posPast</span><span class="p">,</span>
+                 <span class="k">ref</span> <span class="k">const</span> <span class="n">DynamicComponent</span> <span class="n">dynPast</span><span class="p">,</span>
+                 <span class="k">out</span> <span class="n">PositionComponent</span> <span class="n">posFuture</span><span class="p">)</span> <span class="k">nothrow</span>
+    <span class="p">{</span>
+        <span class="k">const</span> <span class="n">timeStep</span> <span class="p">=</span> <span class="mi">1</span> <span class="p">/</span> <span class="mf">60.0</span><span class="p">;</span>
+        <span class="n">posFuture</span><span class="p">.</span><span class="n">x</span> <span class="p">=</span> <span class="n">posPast</span><span class="p">.</span><span class="n">x</span> <span class="p">+</span> <span class="n">timeStep</span> <span class="p">*</span> <span class="n">dynPast</span><span class="p">.</span><span class="n">velocityX</span><span class="p">;</span>
+        <span class="n">posFuture</span><span class="p">.</span><span class="n">y</span> <span class="p">=</span> <span class="n">posPast</span><span class="p">.</span><span class="n">y</span> <span class="p">+</span> <span class="n">timeStep</span> <span class="p">*</span> <span class="n">dynPast</span><span class="p">.</span><span class="n">velocityY</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="c1">/// Keep position of an entity that has no DynamicComponent.</span>
+    <span class="kt">void</span> <span class="n">process</span><span class="p">(</span><span class="k">ref</span> <span class="k">const</span> <span class="n">PositionComponent</span> <span class="n">posPast</span><span class="p">,</span> <span class="k">out</span> <span class="n">PositionComponent</span> <span class="n">posFuture</span><span class="p">)</span> <span class="k">nothrow</span>
+    <span class="p">{</span>
+        <span class="n">posFuture</span> <span class="p">=</span> <span class="n">posPast</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The first <a class="reference internal" href="#process-method"><em>process()</em></a> method reads <a class="reference internal" href="../architecture/gamestate.html#game-state"><em>past</em></a> Position
+and Dynamic components; Tharsis recognizes <tt class="docutils literal"><span class="pre">ref</span> <span class="pre">const</span></tt> parameters (except <a class="reference internal" href="#context">Context</a>, if
+used) as past components. It uses the values of these components to write the <a class="reference internal" href="../architecture/gamestate.html#game-state"><em>future</em></a> Position component; recognized as an <tt class="docutils literal"><span class="pre">out</span></tt> parameter.</p>
+<p>Note the second <a class="reference internal" href="#process-method"><em>process()</em></a> method; it handles entities with
+a <tt class="docutils literal"><span class="pre">PositionComponent</span></tt> but no <tt class="docutils literal"><span class="pre">DynamicComponent</span></tt>. Without it, no future
+<tt class="docutils literal"><span class="pre">PositionComponents</span></tt> would be written for these entities, effectively removing their
+position.</p>
+<p>The use of <tt class="docutils literal"><span class="pre">final</span></tt>, while not necessary, may help the compiler with optimization.
+Processes don&#8217;t need to inherit any base class.</p>
+<p>To actually use <tt class="docutils literal"><span class="pre">PositionProcess</span></tt>, we need to register it:</p>
+<div class="highlight-d"><div class="highlight"><pre><span class="c1">// Register component types needed by PositionProcess</span>
+<span class="k">auto</span> <span class="n">compTypeMgr</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ComponentTypeManager</span><span class="p">!</span><span class="n">YAMLSource</span><span class="p">(</span><span class="n">YAMLSource</span><span class="p">.</span><span class="n">Loader</span><span class="p">());</span>
+<span class="n">compTypeMgr</span><span class="p">.</span><span class="n">registerComponentTypes</span><span class="p">!(</span><span class="n">PositionComponent</span><span class="p">,</span> <span class="n">DynamicComponent</span><span class="p">)();</span>
+<span class="n">compTypeMgr</span><span class="p">.</span><span class="n">lock</span><span class="p">();</span>
+<span class="k">auto</span> <span class="n">entityMgr</span> <span class="p">=</span> <span class="k">new</span> <span class="n">DefaultEntityManager</span><span class="p">(</span><span class="n">compTypeMgr</span><span class="p">,</span> <span class="k">new</span> <span class="n">Scheduler</span><span class="p">(</span><span class="mi">4</span><span class="p">));</span>
+
+<span class="c1">// Construct and register the PositionProcess.</span>
+<span class="n">entityMgr</span><span class="p">.</span><span class="n">registerProcess</span><span class="p">(</span><span class="k">new</span> <span class="n">PositionProcess</span><span class="p">());</span>
+<span class="c1">// Construct and register Processes used to preserve Dynamic and Life components.</span>
+<span class="n">entityMgr</span><span class="p">.</span><span class="n">registerProcess</span><span class="p">(</span><span class="k">new</span> <span class="n">CopyProcess</span><span class="p">!</span><span class="n">DynamicComponent</span><span class="p">());</span>
+<span class="n">entityMgr</span><span class="p">.</span><span class="n">registerProcess</span><span class="p">(</span><span class="k">new</span> <span class="n">CopyProcess</span><span class="p">!</span><span class="n">LifeComponent</span><span class="p">());</span>
+</pre></div>
+</div>
+<p>Besides the <tt class="docutils literal"><span class="pre">PositionProcess</span></tt>, we also register a <a class="reference internal" href="#copy-process"><em>CopyProcess</em></a> for
+<tt class="docutils literal"><span class="pre">DynamicComponent</span></tt>. This is a dummy Process that just preserves (copies into future) any
+<tt class="docutils literal"><span class="pre">DynamicComponents</span></tt> in entities. <a class="reference internal" href="component.html#life-component"><em>LifeComponent</em></a> is a builtin component type used
+to determine when an entity should be removed (when the component is removed). Using
+a <a class="reference internal" href="#copy-process"><em>CopyProcess</em></a> for <a class="reference internal" href="component.html#life-component"><em>LifeComponent</em></a> effectively makes all entities immortal.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The number of Processes that can be registered with an <a class="reference external" href="../../api/tharsis/entity/entitymanager/EntityManager.html">EntityManager</a> is limited by its
+<a class="reference external" href="../../api/tharsis/entity/entitypolicy.html">EntityPolicy</a> parameter (with <a class="reference external" href="../../api/tharsis/entity/entitypolicy/DefaultEntityPolicy.html">DefaultEntityPolicy</a> / <tt class="docutils literal"><span class="pre">DefaultEntityManager</span></tt> this
+limit is <strong>256</strong>).</p>
+</div>
+</div>
+<div class="section" id="processes-and-entitymanager">
+<h2>Processes and EntityManager<a class="headerlink" href="#processes-and-entitymanager" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="../../api/tharsis/entity/entitymanager/EntityManager.html">EntityManager</a> only executes Processes that are registered with it using
+<tt class="docutils literal"><span class="pre">entityMgr.registerProcess()</span></tt>. Only <strong>one</strong> Process can write future <a class="reference internal" href="component.html#component"><em>components</em></a> of any single type. In the above example, there can&#8217;t be a second Process
+writing <tt class="docutils literal"><span class="pre">PositionComponent</span></tt>.</p>
+<p><tt class="docutils literal"><span class="pre">EntityManager</span></tt> does not <em>own</em> the registered Processes, but they must not be destroyed for
+as long as the <tt class="docutils literal"><span class="pre">EntityManager</span></tt> exists. <tt class="docutils literal"><span class="pre">EntityManager</span></tt> will not destroy the Processes in its
+destructor. Note that while <a class="reference external" href="../../api/tharsis/entity/entitymanager/EntityManager.executeFrame.html">EntityManager.executeFrame()</a> is executing,
+the Processes <a class="reference internal" href="#process-method"><em>process()</em></a>/<a class="reference internal" href="#preprocess-method"><em>preProcess()</em></a>/<a class="reference internal" href="#postprocess-method"><em>postProcess()</em></a> methods may be running in any
+thread; it&#8217;s not safe to access the Processes without any needed synchronization.</p>
+</div>
+<div class="section" id="process-concept">
+<h2>Process concept<a class="headerlink" href="#process-concept" title="Permalink to this headline">¶</a></h2>
+<p>This section details the methods and other members a Process can have.</p>
+<p>A Process must be a <tt class="docutils literal"><span class="pre">class</span></tt>.</p>
+<div class="section" id="process-and-threads">
+<h3>Process and threads<a class="headerlink" href="#process-and-threads" title="Permalink to this headline">¶</a></h3>
+<p>At the beginning of each frame, Tharsis will assign each Process to run in a thread,
+meaning its methods may be called from different threads between frames, but Tharsis will
+never call them from different threads within a frame.</p>
+<p>A Process can be <em>bound</em> to a specific thread at compile-time to force it to run in that
+thread. See <a class="reference internal" href="#boundtothread"><em>boundToThread</em></a> below.</p>
+</div>
+<div class="section" id="struct-futurecomponent">
+<span id="future-component"></span><h3><tt class="docutils literal"><span class="pre">struct</span> <span class="pre">FutureComponent</span></tt><a class="headerlink" href="#struct-futurecomponent" title="Permalink to this headline">¶</a></h3>
+<p>This member <strong>must</strong> be present if the <a class="reference internal" href="#process-method"><em>process()</em></a> method writes any
+<a class="reference internal" href="../architecture/gamestate.html#game-state"><em>future</em></a> <a class="reference internal" href="component.html#component"><em>components</em></a>.  It is used by Tharsis to verify
+that all <a class="reference internal" href="#process-method"><em>process()</em></a> overloads write the correct future component
+type. It is usually most practical to define the component type separately and use an
+alias: <tt class="docutils literal"><span class="pre">alias</span> <span class="pre">FutureComponent</span> <span class="pre">=</span> <span class="pre">PositionComponent</span></tt>.</p>
+</div>
+<div class="section" id="void-process-context-1-past-components-future-component-nothrow">
+<span id="process-method"></span><h3><tt class="docutils literal"><span class="pre">void</span> <span class="pre">process(context?,</span> <span class="pre">&gt;=</span> <span class="pre">1</span> <span class="pre">past</span> <span class="pre">components,</span> <span class="pre">future</span> <span class="pre">component?)</span> <span class="pre">nothrow</span></tt><a class="headerlink" href="#void-process-context-1-past-components-future-component-nothrow" title="Permalink to this headline">¶</a></h3>
+<p>This is a <strong>required</strong> method.</p>
+<p>The <tt class="docutils literal"><span class="pre">process()</span></tt> method is the core of what a Process is; it reads <em>read-only</em> <a class="reference internal" href="../architecture/gamestate.html#game-state"><em>past</em></a> components, and optionally writes future components of <strong>one</strong> component
+type. Tharsis only calls the <tt class="docutils literal"><span class="pre">process()</span></tt> method for <strong>matching</strong> entities; that is
+entities that contain <strong>all</strong> past components in its signature.</p>
+<div class="section" id="parameters">
+<h4>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h4>
+<ul id="context">
+<li><p class="first"><strong>optional</strong> <em>entity context</em>: <tt class="docutils literal"><span class="pre">ref</span> <span class="pre">const</span></tt> <a class="reference external" href="../../api/tharsis/entity/entitymanager/EntityManager.Context.html">EntityManager.Context</a></p>
+<p>Allows access to entity ID and all its past components. Note that accessing components
+through entity context has higher overhead than accessing components through
+<tt class="docutils literal"><span class="pre">process()</span></tt> parameters; it should only be done when needed (e.g. when accessing
+components of all types is needed).</p>
+</li>
+</ul>
+<ul>
+<li><p class="first"><strong>required</strong> 1 or more <em>past components</em></p>
+<ul>
+<li><p class="first"><tt class="docutils literal"><span class="pre">ref</span> <span class="pre">const</span> <span class="pre">PastComponent</span></tt></p>
+<p>(<tt class="docutils literal"><span class="pre">PastComponent</span></tt> is any component type registered with <tt class="docutils literal"><span class="pre">ComponentTypeManager</span></tt>).</p>
+<p>Reference to a past component of an entity. Entities that do not have this component will
+not be passed to the <tt class="docutils literal"><span class="pre">process()</span></tt> method.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">immutable</span> <span class="pre">PastMultiComponent[]</span></tt></p>
+<p>(<tt class="docutils literal"><span class="pre">PastMultiComponent</span></tt> is any <a class="reference internal" href="component.html#multicomponent"><em>multicomponent</em></a> type
+registered with <tt class="docutils literal"><span class="pre">ComponentTypeManager</span></tt>).</p>
+<p>Slice to past <a class="reference internal" href="component.html#multicomponent"><em>multicomponents</em></a> of an entity.  Entities that
+have zero components of this type will not be passed to the <tt class="docutils literal"><span class="pre">process()</span></tt> method.</p>
+</li>
+</ul>
+</li>
+<li><p class="first">(<strong>required</strong> if the Process has a FutureComponent) <em>future component</em>:</p>
+<ul>
+<li><p class="first"><tt class="docutils literal"><span class="pre">out</span> <span class="pre">FutureComponent</span></tt></p>
+<p>(<tt class="docutils literal"><span class="pre">FutureComponent</span></tt> is the <a class="reference internal" href="#future-component"><em>FutureComponent</em></a> type of the
+Process)</p>
+<p>Reference to the future component of the entity. <tt class="docutils literal"><span class="pre">out</span></tt> default-initializes the
+component. The entity will always have the future component if this parameter pattern
+is used. See the pattern below if you need to remove a component.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">ref</span> <span class="pre">FutureComponent*</span></tt></p>
+<p>(<tt class="docutils literal"><span class="pre">FutureComponent</span></tt> is the <a class="reference internal" href="#future-component"><em>FutureComponent</em></a> type of the Process)</p>
+<p><strong>Reference to a pointer</strong> to the future component. If the pointer is set to null,
+no future component is written; this can be used to remove components from entities.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">ref</span> <span class="pre">FutureMultiComponent[]</span></tt></p>
+<p>(<tt class="docutils literal"><span class="pre">FutureMultiComponent</span></tt> is the <a class="reference internal" href="#future-component"><em>FutureComponent</em></a> type of the
+Process, when it is a <a class="reference internal" href="component.html#multicomponent"><em>multicomponent</em></a> type) aa</p>
+<p>Reference to a slice of future <a class="reference internal" href="component.html#multicomponent"><em>multicomponents</em></a>,
+<tt class="docutils literal"><span class="pre">FutureMultiComponent.maxComponentsPerEntity</span></tt> long. After writing the future
+components the slice must be shortened to specify the number of components written.</p>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="matching-different-entities-with-multiple-process-methods">
+<h4>Matching different entities with multiple <tt class="docutils literal"><span class="pre">process()</span></tt> methods<a class="headerlink" href="#matching-different-entities-with-multiple-process-methods" title="Permalink to this headline">¶</a></h4>
+<p>There can be multiple <tt class="docutils literal"><span class="pre">process()</span></tt> overloads with different past component parameters
+(but never a different future component). These handle the cases when an entity has
+different components. E.g. in the example at the beginning of this document, one overhead
+handles entities with a <tt class="docutils literal"><span class="pre">PositionComponent</span></tt> and a <tt class="docutils literal"><span class="pre">DynamicComponent</span></tt>, while another
+handles entities that only have a <tt class="docutils literal"><span class="pre">PositionComponent</span></tt>.</p>
+<p>Multiple <tt class="docutils literal"><span class="pre">process()</span></tt> methods may result in ambiguities; for example, if one
+<tt class="docutils literal"><span class="pre">process()</span></tt> overload reads past components <tt class="docutils literal"><span class="pre">A</span></tt> and <tt class="docutils literal"><span class="pre">B</span></tt>, and another reads <tt class="docutils literal"><span class="pre">C</span></tt> and
+<tt class="docutils literal"><span class="pre">D</span></tt>, Tharsis wouldn&#8217;t know which <tt class="docutils literal"><span class="pre">process()</span></tt> method to call for an entity with <strong>all</strong>
+of <tt class="docutils literal"><span class="pre">A</span></tt>, <tt class="docutils literal"><span class="pre">B</span></tt>, <tt class="docutils literal"><span class="pre">C</span></tt> and <tt class="docutils literal"><span class="pre">D</span></tt>. Tharsis detects this as a compile-time error; to resolve
+this, another overload must be added to handle entities with all the components.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">For a Process reading many different component combinations this could quickly get out
+of hand, requiring too many <tt class="docutils literal"><span class="pre">process()</span></tt> methods. In this case it may be easier to
+directly access components through <a class="reference internal" href="#context">Context</a>.</p>
+</div>
+</div>
+</div>
+<div class="section" id="void-preprocess-nothrow-void-preprocess-profiler-profiler-nothrow">
+<span id="preprocess-method"></span><h3><tt class="docutils literal"><span class="pre">void</span> <span class="pre">preProcess()</span> <span class="pre">nothrow</span></tt> | <tt class="docutils literal"><span class="pre">void</span> <span class="pre">preProcess(Profiler</span> <span class="pre">profiler)</span> <span class="pre">nothrow</span></tt><a class="headerlink" href="#void-preprocess-nothrow-void-preprocess-profiler-profiler-nothrow" title="Permalink to this headline">¶</a></h3>
+<p><strong>Optional</strong> method that will be called in each frame before processing any entities.
+Useful for per-frame setup.</p>
+<p>Can optionally have a <a class="reference external" href="http://defenestrate.eu/docs/tharsis.prof/tharsis.prof.profiler.html">tharsis.prof.Profiler</a> parameter to get
+access to a thread profiler attached to <a class="reference external" href="../../api/tharsis/entity/entitymanager/EntityManager.html">EntityManager</a> through
+<a class="reference external" href="../../api/tharsis/entity/entitymanager/EntityManager.attachPerThreadProfilers.html">EntityManager.attachPerThreadProfilers()</a>; if
+attached by the user.</p>
+</div>
+<div class="section" id="void-postprocess-nothrow">
+<span id="postprocess-method"></span><h3><tt class="docutils literal"><span class="pre">void</span> <span class="pre">postProcess()</span> <span class="pre">nothrow</span></tt><a class="headerlink" href="#void-postprocess-nothrow" title="Permalink to this headline">¶</a></h3>
+<p><strong>Optional</strong> method that will be called in each frame after all entities have been
+processed.</p>
+</div>
+<div class="section" id="enum-uint-boundtothread">
+<span id="boundtothread"></span><h3><tt class="docutils literal"><span class="pre">enum</span> <span class="pre">uint</span> <span class="pre">boundToThread</span></tt><a class="headerlink" href="#enum-uint-boundtothread" title="Permalink to this headline">¶</a></h3>
+<p><strong>Optional</strong> member used to force the Process to run in a specific thread, e.g. <tt class="docutils literal"><span class="pre">enum</span>
+<span class="pre">boundToThread</span> <span class="pre">=</span> <span class="pre">0</span></tt> will force the Process to always run in the first thread. The actual
+thread the Process will run in is <tt class="docutils literal"><span class="pre">boundToThread</span> <span class="pre">%</span> <span class="pre">threadCount</span></tt> where <tt class="docutils literal"><span class="pre">threadCount</span></tt> is
+the number of threads Tharsis is using.</p>
+<p>This is useful when the Process must absolutely always run in the same thread, e.g. when
+using OpenGL. Note that binding too many Processes can effectively nullify the benefits of
+Process scheduling (load balancing) in Tharsis. Still, even that may be useful for some
+cases (e.g. if you really know the target machine).</p>
+</div>
+</div>
+<div class="section" id="copyprocess">
+<span id="copy-process"></span><h2><tt class="docutils literal"><span class="pre">CopyProcess</span></tt><a class="headerlink" href="#copyprocess" title="Permalink to this headline">¶</a></h2>
+<p><tt class="docutils literal"><span class="pre">CopyProcess(Component)</span></tt> is a template class in <a class="reference external" href="https://github.com/kiith-sa/tharsis-full">Tharsis Full</a> that does nothing except copying <a class="reference internal" href="../architecture/gamestate.html#game-state"><em>past</em></a> <a class="reference internal" href="component.html#component"><em>component</em></a> of specified type into the <a class="reference internal" href="../architecture/gamestate.html#game-state"><em>future</em></a>. This is useful as a dummy Process to ensure components don&#8217;t disappear when
+there is no Process yet to write them.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><div class="sphinxlocaltoc">
+    <h3><a href="../index.html">Page contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Process</a><ul>
+<li><a class="reference internal" href="#example">Example</a></li>
+<li><a class="reference internal" href="#processes-and-entitymanager">Processes and EntityManager</a></li>
+<li><a class="reference internal" href="#process-concept">Process concept</a><ul>
+<li><a class="reference internal" href="#process-and-threads">Process and threads</a></li>
+<li><a class="reference internal" href="#struct-futurecomponent"><tt class="docutils literal"><span class="pre">struct</span> <span class="pre">FutureComponent</span></tt></a></li>
+<li><a class="reference internal" href="#void-process-context-1-past-components-future-component-nothrow"><tt class="docutils literal"><span class="pre">void</span> <span class="pre">process(context?,</span> <span class="pre">&gt;=</span> <span class="pre">1</span> <span class="pre">past</span> <span class="pre">components,</span> <span class="pre">future</span> <span class="pre">component?)</span> <span class="pre">nothrow</span></tt></a><ul>
+<li><a class="reference internal" href="#parameters">Parameters</a></li>
+<li><a class="reference internal" href="#matching-different-entities-with-multiple-process-methods">Matching different entities with multiple <tt class="docutils literal"><span class="pre">process()</span></tt> methods</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#void-preprocess-nothrow-void-preprocess-profiler-profiler-nothrow"><tt class="docutils literal"><span class="pre">void</span> <span class="pre">preProcess()</span> <span class="pre">nothrow</span></tt> | <tt class="docutils literal"><span class="pre">void</span> <span class="pre">preProcess(Profiler</span> <span class="pre">profiler)</span> <span class="pre">nothrow</span></tt></a></li>
+<li><a class="reference internal" href="#void-postprocess-nothrow"><tt class="docutils literal"><span class="pre">void</span> <span class="pre">postProcess()</span> <span class="pre">nothrow</span></tt></a></li>
+<li><a class="reference internal" href="#enum-uint-boundtothread"><tt class="docutils literal"><span class="pre">enum</span> <span class="pre">uint</span> <span class="pre">boundToThread</span></tt></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#copyprocess"><tt class="docutils literal"><span class="pre">CopyProcess</span></tt></a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div class="sphinxprev">
+    <h4>Previous page</h4>
+    <p class="topless"><a href="../index.html"
+                          title="Previous page">&larr; Tharsis Core documentation</a></p>
+  </div>
+  <div class="sphinxnext">
+    <h4>Next page</h4>
+    <p class="topless"><a href="component.html"
+                          title="Next page">&rarr; Component</a></p>
+  </div>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/concepts/process.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../contents.html" title="Table Of Contents"
+             >toc</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="component.html" title="Component"
+             >next</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../index.html" title="Tharsis Core documentation"
+             >previous</a> &nbsp; &nbsp;</li>
+    <li><a href="../index.html">Tharsis Core 0.1 documentation</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer">
+        &copy; Copyright 2014, Ferdinand Majerech.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

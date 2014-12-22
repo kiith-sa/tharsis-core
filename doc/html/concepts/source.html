@@ -1,0 +1,340 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Source &mdash; Tharsis Core 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/redcloud.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Noticia+Text|Open+Sans|Droid+Sans+Mono" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/cloud.js"></script>
+    <link rel="top" title="Tharsis Core 0.1 documentation" href="../index.html" />
+    <link rel="next" title="Game state" href="../architecture/gamestate.html" />
+    <link rel="prev" title="Component" href="component.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head>
+  <body>
+    <div class="relbar-top">
+        
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../contents.html" title="Table Of Contents"
+             accesskey="C">toc</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../architecture/gamestate.html" title="Game state"
+             accesskey="N">next</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="component.html" title="Component"
+             accesskey="P">previous</a> &nbsp; &nbsp;</li>
+    <li><a href="../index.html">Tharsis Core 0.1 documentation</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="source">
+<span id="id1"></span><h1>Source<a class="headerlink" href="#source" title="Permalink to this headline">¶</a></h1>
+<p>A <em>Source</em> represents &#8216;source code&#8217; to load an <tt class="docutils literal"><span class="pre">Entity</span></tt> (<tt class="docutils literal"><span class="pre">EntityPrototype</span></tt>) from. It
+is passed to <tt class="docutils literal"><span class="pre">ComponentTypeManager</span></tt> as a template parameter. <strong>Tharsis-full</strong> provides
+<tt class="docutils literal"><span class="pre">YAMLSource</span></tt>, a <em>Source</em> implementation based on the <a class="reference external" href="http://yaml.org">YAML</a> format.
+A <em>Source</em> type should be a struct with <a class="reference internal" href="#source-skeleton"><em>interface</em></a> described below.</p>
+<div class="section" id="constraints-of-a-source-struct">
+<h2>Constraints of a Source struct<a class="headerlink" href="#constraints-of-a-source-struct" title="Permalink to this headline">¶</a></h2>
+<p>Size of a <em>Source</em> can be at most <tt class="docutils literal"><span class="pre">tharsis.entity.componenttypemanager.maxSourceBytes</span></tt>
+(<tt class="docutils literal"><span class="pre">512</span></tt> right now). A <em>Source</em> must be copyable; if it stores nested data (e.g.
+JSON/XML/YAML subnodes), copying a <em>Source</em> must either copy this nested data or share it
+by using e.g. reference counted or GC storage.</p>
+</div>
+<div class="section" id="skeleton-of-a-source-struct">
+<span id="source-skeleton"></span><h2>Skeleton of a Source struct<a class="headerlink" href="#skeleton-of-a-source-struct" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-d"><div class="highlight"><pre><span class="c1">// Note: some manual casting might be needed to ensure that methods of a Source type</span>
+<span class="c1">// have required attributes (such as pure, nothrow, etc.).</span>
+<span class="c1">//</span>
+<span class="c1">// This can be done by ensuring that the method obeys the attribute (e.g. ensuring that</span>
+<span class="c1">// all exceptions are caught) and manually casting functions that don&#39;t have the attribute.</span>
+<span class="c1">//</span>
+<span class="c1">// For example:</span>
+<span class="c1">//</span>
+<span class="c1">// (cast(void delegate(int, int) @safe nothrow)&amp;methodThatDoesNotThrow)()</span>
+<span class="k">struct</span> <span class="n">Source</span>
+<span class="p">{</span>
+<span class="k">public</span><span class="p">:</span>
+    <span class="c1">/// Handles loading of Sources.</span>
+    <span class="k">struct</span> <span class="n">Loader</span>
+    <span class="p">{</span>
+    <span class="k">public</span><span class="p">:</span>
+        <span class="cm">/** Load a Source with specified name (e.g. entity file name).</span>
+<span class="cm">         *</span>
+<span class="cm">         *</span>
+<span class="cm">         * Params: name      = Name to identify the source by (e.g. a file name).</span>
+<span class="cm">         *         logErrors = If true, errors generated during the use of the Source</span>
+<span class="cm">         *                     (such as loading errors, conversion errors etc.) should</span>
+<span class="cm">         *                      be logged, accessible through errorLog().</span>
+<span class="cm">         *</span>
+<span class="cm">         * There is no requirement to load from actual files; this may be implemented</span>
+<span class="cm">         * by loading from some archive file or from memory.</span>
+<span class="cm">         */</span>
+        <span class="n">TestSource</span> <span class="n">loadSource</span><span class="p">(</span><span class="nb">string</span> <span class="n">name</span><span class="p">,</span> <span class="kt">bool</span> <span class="n">logErrors</span><span class="p">)</span> <span class="nd">@safe</span> <span class="k">nothrow</span>
+        <span class="p">{</span>
+            <span class="k">assert</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="cm">/** If true, the Source is &#39;null&#39; and doesn&#39;t store anything.</span>
+<span class="cm">     *</span>
+<span class="cm">     * A null Source may be returned when loading a Source with Loader.loadSource() fails.</span>
+<span class="cm">     */</span>
+    <span class="kt">bool</span> <span class="n">isNull</span><span class="p">()</span> <span class="nd">@safe</span> <span class="k">nothrow</span> <span class="k">const</span>
+    <span class="p">{</span>
+        <span class="k">assert</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="cm">/** If logging is enabled, returns errors logged during construction and use</span>
+<span class="cm">     * of this Source. Otherwise returns a warning message.</span>
+<span class="cm">     */</span>
+    <span class="nb">string</span> <span class="n">errorLog</span><span class="p">()</span> <span class="nd">@safe</span> <span class="k">pure</span> <span class="k">nothrow</span> <span class="k">const</span>
+    <span class="p">{</span>
+        <span class="k">assert</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="cm">/** Read a value of type T to target.</span>
+<span class="cm">     *</span>
+<span class="cm">     * Returns: true if the value was successfully read.</span>
+<span class="cm">     *          false if the Source isn&#39;t convertible to specified type.</span>
+<span class="cm">     */</span>
+    <span class="kt">bool</span> <span class="n">readTo</span><span class="p">(</span><span class="n">T</span><span class="p">)(</span><span class="k">out</span> <span class="n">T</span> <span class="n">target</span><span class="p">)</span> <span class="nd">@safe</span> <span class="k">nothrow</span>
+    <span class="p">{</span>
+        <span class="k">assert</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="cm">/** Get a nested Source from a &#39;sequence&#39; Source.</span>
+<span class="cm">     *</span>
+<span class="cm">     * (Get a value from a Source that represents an array of Sources)</span>
+<span class="cm">     *</span>
+<span class="cm">     * Can only be called on if the Source is a sequence (see isSequence()).</span>
+<span class="cm">     *</span>
+<span class="cm">     * Params:  index  = Index of the Source to get in the sequence.</span>
+<span class="cm">     *          target = Target to read the Source to.</span>
+<span class="cm">     *</span>
+<span class="cm">     * Returns: true on success, false if index is out of range.</span>
+<span class="cm">     */</span>
+    <span class="kt">bool</span> <span class="n">getSequenceValue</span><span class="p">(</span><span class="nb">size_t</span> <span class="n">index</span><span class="p">,</span> <span class="k">out</span> <span class="n">TestSource</span> <span class="n">target</span><span class="p">)</span> <span class="nd">@safe</span> <span class="k">nothrow</span>
+    <span class="p">{</span>
+        <span class="k">assert</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+    <span class="p">}</span>
+
+
+    <span class="cm">/** Get a nested Source from a &#39;mapping&#39; Source.</span>
+<span class="cm">     *</span>
+<span class="cm">     * (Get a value from a Source that maps strings to Sources)</span>
+<span class="cm">     *</span>
+<span class="cm">     * Can only be called on if the Source is a mapping (see isMapping()).</span>
+<span class="cm">     *</span>
+<span class="cm">     * Params: key    = Key identifying the nested source..</span>
+<span class="cm">     *         target = Target to read the nested source to.</span>
+<span class="cm">     *</span>
+<span class="cm">     * Returns: true on success, false if there is no such key in the mapping.</span>
+<span class="cm">     */</span>
+    <span class="kt">bool</span> <span class="n">getMappingValue</span><span class="p">(</span><span class="nb">string</span> <span class="n">key</span><span class="p">,</span> <span class="k">out</span> <span class="n">TestSource</span> <span class="n">target</span><span class="p">)</span> <span class="nd">@safe</span> <span class="k">nothrow</span>
+    <span class="p">{</span>
+        <span class="k">assert</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="c1">/// Is this a scalar source? A scalar is any source that is not a sequence or a mapping.</span>
+    <span class="kt">bool</span> <span class="n">isScalar</span><span class="p">()</span> <span class="nd">@safe</span> <span class="k">nothrow</span> <span class="k">const</span>
+    <span class="p">{</span>
+        <span class="k">assert</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="c1">/// Is this a sequence source? A sequence acts as an array of values of various types.</span>
+    <span class="kt">bool</span> <span class="n">isSequence</span><span class="p">()</span> <span class="nd">@safe</span> <span class="k">nothrow</span> <span class="k">const</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="n">yaml_</span><span class="p">.</span><span class="n">isSequence</span><span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="c1">/// Is this a mapping source? A mapping acts as an associative array of various types.</span>
+    <span class="kt">bool</span> <span class="n">isMapping</span><span class="p">()</span> <span class="nd">@safe</span> <span class="k">nothrow</span> <span class="k">const</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="n">yaml_</span><span class="p">.</span><span class="n">isMapping</span><span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="format-of-components-in-a-source-struct">
+<h2>Format of components in a Source struct<a class="headerlink" href="#format-of-components-in-a-source-struct" title="Permalink to this headline">¶</a></h2>
+<p>A <em>Source</em> storing an entity must be a mapping where keys are lower-case component type
+names without the <em>&#8220;Component&#8221;</em> suffix. The values corresponding to these keys must be
+mappings containing the component&#8217;s properties, or sequences of such mappings for multi
+components. Example in YAML:</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">visual</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">r</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">255</span>
+    <span class="l-Scalar-Plain">g</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">0</span>
+    <span class="l-Scalar-Plain">b</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">0</span>
+    <span class="l-Scalar-Plain">a</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">255</span>
+<span class="l-Scalar-Plain">engine</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">acceleration</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">90.0</span>
+    <span class="l-Scalar-Plain">maxSpeed</span><span class="p-Indicator">:</span>     <span class="l-Scalar-Plain">450.0</span>
+<span class="l-Scalar-Plain">timedTriggerMulti</span><span class="p-Indicator">:</span>
+    <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">time</span><span class="p-Indicator">:</span>      <span class="l-Scalar-Plain">0.3</span>
+      <span class="l-Scalar-Plain">triggerID</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">1</span>
+      <span class="l-Scalar-Plain">periodic</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+    <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">time</span><span class="p-Indicator">:</span>      <span class="l-Scalar-Plain">0.3</span>
+      <span class="l-Scalar-Plain">triggerID</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">2</span>
+      <span class="l-Scalar-Plain">periodic</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+<p>This YAML fragment encodes an entity with (fictional) <tt class="docutils literal"><span class="pre">VisualComponent</span></tt>,
+<tt class="docutils literal"><span class="pre">EngineComponent</span></tt> and 2 <tt class="docutils literal"><span class="pre">TimedTriggerMultiComponents</span></tt>.</p>
+<p>If not all properties are specified for a component, default values of these properties
+(as specified in the body of the component type) are used.</p>
+<p>For example, to load an int property <tt class="docutils literal"><span class="pre">awesomeness</span></tt> of an <tt class="docutils literal"><span class="pre">ExampleComponent</span></tt>, Tharsis
+will use the <em>Source</em> API roughly in the following way:</p>
+<div class="highlight-d"><div class="highlight"><pre><span class="kt">bool</span> <span class="n">getAwesomeness</span><span class="p">(</span><span class="k">ref</span> <span class="k">const</span><span class="p">(</span><span class="n">Source</span><span class="p">)</span> <span class="n">components</span><span class="p">,</span> <span class="k">out</span> <span class="kt">int</span> <span class="n">awesomeness</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">components</span><span class="p">.</span><span class="n">isNull</span><span class="p">())</span>
+    <span class="p">{</span>
+        <span class="c1">// Components is null</span>
+        <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">Source</span> <span class="n">exampleComponent</span><span class="p">;</span>
+    <span class="k">if</span><span class="p">(!</span><span class="n">component</span><span class="p">.</span><span class="n">getMappingValue</span><span class="p">(</span><span class="s">&quot;example&quot;</span><span class="p">,</span> <span class="n">exampleComponent</span><span class="p">))</span>
+    <span class="p">{</span>
+        <span class="c1">// Could not find ExampleComponent in components</span>
+        <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">Source</span> <span class="n">awesomenessSource</span><span class="p">;</span>
+    <span class="k">if</span><span class="p">(!</span><span class="n">exampleComponent</span><span class="p">.</span><span class="n">getMappingValue</span><span class="p">(</span><span class="s">&quot;awesomeness&quot;</span><span class="p">,</span> <span class="n">awesomenessSource</span><span class="p">))</span>
+    <span class="p">{</span>
+        <span class="c1">// Could not find awesomeness in exampleComponent source</span>
+        <span class="k">static</span> <span class="k">if</span><span class="p">(</span><span class="n">ExampleComponent</span><span class="p">.</span><span class="n">awesomeness</span> <span class="k">is</span> <span class="n">a</span> <span class="n">resource</span> <span class="n">handle</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">else</span>
+        <span class="p">{</span>
+            <span class="n">awesomeness</span> <span class="p">=</span> <span class="n">ExampleComponent</span><span class="p">.</span><span class="n">awesomeness</span><span class="p">.</span><span class="n">init</span><span class="p">;</span>
+            <span class="k">return</span> <span class="kc">true</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">if</span><span class="p">(!</span><span class="n">awesomenessSource</span><span class="p">.</span><span class="n">readTo</span><span class="p">(</span><span class="n">awesomeness</span><span class="p">))</span>
+    <span class="p">{</span>
+        <span class="c1">// awesomeness could not be read to int</span>
+        <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="kc">true</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><div class="sphinxlocaltoc">
+    <h3><a href="../index.html">Page contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Source</a><ul>
+<li><a class="reference internal" href="#constraints-of-a-source-struct">Constraints of a Source struct</a></li>
+<li><a class="reference internal" href="#skeleton-of-a-source-struct">Skeleton of a Source struct</a></li>
+<li><a class="reference internal" href="#format-of-components-in-a-source-struct">Format of components in a Source struct</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div class="sphinxprev">
+    <h4>Previous page</h4>
+    <p class="topless"><a href="component.html"
+                          title="Previous page">&larr; Component</a></p>
+  </div>
+  <div class="sphinxnext">
+    <h4>Next page</h4>
+    <p class="topless"><a href="../architecture/gamestate.html"
+                          title="Next page">&rarr; Game state</a></p>
+  </div>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/concepts/source.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../contents.html" title="Table Of Contents"
+             >toc</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../architecture/gamestate.html" title="Game state"
+             >next</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="component.html" title="Component"
+             >previous</a> &nbsp; &nbsp;</li>
+    <li><a href="../index.html">Tharsis Core 0.1 documentation</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer">
+        &copy; Copyright 2014, Ferdinand Majerech.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>
