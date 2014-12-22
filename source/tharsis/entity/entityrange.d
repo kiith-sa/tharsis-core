@@ -58,7 +58,7 @@ public:
     union
     {
         private Entity currentEntity_;
-        const Entity currentEntity;
+        const Entity entity;
     }
 
 private:
@@ -92,20 +92,20 @@ public:
      *
      * Params:
      *
-     * typeID = Type ID of component to access. Must be an ID of a registered component type.
-     * entity = ID of the entity to access. Must be an ID of an existing past entity.
+     * typeID   = Type ID of component to access. Must be an ID of a registered component type.
+     * entityID = ID of the entity to access. Must be an ID of an existing past entity.
      *
      * Returns: A RawComponent representation of the past component if the entity contains
      *          such a component; NULL RawComponent otherwise.
      */
-    ImmutableRawComponent rawPastComponent(const ushort typeID, const EntityID entity)
+    ImmutableRawComponent rawPastComponent(const ushort typeID, const EntityID entityID)
         nothrow const
     {
         assert(!componentTypeMgr_.componentTypeInfo[typeID].isMulti,
                "rawPastComponent can't access components of MultiComponent types");
 
         // Fast path when accessing a component in the current past entity.
-        if(currentEntity.id == entity)
+        if(this.entity.id == entityID)
         {
             return componentOfEntity(typeID, pastEntityIndex_);
         }
@@ -117,9 +117,9 @@ public:
         {
             const size_t index = slice.length / 2;
             const EntityID mid = slice[index].id;
-            if(mid > entity)       { slice = slice[0 .. index]; }
-            else if (mid < entity) { slice = slice[index + 1 .. $]; }
-            else                   { return componentOfEntity(typeID, index); }
+            if(mid > entityID)       { slice = slice[0 .. index]; }
+            else if (mid < entityID) { slice = slice[index + 1 .. $]; }
+            else                     { return componentOfEntity(typeID, index); }
         }
 
         // If this happens, the user passed an invalid entity ID or we have a bug.
@@ -354,7 +354,7 @@ package:
     /// Get the current past entity.
     Entity front() @safe pure nothrow const @nogc
     {
-        return entityAccess_.currentEntity;
+        return entityAccess_.entity;
     }
 
     /// Get the EntityAccess data member to pass it to a process() method.
