@@ -16,3 +16,4 @@ meta/*
 *.dub*
 __test__library__
 *.a
+docsrc/_build
