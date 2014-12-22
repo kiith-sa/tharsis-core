@@ -1,3 +1,4 @@
+/doc/html/.buildinfo
 /dub.selections.json
 /perf.data.old
 /perf.data
@@ -17,3 +18,4 @@ meta/*
 __test__library__
 *.a
 docsrc/_build
+doc/html/_sources
