@@ -153,7 +153,7 @@ enum maxSourceBytes = 512;
  + Params:
  + Source = Struct to read components with, e.g a YAML or XML node or an INI section.
  +          $(B tharsis-full) provides a YAML-based Source implementation. For details,
- +          see $(LINK2 ../../../concepts/source.html, Source concept documentation).
+ +          see $(LINK2 ../../../html/concepts/source.html, Source concept documentation).
  + Policy = Specifies compile-time parameters such as the max number of component types.
  +          See tharsis.entity.entitypolicy for the default Policy type.
  +
@@ -237,7 +237,7 @@ public:
         sourceLoader_      = loader;
     }
 
-    /** Register specified $(LINK2 component ../../../concepts/component.html) types.
+    /** Register specified $(LINK2 component ../../../html/concepts/component.html) types.
      *
      * Every component type used by any Process must be registered. The ComponentTypeID
      * enum member of the component type should be set by the userComponentTypeID template
