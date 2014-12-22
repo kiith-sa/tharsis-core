@@ -207,12 +207,11 @@ private:
      * GetResourceHandle A deleg that, given resource type ID and descriptor, returns a
      *                   raw resource handle. Used to init properties that are resource
      *                   handles. Always passed but not every property will use this.
-     * string            A string to write any loading errors to. If there are no 
-     *                   errors, this is not touched.
+     * string            A delegate to log any loading errors with.
      *
      * Returns: true if the property was successfully loaded, false otherwise.
      */
-    alias LoadProperty = bool function(ubyte[], void*, GetResourceHandle, ref string) nothrow;
+    alias LoadProperty = bool function(ubyte[], void*, GetResourceHandle, void delegate(string) nothrow) nothrow;
 
     /* A function type to add the value of this property in right to the value in left.
      *
@@ -385,7 +384,7 @@ private:
     static bool implementLoadProperty
         (Source, Component, string fieldNameInternal)
         (ubyte[] componentRaw, void* sourceRaw, GetResourceHandle getHandle,
-         ref string errorLog) nothrow
+         void delegate(string) nothrow logError) nothrow
     {
         assert(componentRaw.length == Component.sizeof,
                "Size of component buffer doesn't match its type");
@@ -399,8 +398,8 @@ private:
         import std.exception;
         if(!source.isMapping)
         {
-            errorLog ~= "'%s' failed to load: Component source is not a mapping\n\n"
-                        .format(compName).assumeWontThrow;
+            logError("'%s' failed to load: Component source is not a mapping\n\n"
+                     .format(compName)).assumeWontThrow;
             return false;
         }
 
@@ -421,8 +420,8 @@ private:
         {
             static if(isResource)
             {
-                errorLog ~= "'%s' falied to load: Property '%s' not found\n\n"
-                            .format(compName, fieldName).assumeWontThrow;
+                logError("'%s' falied to load: Property '%s' not found\n\n"
+                         .format(compName, fieldName)).assumeWontThrow;
                 return false;
             }
             // If the property is not found in the Source, and the property is not a
@@ -452,7 +451,7 @@ private:
             Descriptor desc;
             if(!Descriptor.load(fieldSource, desc))
             {
-                errorLog ~= failedToLoad.format(Descriptor.stringof).assumeWontThrow;
+                logError(failedToLoad.format(Descriptor.stringof)).assumeWontThrow;
                 return false;
             }
 
@@ -462,7 +461,7 @@ private:
         // By default, properties are stored in the Source directly as values.
         else if(!fieldSource.readTo(*fieldPtr))
         {
-            errorLog ~= failedToLoad.format(FieldType.stringof).assumeWontThrow;
+            logError(failedToLoad.format(FieldType.stringof)).assumeWontThrow;
             return false;
         }
 
@@ -646,11 +645,11 @@ public:
      * source        = Source to load the component from (e.g. a component stored as YAML).
      * entityManager = Entity manager (needed to get access to resource management - to
      *                 initialize any resource handles in the component).
-     * errorLog      = A string to write any loading errors to. If there are no errors,
-     *                 this is not touched.
+     * logError      = A delegate to log any loading errors with.
      */
     bool loadComponent(Source, Policy)(ubyte[] componentData, ref Source source,
-                                       EntityManager!Policy entityManager, ref string errorLog)
+                                       EntityManager!Policy entityManager,
+                                       void delegate(string) nothrow logError)
         @trusted nothrow const
     {
         assert(typeid(Source) is sourceType_,
@@ -664,7 +663,7 @@ public:
         // loading fails.
         foreach(ref p; properties_)
         {
-            if(!p.loadProperty(componentData, cast(void*)&source, getHandle, errorLog))
+            if(!p.loadProperty(componentData, cast(void*)&source, getHandle, logError))
             {
                 return false;
             }

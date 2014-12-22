@@ -248,8 +248,11 @@ protected:
     string errorLog_;
 
 public:
-    /// Delegate type that loads a Resource (or sets its state to LoadFailed on failure.)
-    alias LoadResource = void delegate(ref Resource, ref string) @safe nothrow;
+    /** Delegate type that loads a Resource (or sets its state to LoadFailed on failure.)
+     *
+     * The second parameter is delegate which can be used to log errors.
+     */
+    alias LoadResource = void delegate(ref Resource, void delegate(string) nothrow) @safe nothrow;
 
     /// Construct a MallocResourceManager using specified delegate to load resources.
     this(LoadResource loadDeleg) @trusted nothrow
@@ -451,7 +454,7 @@ protected:
 
                 auto resourceMutable = &resources_.atMutable(index);
                 resourceMutable.state = ResourceState.Loading;
-                loadResource_(*resourceMutable, errorLog_);
+                loadResource_(*resourceMutable, (string error) nothrow { errorLog_ ~= error; });
                 if(resourceMutable.state == ResourceState.Loaded)
                 {
                     resources_.markImmutable(index);

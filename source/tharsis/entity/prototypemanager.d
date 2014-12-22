@@ -81,17 +81,16 @@ public:
          * componentType   = Type of the component to load.
          * componentSource = Source to load the component from.
          * prototype       = Prototype to load the component into. Must not be locked yet.
-         * errorLog        = A string to write any loading errors to. If there are no
-         *                   errors, this is not touched.
+         * logError        = A delegate to log any loading errors with.
          *
          * Returns: true if the component was successfully loaded, false otherwise.
          */
         bool loadComponent(ref const(ComponentTypeInfo) componentType,
                            ref Source componentSource, ref EntityPrototype prototype,
-                           ref string errorLog) nothrow
+                           void delegate(string) nothrow logError) nothrow
         {
             ubyte[] storage = prototype.allocateComponent(componentType);
-            if(!componentType.loadComponent(storage, componentSource, entityManager, errorLog))
+            if(!componentType.loadComponent(storage, componentSource, entityManager, logError))
             {
                 // Failed to load the component.
                 return false;
@@ -106,8 +105,7 @@ public:
          * componentType = Type of components to load. Must be a MultiComponent type.
          * sequence      = Source storing a sequence of components.
          * prototype     = Prototype to load the components into. Must not be locked yet.
-         * errorLog      = A string to write any loading errors to. If there are no
-         *                 errors, this is not touched.
+         * logError      = A delegate to log any loading errors with.
          *
          * Returns: true if all components successfully loaded, false if a) there are zero
          *          components (empty sequence), b) failed to load a component, or c)
@@ -116,13 +114,13 @@ public:
          */
         bool loadMultiComponent(ref const(ComponentTypeInfo) componentType,
                                 ref Source sequence, ref EntityPrototype prototype,
-                                ref string errorLog) nothrow
+                                void delegate(string) nothrow logError) nothrow
         {
             size_t count = 0;
             Source componentSource;
             if(sequence.isSequence) while(sequence.getSequenceValue(count, componentSource))
             {
-                if(!loadComponent(componentType, componentSource, prototype, errorLog))
+                if(!loadComponent(componentType, componentSource, prototype, logError))
                 {
                     return false;
                 }
@@ -144,10 +142,10 @@ public:
          *
          * resource = Resource to load. State of the resource will be set to Loaded if
          *            loaded successfully, LoadFailed otherwise.
-         * errorLog = A string to write any loading errors to. If there are no errors,
-         *            this is not touched.
+         * logError = A delegate to log any loading errors with.
          */
-        void loadResource(ref Resource resource, ref string errorLog) @trusted nothrow
+        void loadResource(ref Resource resource, void delegate(string) nothrow logError)
+            @trusted nothrow
         {
             auto typeMgr = componentTypeManager;
             // Get the source (e.g. YAML) storing the prototype. May fail e.g if
@@ -191,8 +189,8 @@ public:
                     continue;
                 }
 
-                if(type.isMulti ? !loadMultiComponent(type, compSrc, *prototype, errorLog)
-                                : !loadComponent(type, compSrc, *prototype, errorLog))
+                if(type.isMulti ? !loadMultiComponent(type, compSrc, *prototype, logError)
+                                : !loadComponent(type, compSrc, *prototype, logError))
                 {
                     resource.state = ResourceState.LoadFailed;
                     return;
