@@ -119,6 +119,7 @@ html_theme_options =\
 {
     "max_width"        : "32cm",
     "popuptoc"         : False,
+    "externalrefs"     : False,
 
 #     "footerbgcolor"    : "#0f151b",
 #     "footertextcolor"  : "#ccc",
