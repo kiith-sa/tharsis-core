@@ -17,12 +17,12 @@ struct Entity
     union
     {
         /// Unique identifier of this entity.
-        private EntityID id_;
         const EntityID id;
+        private EntityID id_;
     }
 
 package:
-    /// Create an entity with specified ID.
+    // Create an entity with specified ID.
     this(const EntityID id) pure nothrow @safe @nogc
     {
         id_ = id;

@@ -28,19 +28,21 @@ import tharsis.util.stackbuffer;
 
 /** Stores data to create an entity from.
  *
- * An EntityPrototoype stores components to initialize a new entity with. Components can
- * be loaded from a file once, and then reused to create entities without loading again.
+ * An EntityPrototoype stores [components](../concepts/component.html) to initialize a new
+ * entity with. Components are loaded once to a prototype, and then reused to create
+ * entities without loading again. EntityPrototype is usually used through
+ * PrototypeManager.
  *
- * An EntityPrototype is usually used through PrototypeManager. Code that creates an
- * EntityPrototype must provide it with memory as well as the components it should store.
+ * Any code that creates an EntityPrototype manually must provide it with memory as well
+ * as the components it should store.
  *
- * An EntityPrototype can't contain builtin components at the moment. This restriction may
- * be relaxed in future if needed.
+ * EntityPrototype can't contain builtin components at the moment. This restriction may be
+ * relaxed in future.
  */
 struct EntityPrototype
 {
 private:
-    /** Storage provided to the EntityPrototype by its owner.
+    /* Storage provided to the EntityPrototype by its owner.
      *
      * Both componentTypeIDs_ and components_ point to this storage. Passed by
      * useMemory(). Never resized; running out of this space triggers an assert error.
@@ -50,7 +52,7 @@ private:
      */
     ubyte[] storage_;
 
-    /** Part of storage_ used to store type IDs.
+    /* Part of storage_ used to store type IDs.
      *
      * Before lockAndTrimMemory() is called, this is at the end of storage_ and in reverse
      * order. When the memory is trimmed, this is reordered to match the order of the (now
@@ -61,16 +63,16 @@ private:
      */
     ushort[] componentTypeIDs_;
 
-    /** Part of storage_ storing components. Starts at the beginning of storage_. After a
+    /* Part of storage_ storing components. Starts at the beginning of storage_. After a
      * call to loacAndTrimMemory, components are sorted by component type ID.
      */
     ubyte[] components_;
 
-    /// Set to true by lockAndTrimMemory(), after which no more components can be added.
+    // Set to true by lockAndTrimMemory(), after which no more components can be added.
     bool locked_ = false;
 
 public:
-    /** A range to iterate over components in an EntityPrototype.
+    /** A range to iterate over [components](../concepts/component.html) in an EntityPrototype.
      *
      * If the isConst parameter is true, the range can only read components. Otherwise the
      * components can be modified.
@@ -81,38 +83,38 @@ public:
     struct GenericComponentRange(Flag!"isConst" isConst)
     {
     private:
-        /// Work with a const or non-const EntityPrototype depending on isConst.
+        // Work with a const or non-const EntityPrototype depending on isConst.
         alias Prototype = Select!(isConst, const(EntityPrototype), EntityPrototype);
 
-        /// The entity prototype we're iterating over.
+        // The entity prototype we're iterating over.
         Prototype* prototype_;
 
-        /** Type information about all component types.
+        /* Type information about all component types.
          *
          * (This is a slice to ComponentTypeManager data).
          */
         const(ComponentTypeInfo)[] componentTypeInfo_;
 
-        /** Index of the current component in the prototype.
+        /* Index of the current component in the prototype.
          *
          * Used with Prototype.componentTypeIDs_ to get type of the current component.
          */
         size_t componentIndex_ = 0;
 
-        /// Offset, in bytes, where the current component in Prototype.components_ starts.
+        // Offset, in bytes, where the current component in Prototype.components_ starts.
         size_t componentOffset_ = 0;
 
-        /** Current element of the range (type ID + slice with component data).
+        /* Current element of the range (type ID + slice with component data).
          *
          * Storing front_ allows access through a const (inout) reference.
          */
         RawComponent front_;
 
-        /// No copying.
+        // No copying.
         @disable this(this);
         @disable this();
 
-        /** Construct a component range.
+        /* Construct a component range.
          *
          * Params:  prototype         = Entity prototype to iterate over.
          *          componentTypeInfo = Type info about all registered component types.
@@ -129,7 +131,7 @@ public:
     public:
         /** Get the current component.
          *
-         * Must not be called if the range is empty.
+         * Note: Must not be called if the range is empty.
          */
         ref inout(RawComponent) front() @safe pure nothrow inout @nogc
         {
@@ -139,7 +141,7 @@ public:
 
         /** Go to the next component.
          *
-         * Must not be called if the range is empty.
+         * Note: Must not be called if the range is empty.
          */
         void popFront() @safe pure nothrow
         {
@@ -157,7 +159,7 @@ public:
         }
 
     private:
-        /// Update the front_ data member.
+        // Update the front_ data member.
         void updateFront() @trusted pure nothrow @nogc
         {
             // front_ is invalid when the range is empty.
@@ -178,16 +180,6 @@ public:
 
     /** Get a range to iterate over components in the prototype as RawComponents.
      *
-     * Params:  componentTypeManager = Manager with type info of all component types.
-     */
-    ComponentRange componentRange(AbstractComponentTypeManager componentTypeManager)
-        pure nothrow
-    {
-        return ComponentRange(this, componentTypeManager.componentTypeInfo);
-    }
-
-    /** Get a range to iterate over components in the prototype as RawComponents.
-     *
      * Params:  componentTypeInfo = Slice with type info of all component types.
      */
     ComponentRange componentRange(const(ComponentTypeInfo)[] componentTypeInfo)
@@ -196,7 +188,21 @@ public:
         return ComponentRange(this, componentTypeInfo);
     }
 
-    /// Ditto.
+    /** Get a range to iterate over components in the prototype as RawComponents
+     * (convenience overload).
+     *
+     * Params:  componentTypeManager = Provides access to type info of all component types.
+     */
+    ComponentRange componentRange(AbstractComponentTypeManager componentTypeManager)
+        pure nothrow
+    {
+        return ComponentRange(this, componentTypeManager.componentTypeInfo);
+    }
+
+    /** Get a range to iterate over components with read-only access.
+     *
+     * See_Also: componentRange
+     */
     ConstComponentRange constComponentRange
         (const(ComponentTypeInfo)[] componentTypeInfo) pure nothrow const @nogc
     {
@@ -206,14 +212,15 @@ public:
 
     /** Provide memory for the prototype to use.
      *
-     * Must be called before adding any components. Can only be called once.
+     * Note:
      *
-     * Size of passed memory must be enough for all components that will be added to this
-     * prototype, plus ushort.sizeof per component for component type IDs. Size of passed
-     * memory should be aligned up to a multiple of 16.
+     * * Must be called exactly once before adding any components.
+     * * Size of passed memory must be aligned up to a multiple of 16 and must be enough
+     *   for all components that will be added to this prototype, plus ushort.sizeof per
+     *   component for component type IDs. **Use maxPrototypeBytes() to determine the largest
+     *   possible size needed for any prototype.**
      *
-     * Params: memory = Memory for the prototype to use. Must be at least
-     *                  maxPrototypeBytes() bytes long.
+     * Params: memory = Memory for the prototype to use. 
      */
     void useMemory(ubyte[] memory) @safe pure nothrow
     {
@@ -243,14 +250,15 @@ public:
                componentTypeManager.maxEntityComponents * ushort.sizeof;
     }
 
-    /** Allocate space for a component in the prototype.
+    /** Allocate space to add a [component](../concepts/component.html) into.
      *
-     * Can only be called between calls to useMemory() and lockAndTrimMemory().
+     * Note: Can only be called between calls to useMemory() and lockAndTrimMemory().
      *
-     * Params: info = Type information about the component. Except for MultiComponents,
+     * Params: info = Type information about the component. Except for 
+     *                [MultiComponents](../concepts/component.html#multicomponent),
      *                multiple components of the same type can not be added.
      *
-     * Returns: A slice to write the component to. The component $(B must) be written to
+     * Returns: A slice to write the component to. The component **must** be written to
      *          this slice or the prototype must be thrown away.
      */
     ubyte[] allocateComponent(ref const(ComponentTypeInfo) info) @trusted nothrow
@@ -343,12 +351,17 @@ public:
 }
 
 
-/** Merge two entity prototypes; components from over override components from base. The
- * returned prototype is not locked/trimmed.
+/** Merge two entity prototypes; [components](../concepts/component.html) from over
+ * override components from base. The returned prototype is not locked/trimmed.
  *
  * The result is created by taking all components from base and adding components of each
  * type from over. If components of the same type are both in base and over, component/s
  * from over are used (overriding base).
+ *
+ * Note:
+ *
+ * To create entities using the merged prototype, it must be locked by calling 
+ * EntityPrototype.lockAndTrimMemory().
  *
  * Params: base           = The base for the merged prototype.
  *         over           = Prototype with components added to/overriding components in base.
@@ -357,7 +370,6 @@ public:
  *         componentTypes = Type information about all registered component types.
  *
  * Returns: Merged prototype. The prototype is not locked, allowing to add more components.
- *          To be used it must be locked by calling EntityPrototype.lockAndTrimMemory().
  */
 EntityPrototype mergePrototypesOverride
     (ref const(EntityPrototype) base, ref const(EntityPrototype) over,
@@ -418,7 +430,8 @@ EntityPrototype mergePrototypesOverride
 /// A resource wrapping an EntityPrototype. Managed by PrototypeManager.
 struct EntityPrototypeResource
 {
-    /// Described either by prototype filename or a prototype written directly in a Source.
+    /// Described either by filename or a prototype stored directly in a 
+    /// [Source](../concepts/source.html).
     alias Descriptor = DefaultDescriptor!EntityPrototypeResource;
 
     /// No default construction.

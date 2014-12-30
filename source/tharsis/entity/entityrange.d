@@ -24,12 +24,14 @@ import tharsis.entity.processtypeinfo;
 import tharsis.util.mallocarray;
 
 /** Used to provide direct access to entity components to process() methods.
+ *
+ * Also known as EntityManager.Context.
  */
 //  Always used as a part of EntityRange.
 struct EntityAccess(EntityManager)
 {
 package:
-    /** Index of the past entity we're currently reading.
+    /* Index of the past entity we're currently reading.
      *
      * Updated by nextPastEntity().
      */
@@ -44,13 +46,13 @@ package:
     enum isEntityAccess_ = true;
 
 private:
-    /** Past entities in the entity manager.
+    /* Past entities in the entity manager.
      *
      * Past entities that are not alive are ignored.
      */
     immutable(Entity[]) pastEntities_;
 
-    /// Stores past components of all entities.
+    // Stores past components of all entities.
     immutable(EntityManager.ComponentStateT)* pastComponents_;
 
 public:
@@ -62,7 +64,7 @@ public:
     }
 
 private:
-    /// Provides access to component type info.
+    // Provides access to component type info.
     AbstractComponentTypeManager componentTypeMgr_;
 
     /// No default construction or copying.
@@ -70,7 +72,7 @@ private:
     @disable this(this);
 
 public:
-    /** Access a past (non-multi) component in _any_ past entity.
+    /** Access a past (non-multi) [component](../concepts/component.html) in *any* past entity.
      *
      * This is a relatively slow way to access components, but allows to access components
      * of any entity. Should only be used when necessary.
@@ -79,7 +81,7 @@ public:
      *         entity    = ID of the entity to access. Must be an ID of an existing past entity.
      *
      * Returns: Pointer to the past component if the entity contains such a component;
-     *          NULL otherwise.
+     *          `null` otherwise.
      */
     immutable(Component)* pastComponent(Component)(const EntityID entity) nothrow const
         if(!isMultiComponent!Component)
@@ -88,7 +90,8 @@ public:
         return raw.isNull ? null : cast(immutable(Component)*)raw.componentData.ptr;
     }
 
-    /** Access a past (non-multi) component in _any_ past entity as raw data.
+    /** Access a past (non-multi) [component](../concepts/component.html) in _any_ past entity
+     * as raw data.
      *
      * Params:
      *
@@ -96,7 +99,7 @@ public:
      * entityID = ID of the entity to access. Must be an ID of an existing past entity.
      *
      * Returns: A RawComponent representation of the past component if the entity contains
-     *          such a component; NULL RawComponent otherwise.
+     *          such a component; null RawComponent otherwise.
      */
     ImmutableRawComponent rawPastComponent(const ushort typeID, const EntityID entityID)
         nothrow const
@@ -127,7 +130,7 @@ public:
     }
 
 package:
-    /// Construct an EntityAccess for entities of specified entity manager.
+    // Construct an EntityAccess for entities of specified entity manager.
     this(EntityManager entityManager) @trusted pure nothrow @nogc
     {
         pastEntities_     = entityManager.past_.entities;
@@ -136,7 +139,7 @@ package:
         componentTypeMgr_ = entityManager.componentTypeMgr_;
     }
 
-    /// Move to the next past entity (called by EntityRange).
+    // Move to the next past entity (called by EntityRange).
     void nextPastEntity() @safe pure nothrow @nogc
     {
         ++pastEntityIndex_;
@@ -170,7 +173,7 @@ private:
 
 package:
 
-/** A range used to iterate over entities and their components in EntityManager.
+/* A range used to iterate over entities and their components in EntityManager.
  *
  * Used when executing Process to read past entities/components and to provide space for
  * future components. Iterates over _all_ past entities; matchComponents() determines if

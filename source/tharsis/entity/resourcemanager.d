@@ -12,42 +12,47 @@ import tharsis.entity.entitymanager;
 import tharsis.util.interfaces;
 
 
-/// Base class to provide unified access to resource managers.
+/** Base class of all resource managers.
+ *
+ * Has no compile-time knowledge of the resource type, unlike the derived ResourceManager.
+ */
 abstract class AbstractResourceManager
 {
 public:
-    /// Get the resource type managed by this resource manager.
+    /// Get run-time type info of the resource type managed by this resource manager.
     TypeInfo managedResourceType() @safe pure nothrow const;
 
     /** Clear the resource manager, deleting all resources.
      *
-     * Must not be called while the EntityManager.executeFrame() is running.
+     * Must not be called while EntityManager.executeFrame() is running.
      */
     void clear() @safe;
 
 protected:
     /** Called by EntityManager between game updates.
      *
-     * May handle e.g. resource loading. Called between game updates when the processes
-     * don't run, so implementations don't need to synchronize data written by processes.
+     * May handle e.g. resource loading. Called between game updates when
+     * [processes](../concepts/process.html) don't run, so implementations don't need to
+     * always synchronize data written by processes.
      */
     void update_() @trusted nothrow;
 
     /** Get a raw (untyped) handle to a resource described by a descriptor.
      *
-     * Params: descriptor = An untyped pointer to the descriptor. The descriptor must be
-     *                      of type Resource.Descriptor where Resource is the resource 
-     *                      type managed by this resource manager.
+     * Params: descriptor = Untyped pointer to the descriptor.
+     *
+     *                      **The descriptor must be of type Resource.Descriptor where
+     *                      Resource is the resource type managed by this resource manager.**
      *
      * Returns: A raw handle to the resource (which is in the ResourceState.New state).
      */
     RawResourceHandle rawHandle_(void* descriptor) @trusted nothrow;
 
 package:
-    /// See_Also: update_()
+    // See_Also: update_()
     final void update() @safe nothrow { update_(); }
 
-    /// See_Also: rawHandle_()
+    // See_Also: rawHandle_()
     final RawResourceHandle rawHandle(void* descriptor) @safe nothrow
     {
         return rawHandle_(descriptor);
@@ -59,16 +64,16 @@ package alias uint RawResourceHandle;
 
 /** Type of delegates used to get a resource handle without compile-time type information.
  *
- * Used when initializing handles in components to avoid passing compile-time resource
- * type parameters all over the place.
+ * Used when initializing resource handles in [components](../concepts/component.html) to
+ * avoid passing compile-time resource type parameters all over the place.
  *
- * Params: TypeInfo = Type of resource to get the handle for.
- *         void*    = A void pointer to the resource descriptor. The descriptor must be of
- *                    the Descriptor type specified in the resource type.
+ * Params: type       = Type of resource to get the handle for.
+ *         descriptor = Pointer to the resource descriptor. The descriptor must be of the
+ *                      Descriptor type specified in the resource type.
  *
  * Returns: A raw handle to the resource.
  */
-package alias RawResourceHandle delegate(TypeInfo, void*) nothrow GetResourceHandle;
+package alias RawResourceHandle delegate(TypeInfo type, void* descriptor) nothrow GetResourceHandle;
 
 /** Resource handle.
  *
@@ -79,7 +84,7 @@ struct ResourceHandle(R)
 public:
     /** The resource type this handle is used with.
      *
-     * Public to allow generic code to determine the resource type a handle points to.
+     * Public to allow code to determine the resource type a handle points to.
      */
     alias Resource = R;
 
@@ -99,7 +104,7 @@ public:
     }
 
 package:
-    /// A simple unique ID.
+    // A simple unique ID.
     RawResourceHandle resourceID_ = uint.max;
 }
 
@@ -111,10 +116,10 @@ package:
  */
 abstract class ResourceManager(Resource) : AbstractResourceManager
 {
-    /// Shortcut alias.
-    alias ResourceHandle!Resource Handle;
-    /// Ditto.
-    alias Resource.Descriptor Descriptor;
+    /// Shorter name for the resource handle of managed resource.
+    alias Handle = ResourceHandle!Resource;
+    /// Shorter name for the resource descriptor of managed resource.
+    alias Descriptor = Resource.Descriptor;
 
 protected:
     override RawResourceHandle rawHandle_(void* descriptor) @trusted nothrow
@@ -130,28 +135,27 @@ public:
 
     /** Get a handle to resource defined with specified descriptor.
      *
-     * If the resource doesn't exist yet, this will create it. The resource may or may not
-     * be loaded. Use the loaded() method to determine that.
+     * If the resource doesn't exist yet, it will be created. The resource may or may not
+     * be loaded. Use state() to determine that.
      */
     Handle handle(ref Descriptor descriptor) @safe nothrow;
 
-    /** Get the current state of the resource with specified handle.
+    /** Get current state of the resource with specified handle.
      *
-     * All resources are New at the beginning, and may be requested to load asynchronously,
-     * which means $(B no) resource is available immediately the first frame it exists.
-     *
-     * The resource may be Loaded at some later time, or loading may fail, resulting in a
+     * All resources are New at first, and may be requested to load asynchronously, which
+     * means **no** resource is available immediately the first frame it exists. The
+     * resource may be Loaded at some later time, or loading may fail, resulting in a
      * LoadFailed state.
      *
      * This method is not const to allow for non-const internal operations (such as mutex
-     * locking), but it should be logically const from the user's point of view.
+     * locking), but it should be logically const from caller's point of view.
      */
     ResourceState state(const Handle handle) @safe nothrow;
 
     /** Request the resource with specified handle to be loaded by the manager.
      *
-     * The ResourceManager will try to load the resource asynchronously. If the resource
-     * is already loaded, requestLoad() will do nothing.
+     * ResourceManager will try to load the resource asynchronously. If the resource is
+     * already loaded, requestLoad() will do nothing.
      *
      * There is no way to force a resource to be loaded immediately; the resource may or
      * may not be loaded by the next frame; it may even fail to load.
@@ -165,18 +169,17 @@ public:
      * This can only be called if the state of the resource is ResourceState.Loaded.
      *
      * This method is not const to allow for non-const internal operations (such as mutex
-     * locking), but it should be logically const from the user's point of view.
+     * locking), but it should be logically const from the caller's point of view.
      */
     ref immutable(Resource) resource(const Handle handle) @safe nothrow;
 
-    /** Access descriptors of all resources that failed to load.
+    /** Get descriptors of all resources that failed to load.
      *
      * Used for debugging.
      */
-    Foreachable!(const(Descriptor)) loadFailedDescriptors() 
-        @safe pure nothrow const;
+    Foreachable!(const(Descriptor)) loadFailedDescriptors() @safe pure nothrow const;
 
-    /** Get a detailed string log of all loading errors. 
+    /** Get a detailed string log of all loading errors.
      *
      * Used for debugging.
      */
@@ -187,13 +190,13 @@ public:
 
 /** Base class for resource managers storing resources in manually allocated memory.
  *
- * Resources created during a game update are temporarily stored in a mutex-protected
- * array, loaded when ResourceManager.update() is called and moved into permanent,
- * immutable storage (consisting of manually allocated pages that are never moved).
+ * Resources created during a frame are temporarily stored in a mutex-protected array,
+ * loaded when ResourceManager.update() is called and moved into permanent, immutable
+ * storage (consisting of manually allocated pages that are never moved).
  *
  * Resources are loaded by a delegate passed to MallocResourceManager constructor.
  */
-abstract class MallocResourceManager(Resource) : ResourceManager!Resource 
+abstract class MallocResourceManager(Resource) : ResourceManager!Resource
 {
 private:
     /* Loads a resource, setting its state to Loaded on success, LoadFailed on failure.
@@ -250,9 +253,10 @@ protected:
 public:
     /** Delegate type that loads a Resource (or sets its state to LoadFailed on failure.)
      *
-     * The second parameter is delegate which can be used to log errors.
+     * The second parameter is delegate used to log errors.
      */
-    alias LoadResource = void delegate(ref Resource, void delegate(string) nothrow) @safe nothrow;
+    alias LoadResource = void delegate(ref Resource resource,
+                                       void delegate(string) nothrow logError) @safe nothrow;
 
     /// Construct a MallocResourceManager using specified delegate to load resources.
     this(LoadResource loadDeleg) @trusted nothrow
@@ -479,7 +483,7 @@ private:
 
 /** Enumerates resource states.
  *
- * See ResourceManager.state.
+ * See_also: ResourceManager.state
  */
 enum ResourceState
 {

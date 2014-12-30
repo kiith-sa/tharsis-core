@@ -21,16 +21,16 @@ import tharsis.entity.componenttypeinfo;
 /// Default policy controlling compile-time parameters to the entity system.
 struct DefaultEntityPolicy
 {
-    /** Maximum possible number of user-defined component types.
+    /** Maximum possible number of user-defined [component](../concepts/component.html) types.
      *
-     * ComponentTypeIDs of user-defined component types must be
-     * >= maxReservedComponentTypes and < maxReservedComponentTypes + maxUserComponentTypes.
-     *
-     * If changed, update doc in tharsis/entity/componenttypemanager.d
+     * [ComponentTypeIDs](../concepts/component.html#enum-ushort-componenttypeid) of
+     * user-defined component types must be `>= maxReservedComponentTypes` and
+     * `< maxReservedComponentTypes + maxUserComponentTypes`.
      */
+    // If changed, update doc in tharsis/entity/componenttypemanager.d
     enum maxUserComponentTypes = 256;
 
-    /// Maximum possible number of Processes.
+    /// Maximum possible number of [Processes](../concepts/process.html).
     enum maxProcesses = 256;
 
     /// Maximum entities added during one frame.
@@ -39,7 +39,7 @@ struct DefaultEntityPolicy
     /// Min size of component buffers (in components) for every component type to preallocate.
     enum minComponentPrealloc = 1024;
 
-    /// The multiplier to increase allocated size during an emergency reallocation.
+    /// The value to multiply allocated memory with during a reallocation.
     enum reallocMult = 2.5;
 
     /** Minimum relative size of component buffers (in components) for every component type
@@ -53,7 +53,7 @@ struct DefaultEntityPolicy
      * Processes with names longer than this will work but may result in suboptimal
      * performance if two Processes end up being confused after their names are cut.
      *
-     * Can be at most 255.
+     * Note: Can be at most 255.
      */
     enum profilerNameCutoff = 128;
 
@@ -65,7 +65,7 @@ struct DefaultEntityPolicy
     alias ushort ComponentCount;
 }
 
-/// Check if an entity policy is valid.
+/// Check if an entity policy is valid, triggering a compile-time error if not.
 template validateEntityPolicy(Policy)
 {
     static assert(std.traits.isUnsigned!(Policy.ComponentCount),
@@ -75,8 +75,9 @@ template validateEntityPolicy(Policy)
                   "profilerNameCutoff must not be more than 255");
 }
 
-/** The maximum possible number of component types when using specified entity policy,
- * including builtins, defaults and user defined.
+/** Get maximum possible number of component types when using specified entity policy,
+ * including builtins, [tharsis-full](https://github.com/kiith-sa/tharsis-full) defaults
+ * and user defined.
  */
 template maxComponentTypes(Policy)
 {

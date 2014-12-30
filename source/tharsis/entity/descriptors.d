@@ -22,12 +22,12 @@ struct StringDescriptor(Resource)
     /// The string describing a resource.
     string fileName;
 
-    /** Load a StringDescriptor from a Source such as YAML.
+    /** Load a StringDescriptor from a [Source](../concepts/source.html).
      *
      * Params:  source = Source to load from.
      *          result = The descriptor will be written here, if loaded succesfully.
      *
-     * Returns: true if succesfully loaded, false otherwise.
+     * Returns: `true` if succesfully loaded, `false` otherwise.
      */
     static bool load(Source)(ref Source source, out StringDescriptor result)
         @safe nothrow
@@ -37,7 +37,7 @@ struct StringDescriptor(Resource)
 
     /** Determine if this descriptor maps to the same resource handle as another descriptor.
      *
-     * Usually, this returns true if two descriptors describe the same resource (e.g. if
+     * Usually, this returns `true` if two descriptors describe the same resource (e.g. if
      * the descriptors are equal).
      *
      * The resource manager uses this to figure whether to load a new resource or reuse an
@@ -50,10 +50,10 @@ struct StringDescriptor(Resource)
     }
 }
 
-/** A resource descriptor storing a Source (such as YAML).
+/** A resource descriptor storing a [Source](../concepts/source.html).
  *
- * Used when a resource is defined inline in a source file (e.g. the 'override' section of
- * a spawner component).
+ * Used when a resource is defined inline in a source file (e.g. the `override` section of
+ * a [tharsis-full](https://github.com/kiith-sa/tharsis-full) spawner component).
  *
  * Params: Resource = Resource type the descriptor describes. Templating by resource type
  *                    prevents assignments between descriptors of different resource types.
@@ -61,10 +61,10 @@ struct StringDescriptor(Resource)
 struct SourceWrapperDescriptor(Resource)
 {
 private:
-    /// Common parent class for source wrappers.
+    // Common parent class for source wrappers.
     class AbstractSourceWrapper {}
 
-    /** Wraps a Source of a concrete type and provides access to it.
+    /* Wraps a Source of a concrete type and provides access to it.
      *
      * Necessary to support any possible Source type without templating the descriptor itself.
      */
@@ -77,7 +77,7 @@ private:
         Source source;
     }
 
-    /** The wrapped source. Yes, this does use the GC (or rather, new).
+    /* The wrapped source. Yes, this does use the GC (or rather, new).
      *
      * It's unlikely to cause measurable overhead, since resources are shared. We may wrap
      * Sources without GC in future, but that may require tricky memory allocation.
@@ -105,7 +105,7 @@ public:
      * Params:  source = Source to load from.
      *          result = The descriptor will be written here, if loaded succesfully.
      *
-     * Returns: true if succesfully loaded, false otherwise.
+     * Returns: `true` if succesfully loaded, `false` otherwise.
      */
     static bool load(Source)(ref Source source, out SourceWrapperDescriptor result)
         @safe nothrow
@@ -116,7 +116,7 @@ public:
 
     /** Determine if this descriptor maps to the same resource handle as another descriptor.
      *
-     * Usually, this returns true if two descriptors describe one resource (e.g. if they
+     * Usually, this returns `true` if two descriptors describe one resource (e.g. if they
      * are equal). SourceWrapperDescriptors are assumed to never map to the same handle
      * (the resource is loaded directly from a subnode of a larger resource's definition).
      *
@@ -139,8 +139,8 @@ public:
     }
 }
 
-/**A resource descriptor that can store either a filename to load a resource from or a
- * Source to load the resource directly.
+/** A resource descriptor that can store either a filename to load a resource from or a
+ * [Source](../concepts/source.html) to load the resource directly.
  *
  * Used when a resource may be defined directly in a subnode of a source (e.g. YAML) file,
  * but we also want to be able to define it in a separate file and use its filename.
@@ -180,17 +180,18 @@ public:
         stringBackend_ = StringDescriptor!Resource(fileName);
     }
 
+    /// Get the file name if the descriptors describe a file, `"<inline resource>"` otherwise.
     string fileName() @safe pure nothrow const @nogc
     {
         return type_ == Type.String ? stringBackend_.fileName : "<inline resource>";
     }
 
-    /** Load a descriptor from a Source such as YAML.
+    /** Load a descriptor from a [Source](../concepts/source.html).
      *
      * Params:  source = Source to load from.
      *          result = The descriptor will be written here, if loaded succesfully.
      *
-     * Returns: true if succesfully loaded, false otherwise.
+     * Returns: `true` if succesfully loaded, `false` otherwise.
      */
     static bool load(Source)(ref Source source, out CombinedDescriptor result)
         @safe nothrow
@@ -211,7 +212,7 @@ public:
 
     /** Determine if this descriptor maps to the same resource handle as another descriptor.
      *
-     * Usually, this returns true if two descriptors describe the same resource (e.g. if
+     * Usually, this returns `true` if two descriptors describe the same resource (e.g. if
      * the descriptors are equal).
      *
      * The resource manager uses this to figure whether to load a new resource or reuse an
@@ -229,7 +230,7 @@ public:
     }
 
     import tharsis.entity.componenttypemanager;
-    /** Access the wrapped source.
+    /** Access the wrapped Source.
      *
      * This should be used to initialize the resource described by this descriptor.
      */
@@ -251,7 +252,8 @@ static assert(CombinedDescriptor!EntityPrototypeResource.sizeof <= 32,
 /** The default descriptor type used by builtin resource managers.
  *
  * Resources using this descriptor can be loaded both from separate files and from inline
- * Source nodes (e.g. YAML mappings with YAMLSource).
+ * [Source](../concepts/source.html) nodes (e.g. YAML mappings in case of
+ * [tharsis-full](https://github.com/kiith-sa/tharsis-full) YAMLSource).
  */
 template DefaultDescriptor(Resource)
 {

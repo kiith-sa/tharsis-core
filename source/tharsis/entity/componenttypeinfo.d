@@ -29,12 +29,12 @@ alias TypeTuple!(LifeComponent) BuiltinComponents;
 /// Maximum possible number of builtin, mandatory component types.
 package enum ushort maxBuiltinComponentTypes = 8;
 
-/// Maximum possible number of component types in the 'defaults' package.
+/// Maximum possible number of component types in the `defaults` package of `tharsis-full`.
 package enum ushort maxDefaultsComponentTypes = 24;
 
-/** Number of component type IDs reserved for Tharsis builtins and the defaults package.
+/** Number of component type IDs reserved for Tharsis builtins and the `defaults` package.
  *
- * Component type IDs of user-defined components should use userComponentTypeID to avoid\
+ * Component type IDs of user-defined components should use `userComponentTypeID` to avoid
  * collisions with builtin components.
  */
 enum ushort maxReservedComponentTypes = maxBuiltinComponentTypes + maxDefaultsComponentTypes;
@@ -62,7 +62,8 @@ ushort[] componentIDs(ComponentTypes...)() @trusted
 
 /** Get the maximum possible components of this type at entity may have.
  *
- * Used mainly by MultiComponents. For normal Components this is a minimum number of free
+ * Used mainly by [MultiComponents](../concepts/component.html#multicomponents). For
+ * normal [Components](../concepts/component.html) this is a minimum number of free
  * preallocated components.
  */
 auto maxComponentsPerEntity(ComponentType)() @safe pure nothrow
@@ -80,7 +81,7 @@ auto maxComponentsPerEntity(ComponentType)() @safe pure nothrow
 /// Determine if a component type is a MultiComponent type.
 enum isMultiComponent(Component) = Unqual!Component.stringof.endsWith("MultiComponent");
 
-/// Validate a component type at compile-time.
+/// Validate a component type at compile-time, triggering an compile-time error if invalid.
 mixin template validateComponent(Component)
 {
     // Mixins only see the imports of the module where they are mixed in; so
@@ -112,7 +113,7 @@ mixin template validateComponent(Component)
 }
 
 /** Used as an user-defined attribute for component properties to override the name of the
- * property in the Source it's loaded from (e.g. YAML).
+ * property in the [Source](../concepts/source.html) it's loaded from (e.g. YAML).
  */
 struct PropertyName
 {
@@ -128,9 +129,9 @@ struct PropertyName
 struct RawComponent
 {
 private:
-    /// Type ID of the component.
+    // Type ID of the component.
     ushort typeID_ = nullComponentTypeID;
-    /** Slice containing untyped raw data.
+    /* Slice containing untyped raw data.
      *
      * The slice should point to memory owned externally, e.g. to memory of an EntityPrototype.
      */
@@ -176,7 +177,7 @@ public:
 struct ImmutableRawComponent
 {
 public:
-    /// The RawComponent itself.
+    // The RawComponent itself.
     immutable(RawComponent) self_;
     alias self_ this;
 
@@ -195,23 +196,25 @@ struct ComponentPropertyInfo
     mixin(NonCopyable);
 
 private:
-    /** A function type to load the property from a source (e.g. YAML).
+    /* A function type to load the property from a source (e.g. YAML).
      *
      * Params:
+     * component = Component with the property to load, as a raw byte array.
+     * source    = Source to load the property from, e.g. a YAML node defining the
+     *             component. Although we use a void pointer, the source must match the
+     *             type of the source used with the construct() function that created this
+     *             ComponentPropertyInfo.
+     * getHandle = A delegate that, given resource type ID and descriptor, returns a raw
+     *             resource handle. Used to init properties that are resource handles.
+     *             Always passed but not every property will use this.
+     * logError  = A delegate to log any loading errors with.
      *
-     * ubyte[]:          Component with the property to load, as a raw byte array.
-     * void*:            Source to load the property from, e.g. a YAML node defining the
-     *                   component. Although we use a void pointer, the source must match
-     *                   the type of the source used with the construct() function that
-     *                   created this ComponentPropertyInfo.
-     * GetResourceHandle A deleg that, given resource type ID and descriptor, returns a
-     *                   raw resource handle. Used to init properties that are resource
-     *                   handles. Always passed but not every property will use this.
-     * string            A delegate to log any loading errors with.
-     *
-     * Returns: true if the property was successfully loaded, false otherwise.
+     * Returns: `true` if the property was successfully loaded, `false` otherwise.
      */
-    alias LoadProperty = bool function(ubyte[], void*, GetResourceHandle, void delegate(string) nothrow) nothrow;
+    alias LoadProperty = bool function(ubyte[] component,
+                                       void* source,
+                                       GetResourceHandle getHandle,
+                                       void delegate(string) nothrow logError) nothrow;
 
     /* A function type to add the value of this property in right to the value in left.
      *
@@ -240,9 +243,10 @@ private:
 public:
     /** Custom attributes of the property.
      *
-     * For example, @("relative") .
-     * Processes can get propeties with a specific custom attribute using the properties()
-     * method of ComponentTypeInfo. This is used e.g. in
+     * For example, `@("relative")` .
+     *
+     * Processes can get propeties with a specific custom attribute 
+     * ComponentTypeInfo.properties(). This is used e.g. in
      * tharsis.defaults.processes.SpawnerProcess to implement relative properties where a
      * property of a spawned entity is affected by the same property of the spawner.
      */
@@ -254,12 +258,17 @@ public:
     /** Add the value of this property in the right component to this property in the left
      * component.
      *
-     * If "property" is the property (data member) represented by this ComponentPropertyInfo,
-     * this is an equivalent of "left.property += right.property". Both components must be
+     * If `property` is the property (data member) represented by this ComponentPropertyInfo,
+     * this is an equivalent of `left.property += right.property`. Both components must be
      * of the component type that has this property.
      *
-     * May only be called for properties where "left.property += right.property" compiles.
+     * May only be called for properties where `left.property += right.property` compiles.
      * Used to implement relative properties to e.g. spawn new entities at relative positions.
+     *
+     * Note:
+     *
+     * This is basically a hack to be used until we have a better/more general mechanism
+     * for automatically 'combining' properties of two components.
      *
      * Params: left  = The component to add to. Must be a component of the component type
      *                 that has this property.
@@ -273,7 +282,7 @@ public:
     }
 
 private:
-    /** Construct ComponentPropertyInfo describing a property (field) of a component type.
+    /* Construct ComponentPropertyInfo describing a property (field) of a component type.
      *
      * Params:  Source    = Source type we're loading components from, e.g. YAMLSource.
      *          Component = Component type the property belongs to.
@@ -307,7 +316,7 @@ private:
         }
     }
 
-    /** Get the name of a property used in a Source such as YAML.
+    /* Get the name of a property used in a Source such as YAML.
      *
      * Property name in a Source is by default the name of the property in the component
      * struct, but it can be overridden by a PropertyName attribute. This is useful e.g.
@@ -332,7 +341,7 @@ private:
         return result is null ? fieldNameInternal : result;
     }
 
-    /** This template generates an implementation of addRightToLeft for property
+    /* This template generates an implementation of addRightToLeft for property
      * fieldNameInternal of component type Component.
      *
      * When a component type is registered, this template is instantiated for all its
@@ -367,7 +376,7 @@ private:
     }
 
 
-    /** This template generates an implementation of loadProperty loading property
+    /* This template generates an implementation of loadProperty loading property
      * fieldNameInternal of component type Component from source type Source.
      *
      * When registering a component type, this template is instantiated for its properties
@@ -469,7 +478,7 @@ private:
     }
 }
 
-/// Type information about a component type.
+/// Type information about a [component](../concepts/component.html) type.
 struct ComponentTypeInfo
 {
     /// No copying; copies in separate threads may unexpectedly access shared resources.
@@ -484,22 +493,23 @@ public:
 
     /** Maximum possible components of this type in a single entity.
      *
-     * Used mainly by MultiComponents. Used by EntitySystem to ensure there are always
-     * enough components preallocated for the next entity to process.
+     * Used mainly by [MultiComponents](../concepts/component.html#multicomponents), to
+     * allow Tharsis to ensure there are always enough components preallocated for the
+     * next entity to process.
      */
     size_t maxPerEntity = 1;
 
-    /// Is this a MultiComponent type?
+    /// Is this a [MultiComponent](../concepts/component.html#multicomponents) type?
     bool isMulti = false;
 
     /** Name of the component type.
      *
-     * This is the component struct name without the 'Component' suffix. E.g. for
-     * "PhysicsComponent" this would be "Physics"
+     * This is the component struct name without the *Component* suffix. E.g. for
+     * `PhysicsComponent` this would be `"Physics"`
      */
     string name = "";
 
-    /** Name of the component when accessed in a Source (e.g. YAML).
+    /** Name of the component when accessed in a [Source](../concepts/source.html)
      *
      * Usually this is equal to name with the first character forced to lowercase.
      */
@@ -512,18 +522,18 @@ public:
     double minPreallocPerEntity = 0;
 
 private:
-    /** Type info of the Source (e.g. YAML) type the components are loaded from.
+    /* Type info of the Source type the components are loaded from.
      *
      * Ensures that a correct Source is passed to loadComponent.
      */
     TypeInfo sourceType_;
 
-    /// Information about all properties (data members) in the component type.
+    // Information about all properties (data members) in the component type.
     ComponentPropertyInfo[] properties_;
 
 public:
     /** A range that iterates over type info of properties (aka fields or data members) of
-     * a Component type.
+     * a [Component](../concepts/component.html) type.
      *
      * The range element type is ComponentPropertyInfo.
      */
@@ -536,13 +546,13 @@ public:
         mixin(NonCopyable);
 
     private:
-        /// A slice of all properties of the component type.
+        // A slice of all properties of the component type.
         const(ComponentPropertyInfo)[] properties_;
 
-        /** We only iterate over properties that have a this user-defined attribute.
+        /* We only iterate over properties that have a this user-defined attribute.
          *
          * E.g. if filterAttribute_ is "relative", the range will iterate over
-         * '@("relative") float x' but not over 'float x'
+         * `@("relative") float x` but not over `float x`
          */
         string filterAttribute_;
 
@@ -593,7 +603,7 @@ public:
         }
     }
 
-   /** Get a range of properties of a component type with specified user-defined attribute.
+   /** Get a range of properties of this component type with specified user-defined attribute.
     *
     * Example:
     * --------------------
@@ -614,7 +624,6 @@ public:
     *     // Will iterate over ComponentPropertyInfo for 'float x', 'float y' and
     *     // 'float z'
     * }
-    *
     * --------------------
     */
     ComponentPropertyRange properties(string attribute)()
@@ -630,17 +639,17 @@ public:
         return ComponentPropertyRange(properties_, attribute);
     }
 
-    /// Is this ComponentTypeInfo null (i.e. doesn't describe any type)?
+    /// Is this ComponentTypeInfo *null* (i.e. doesn't describe any type)?
     bool isNull() @safe pure nothrow const @nogc { return id == nullComponentTypeID; }
 
     import tharsis.entity.entitymanager;
-    /** Load a component of this component type.
+    /** Load a component of this type.
      *
      * Params:
      *
-     * Source        = Type of Source (e.g. YAML) to load from. Must be the same Source
-     *                 type that was used when the type info was initialized (i.e. the
-     *                 Source parameter of ComponentTypeManager).
+     * Source        = Type of [Source](../concepts/source.html) to load from. Must be
+     *                 the same Source type that was used when the type info was
+     *                 initialized (i.e. the Source parameter of ComponentTypeManager).
      * componentData = Component to load into, as a byte array.
      * source        = Source to load the component from (e.g. a component stored as YAML).
      * entityManager = Entity manager (needed to get access to resource management - to
@@ -673,7 +682,7 @@ public:
     }
 
 private:
-    /** Construct component type information for specified component type.
+    /* Construct component type information for specified component type.
      *
      * Params:  Source    = Source the components will be loaded from (e.g. YAML).
      *          Component = Component type to generate info about.
@@ -716,11 +725,11 @@ private:
 
 /** Is Component.property a resource handle?
  *
- * Params: Component = A Component type.
+ * Params: Component = A [Component](../concepts/component.html) type.
  *         property  = Name of a property (data member) of Component.
  *
- * Returns: true if the property of Component with specified name is a resource handle,
- *          false otherwise.
+ * Returns: `true` if the property of Component with specified name is a resource handle,
+ *          `false` otherwise.
  */
 bool isResourceHandle(Component, string property)()
 {

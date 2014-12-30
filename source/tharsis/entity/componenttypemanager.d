@@ -4,7 +4,7 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 
-/// Component type registering, type information management and loading.
+/// [Component](../concepts/component.html) type registering, type info management and loading.
 module tharsis.entity.componenttypemanager;
 
 
@@ -25,11 +25,11 @@ import tharsis.entity.source;
 class AbstractComponentTypeManager
 {
 private:
-    /// Is this manager locked (i.e. no more types may be registered)?
+    // Is this manager locked (i.e. no more types may be registered)?
     bool locked_;
 
 protected:
-    /** Type information for all registered component types.
+    /* Type information for all registered component types.
      *
      * Every index is a component type ID. If there is no registered component type
      * with a particular ID, the ComponentTypeInfo at that index is null.
@@ -37,10 +37,10 @@ protected:
     ComponentTypeInfo[] componentTypeInfo_;
 
 public:
-    /** Lock the component type manager.
+    /** Lock after registering all component types, so the component type manager can be
+     * passed to EntityManager.
      *
-     * After this is called, no more types can be registered. Must be called before
-     * passing this manager to an EntityManager.
+     * After called, no more types can be registered.
      */
     final void lock() @safe pure nothrow
     {
@@ -48,7 +48,7 @@ public:
         locked_ = true;
     }
 
-    /// Is this manager locked?
+    /// Is this locked (i.e. no more component types can be registered)?
     final @property bool locked() @safe const pure nothrow @nogc { return locked_; }
 
     /// Are all specified component types registered?
@@ -68,11 +68,11 @@ public:
         return true;
     }
 
-    /** Get the maximum size of all components in any single entity in bytes.
+    /** Get the maximum size needed by any single entity to store components, in bytes.
      *
      * Useful when preallocating memory for entity prototypes.
      *
-     * Can only be called after this manager is locked.
+     * Note: Can only be called when the component type manager is locked.
      */
     final size_t maxEntityBytes() @safe pure nothrow const @nogc
     {
@@ -89,7 +89,7 @@ public:
 
     /** Get the maximum number of components (of all types) in a single entity.
      *
-     * Can only be called after this manager is locked.
+     * Note: Can only be called when the component type manager is locked.
      */
     final size_t maxEntityComponents() @safe pure nothrow const @nogc
     {
@@ -108,7 +108,7 @@ public:
      * Returns a slice; component type IDs are indices to this slice. Some elements may
      * be null (determine this using ComponentTypeInfo.isNull).
      *
-     * Can only be called after this manager is locked.
+     * Note: Can only be called after the component type manager is locked.
      */
     final const(ComponentTypeInfo[]) componentTypeInfo() @safe pure nothrow const @nogc
     {
@@ -118,7 +118,7 @@ public:
     }
 
 protected:
-    /** Allows AbstractComponentTypeManager to access component type info storage child
+    /* Allows AbstractComponentTypeManager to access component type info from child
      * classes.
      * .
      *
@@ -134,14 +134,14 @@ protected:
     }
 
 private:
-    /// AbstracComponentTypeManager constructor, called only by ComponentTypeManager.
+    // AbstractComponentTypeManager constructor, called only by ComponentTypeManager.
     this() @safe pure nothrow @nogc
     {
         componentTypeInfo_ = componentTypeInfoStorage();
     }
 }
 
-/// Maximum size of an instance of a Source type in bytes.
+/// Maximum size of an instance of a [Source](../concepts/source.html) type in bytes.
 enum maxSourceBytes = 512;
 
 
@@ -152,8 +152,9 @@ enum maxSourceBytes = 512;
  +
  + Params:
  + Source = Struct to read components with, e.g a YAML or XML node or an INI section.
- +          $(B tharsis-full) provides a YAML-based Source implementation. For details,
- +          see $(LINK2 ../../../html/concepts/source.html, Source concept documentation).
+ +          [tharsis-full](https://github.com/kiith-sa/tharsis-full) provides a YAML-based
+ +          Source implementation. For details, see
+ +          [Source concept documentation](../concepts/source.html).
  + Policy = Specifies compile-time parameters such as the max number of component types.
  +          See tharsis.entity.entitypolicy for the default Policy type.
  +
@@ -215,21 +216,24 @@ private:
     mixin validateEntityPolicy!Policy;
     mixin validateSource!Source;
 
-    /** Type information for all registered component types.
+    /* Type information for all registered component types.
      *
      * Indices are component type IDs. If there is no registered component type with a
      * particular ID, the ComponentTypeInfo at that index is null.
      */
     ComponentTypeInfo[maxComponentTypes!Policy] componentTypeInfoStorage_;
 
-    /// Loads the Source objects from which entities are loaded.
+    // Loads the Source objects from which entities are loaded.
     Source.Loader sourceLoader_;
 
-    /// Set to true after all builtin component types are registered.
+    // Set to true after all builtin component types are registered.
     bool builtinRegistered_ = false;
 
 public:
-    /// Construct a ComponentTypeManager.
+    /** Construct a ComponentTypeManager.
+     *
+     * The passed loader will be used to load entities/components.
+     */
     this(Source.Loader loader) @safe pure nothrow
     {
         registerComponentTypes!BuiltinComponents;
@@ -237,11 +241,12 @@ public:
         sourceLoader_      = loader;
     }
 
-    /** Register specified $(LINK2 component ../../../html/concepts/component.html) types.
+    /** Register specified [component](../concepts/component.html) types.
      *
-     * Every component type used by any Process must be registered. The ComponentTypeID
-     * enum member of the component type should be set by the userComponentTypeID template
-     * with an integer parameter of at least 0 and at most Policy.maxUserComponentTypes
+     * Every component type used by any Process must be registered. The
+     * [ComponentTypeID](../concepts/component.html#enum-ushort-componenttypeid) enum
+     * member of each component type should be set by the userComponentTypeID template 
+     * with an integer parameter of at least 0 and at most Policy.maxUserComponentTypes 
      * (256 by default).
      *
      * Example:
@@ -286,10 +291,10 @@ public:
         }
     }
 
-    /** Get the Source loader used to load components from Sources.
+    /** Get the loader used to load components from [Sources](../concepts/source.html).
      *
      * Note that while it is possible to modify the loader, doing so will be at your own
-     * risk; ComponentTypeManager doesn't expect the loader to change.
+     * risk; ComponentTypeManager doesn't expect the loader to change in any way.
      */
     ref Source.Loader sourceLoader() @safe nothrow @nogc { return sourceLoader_; }
 

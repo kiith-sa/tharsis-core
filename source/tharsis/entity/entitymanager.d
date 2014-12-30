@@ -40,43 +40,40 @@ import tharsis.util.time;
 /// A shortcut alias for EntityManager with the default entity policy.
 alias DefaultEntityManager = EntityManager!DefaultEntityPolicy;
 
-/** The central, "World" object of Tharsis.
+/** The central, "World" subsystem of Tharsis.
  *
  * EntityManager fullfills multiple roles:
  *
- * * Registers processes and resource managers.
- * * Creates entities from entity prototypes.
+ * * Registers [Processes](../concepts/process.html) and resource managers.
  * * Executes processes.
- * * Manages past and future entities and components.
+ * * Manages game state (past and future entities and [components](../concepts/component.html)).
  *
  * Params: Policy = A struct with enum members specifying various compile-time
- *                  parameters and hints. See entitypolicy.d for an example.
- *
- * TODO usage example once stable.
+ *                  parameters and hints. See tharsis.entity.entitypolicy for an example.
  */
 class EntityManager(Policy)
 {
     mixin validateEntityPolicy!Policy;
 
-    /// Allows EntityRange to access the policy.
+    /// Allows to access the EntityManager's Policy.
     alias EntityPolicy = Policy;
 
-    /// Shortcut alias.
-    alias ComponentCount = Policy.ComponentCount;
-
     import tharsis.entity.diagnostics;
-    /// Struct type to store diagnostics info in.
+    /// Struct type to store diagnostics (profiling and debugging) info in.
     alias Diagnostics = EntityManagerDiagnostics!Policy;
 
 package:
-    /// Shortcut aliases.
+    // Type used to represent component counts in an entity.
+    alias ComponentCount = Policy.ComponentCount;
+
+    // Shortcut aliases.
     alias GameStateT          = GameState!Policy;
     alias ComponentStateT     = ComponentState!Policy;
     alias ComponentTypeStateT = ComponentTypeState!Policy;
 
 
     import core.thread;
-    /** A thread that runs processes each frame.
+    /* A thread that runs processes each frame.
      *
      * The thread alternates between states:
      *
@@ -292,69 +289,71 @@ package:
         }
     }
 
-    /// Game state from the previous frame. Stores entities and their components,
-    /// including dead entities and entities that were added during the last frame.
+    // Game state from the previous frame. Stores entities and their components,
+    // including dead entities and entities that were added during the last frame.
     immutable(GameStateT)* past_;
 
-    /// Game state in the current frame. Stores entities and their components, including
-    /// entities hat were added during the last frame.
+    // Game state in the current frame. Stores entities and their components, including
+    // entities hat were added during the last frame.
     GameStateT* future_;
 
-    /// Component type manager, including type info about registered component types.
+    // Component type manager, including type info about registered component types.
     AbstractComponentTypeManager componentTypeMgr_;
 
 private:
-    /// If writtenComponentTypes_[i] is true, there is a process that writes components
-    /// of type with ComponentTypeID equal to i.
+    // If writtenComponentTypes_[i] is true, there is a process that writes components
+    // of type with ComponentTypeID equal to i.
     bool[maxComponentTypes!Policy] writtenComponentTypes_;
 
-    /// Multiplier to apply when preallocating buffers.
+    // Multiplier to apply when preallocating buffers.
     double allocMult_ = 1.0;
 
-    /// Stores both past and future game states.
-    ///
-    /// The past_ and future_ pointers are exchanged every frame, replacing past with
-    /// future and vice versa to reuse memory,
+    /* Stores both past and future game states.
+     *
+     * The past_ and future_ pointers are exchanged every frame, replacing past with
+     * future and vice versa to reuse memory,
+     */
     GameStateT[2] stateStorage_;
 
-    /// Wrappers that execute registered processes.
+    // Wrappers that execute registered processes.
     AbstractProcessWrapper!Policy[] processes_;
 
-    /// Registered resource managers.
+    // Registered resource managers.
     AbstractResourceManager[] resourceManagers_;
 
-    /** A simple class wrapper over entities to add when the next frame starts.
+    /* A simple class wrapper over entities to add when the next frame starts.
      *
      * A class is used to allow convenient use of synchronized and shared. A struct +
      * mutex could be used if needed, but GC overhead of a single instance is very low.
      */
     class EntitiesToAdd
     {
-        /// ID of the next entity that will be created.
-        ///
-        /// 1 is used to ease detection of bugs with uninitialized data.
+        /** ID of the next entity that will be created.
+         *
+         * 1 is used to ease detection of bugs with uninitialized data.
+         */
         uint nextEntityID = 1;
         /// Stores pointers to prototypes and IDs of the entities to add when the next
         /// frame starts.
         MallocArray!(Tuple!(immutable(EntityPrototype)*, EntityID)) prototypes;
     }
 
-    /// Entities to add when the next frame starts.
+    // Entities to add when the next frame starts.
     shared(EntitiesToAdd) entitiesToAdd_;
 
-    /// Determines which processes run in which threads.
+    // Determines which processes run in which threads.
     Scheduler scheduler_;
 
-    /// Process threads (all threads executing processes other than the main thread).
+    // Process threads (all threads executing processes other than the main thread).
     ProcessThread[] procThreads_;
 
-    /// Have the process threads been started?
+    // Have the process threads been started?
     bool threadsStarted_ = false;
 
-    /// Diagnostics data (how many components of which type, etc).
+    // Diagnostics data (how many components of which type, etc).
     Diagnostics diagnostics_;
 
-    /// Profiler (if any) attached to the main thread by attachPerThreadProfilers().
+    // Profiler (if any) attached to the main thread by attachPerThreadProfilers().
     Profiler profilerMainThread_ = null;
 
 public:
@@ -365,7 +364,8 @@ public:
      * Params:
      *
      * componentTypeManager = Component type manager storing component type information.
-     *                        Must be locked.
+     *
+     *                        **Must be locked.**
      * scheduler            = Scheduler to schedule Processes with.
      */
     this(AbstractComponentTypeManager componentTypeManager, Scheduler scheduler)
@@ -402,7 +402,9 @@ public:
         future_ = &(stateStorage_[1]);
     }
 
-    /** Start executing EntityManager in multiple threads.
+    /** Start executing EntityManager (in number of threads determined by Scheduler).
+     *
+     * Note: Must be called before any calls to executeFrame()
      *
      * Throws:
      *
@@ -419,11 +421,11 @@ public:
 
     /** Destroy the EntityManager.
      *
-     * Must be called after using the entity manager.
+     * Must be called when done using the EntityManager.
      *
      * Params: clearResources = Destroy all resources in registered resource managers? If
-     *                          false, the user must manually call the clear() method of
-     *                          every resource manager to free the resources.
+     *                          `No`, the clear() method of each resource manager must be
+     *                          called manually to free the resources.
      */
     void destroy(Flag!"ClearResources" clearResources = Yes.ClearResources)
         @trusted
@@ -445,19 +447,23 @@ public:
         foreach(wrapper; processes_) { .destroy(wrapper); }
     }
 
-    /** Attach multiple Profilers, each of which will profile a single thread.
-     *
-     * Can only be called before startThreads().
+    /** Attach multiple [Profilers](http://defenestrate.eu/docs/tharsis.prof/tharsis.prof.profiler.html),
+     * each of which will profile a single thread.
      *
      * Allows to profile Tharsis execution as a part of a larger program. If there are not
      * enough profilers for all threads, only profilers.length threads will be profiled.
      * If there are more profilers than threads, the extra profilers will be unused.
      *
+     * Note:
+     *
+     * * Must not be called before startThreads().
+     * * Attached profilers must not be modified until EntityManager.destroy() (which
+     * stops the threads) is called.
+     *
      * Params:
      *
-     * profilers = Profilers to attach. Profiler at profilers[0] will profile code running
-     *             in the main thread. $(B Note: ) attached profilers must not be modified
-     *             until the EntityManager.destroy() (which stops the threads) is called.
+     * profilers = Profilers to attach. Profiler at `profilers[0]` will profile code 
+     *             running in the main thread.
      */
     void attachPerThreadProfilers(Profiler[] profilers) @trusted nothrow
     {
@@ -469,7 +475,7 @@ public:
 
     /** Get a copy of diagnostics from the last game update.
      *
-     * Calling this during an update will return incomplete data.
+     * Note: Calling this during executeFrame() will return incomplete data.
      */
     Diagnostics diagnostics() @trusted pure nothrow const @nogc { return diagnostics_; }
 
@@ -480,11 +486,11 @@ public:
      * Params:
      *
      * prototype = Prototype of the entity to add. Usually, the prototype will have to be
-     *             casted to immutable before passed. Must exist without changes until the
+     *             cast to immutable before passed. Must exist without changes until the
      *             beginning of the next update. Can be safely deleted afterwards.
      *
-     * Returns: ID of the new entity on success. A null ID if we've added more than
-     *          Policy.maxNewEntitiesPerFrame new entities during one frame.
+     * Returns: ID of the new entity on success. A null ID if more than
+     *          Policy.maxNewEntitiesPerFrame new entities were added during one frame.
      */
     EntityID addEntity(ref immutable(EntityPrototype) prototype) @trusted nothrow
     {
@@ -510,9 +516,9 @@ public:
         return nothrowWrapper().assumeWontThrow();
     }
 
-    /** Can be set to force more or less preallocation.
+    /** Can be set to force more or less memory preallocation.
      *
-     * Useful e.g. before loading a big map.
+     * Useful e.g. before loading a big map with many entities.
      *
      * Params:  mult = Multiplier for size of preallocations. Must be greater than 0.
      */
@@ -584,15 +590,18 @@ public:
         updateDiagnostics();
     }
 
-    /** When used as an argument for a process() method of a Process, provides access to
-     * the current entity handle and components of all past entities.
+    /** Type passed to [Processes](../concepts/process.html) to provide access to the
+     * current entity handle and components of all past entities.
+     *
+     * Can be used as an argument for a [process()](../concepts/process.html#process-method) 
+     * method of a Process.
      *
      * See_Also: tharsis.entity.entityrange.EntityAccess
      */
     alias Context = EntityAccess!(typeof(this));
 
 package:
-    /** Get a resource handle without compile-time type information.
+    /* Get a resource handle without compile-time type information.
      *
      * Params:
      *
@@ -613,7 +622,7 @@ package:
     }
 
 private:
-    /** Register a Process.
+    /* Register a Process.
      *
      * At most Policy.maxProcesses Processes can be registered (256 by default). Override
      * the Policy template parameter to increase this limit.
@@ -735,7 +744,7 @@ private:
     }
 
     // TODO a "locked" EntityManager state when no new stuff can be registered.
-    /** Register specified resource manager.
+    /* Register specified resource manager.
      *
      * Once registered, components may refer to resources managed by this resource
      * manager, and the EntityManager will update it between frames.
@@ -750,18 +759,18 @@ private:
         resourceManagers_ ~= manager;
     }
 
-    /// A shortcut to access component type information.
+    // A shortcut to access component type information.
     const(ComponentTypeInfo[]) componentTypeInfo() @safe pure nothrow const
     {
         return componentTypeMgr_.componentTypeInfo;
     }
 
-    ///////////////////////////////////////////
-    /// BEGIN CODE CALLED BY executeFrame() ///
-    ///////////////////////////////////////////
+    //-------------------------------------//
+    // BEGIN CODE CALLED BY executeFrame() //
+    //-------------------------------------//
 
 
-    /// Ensure only the threads with processes scheduled to them will run.
+    // Ensure only the threads with processes scheduled to them will run.
     void updateThreads() @trusted nothrow
     {
         foreach(idx, thread; procThreads_) with(ProcessThread.State)
@@ -782,7 +791,7 @@ private:
         }
     }
 
-    /// Run all processes; called by executeFrame();
+    // Run all processes; called by executeFrame();
     void executeProcesses() @system nothrow
     {
         auto totalProcZone = Zone(profilerMainThread_, "EntityManager.executeProcesses()");
@@ -828,7 +837,7 @@ private:
         }
     }
 
-    /** Run Processes assigned by the scheduler to the current thread.
+    /* Run Processes assigned by the scheduler to the current thread.
      *
      * Called during executeProcesses(), from the main thread or a ProcessThread.
      *
@@ -859,7 +868,7 @@ private:
     // process type.
     enum allProcessesZoneName = "__processes__";
 
-    /// Update EntityManager diagnostics (after processes are run).
+    // Update EntityManager diagnostics (after processes are run).
     void updateDiagnostics() @safe nothrow
     {
         auto diagZone = Zone(profilerMainThread_, "updateDiagnostics()");
@@ -902,7 +911,7 @@ private:
     }
 
 
-    /// Show any useful debugging info (warnings) before an update, and check update invariants.
+    // Show any useful debugging info (warnings) before an update, and check update invariants.
     void frameDebug() @trusted nothrow
     {
         auto debugZone = Zone(profilerMainThread_, "frameDebug");
@@ -930,7 +939,7 @@ private:
         }
     }
 
-    /** Update every resource manager, allowing them to load resources.
+    /* Update every resource manager, allowing them to load resources.
      *
      * Part of the code executed between frames in executeFrame().
      */
@@ -940,7 +949,7 @@ private:
         foreach(resManager; resourceManagers_) { resManager.update(); }
     }
 
-    /////////////////////////////////////////
-    /// END CODE CALLED BY executeFrame() ///
-    /////////////////////////////////////////
+    //-----------------------------------//
+    // END CODE CALLED BY executeFrame() //
+    //-----------------------------------//
 }

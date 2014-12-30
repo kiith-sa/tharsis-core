@@ -3,7 +3,11 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-/// Analysis and type information of process() methods in Processes.
+/** Analysis and type information of [Processes](../concepts/process.html) and their
+ * [process()](../concepts/process.html#process-method) methods.
+ *
+ * Used mostly by Tharsis internals.
+ */
 module tharsis.entity.processtypeinfo;
 
 import std.algorithm;
@@ -20,7 +24,7 @@ import tharsis.util.traits;
 import tharsis.util.typetuple;
 
 
-/// Get all overloads of the process() method in a given Process type.
+/// Get all overloads of the `process()` method in a given Process type.
 template processOverloads(Process)
 {
     alias processOverloads = MemberFunctionsTuple!(Process, "process");
@@ -35,7 +39,7 @@ unittest
     static assert(processOverloads!P.length == 2);
 }
 
-/// Get all past component types read by process() methods of a process.
+/// Get all past component types read by `process()` methods of a Process.
 template AllPastComponentTypes(Process)
 {
     alias overloads             = processOverloads!Process;
@@ -57,14 +61,15 @@ unittest
 
 /** Is the specified type an EntityAccess type?
  *
- * EntityAccess is passed to some process() functions to access entity info.
+ * EntityAccess, aka EntityManager.Context, is passed to some
+ * [process()](../concepts/process.html#process-method) functions to access entity info.
  */
 template isEntityAccess(T)
 {
     alias isEntityAccess = hasMember!(T, "isEntityAccess_");
 }
 
-/// Get past component types read by specified process() method.
+/// Get past component types read by specified `process()` method.
 template PastComponentTypes(alias ProcessFunc)
 {
     mixin validateProcessMethod!ProcessFunc;
@@ -86,15 +91,16 @@ template PastComponentTypes(alias ProcessFunc)
     alias PastComponentTypes = UnqualAll!baseTypes;
 }
 
-/// Get sorted array of IDs of past component types read by a process() method.
+/// Get a sorted array of IDs of past component types read by a `process()` method.
 template pastComponentIDs(alias ProcessFunc)
 {
     enum pastComponentIDs = componentIDs!(PastComponentTypes!ProcessFunc);
 }
 
-/** Get the raw future component type written by a process() method
+/** Get the "raw" future component type written by a
+ * [process()](../concepts/process.html#process-method) method
  *
- * The raw type includes any qualifiers, ref/pointer/slice, as specified in the signature
+ * The raw type includes any qualifiers, `ref`/`*`/`[]`, as specified in the signature
  */
 template RawFutureComponentType(alias ProcessFunc)
 {
@@ -110,7 +116,7 @@ template RawFutureComponentType(alias ProcessFunc)
     }
 }
 
-/// Get the future component type written by a process() method.
+/// Get the future component type written by a `process()` method.
 template FutureComponentType(alias ProcessFunc)
 {
 private:
@@ -133,7 +139,8 @@ public:
     }
 }
 
-/// Does a process() method write to a future component?
+/// Does a [process()](../concepts/process.html#process-method) method write to a future
+/// component?
 template hasFutureComponent(alias ProcessFunc)
     if(isCallable!ProcessFunc)
 {
@@ -146,10 +153,12 @@ template hasFutureComponent(Process)
     enum hasFutureComponent = __traits(compiles, Process.FutureComponent.sizeof);
 }
 
-/** Does a process() method write to a future component by pointer?
+/** Does a [process()](../concepts/process.html#process-method) method write to a future
+ * component by pointer?
+
  *
- * Writing by pointer allows nulling it, allowing to remove/not add the component into the
- * future entity.
+ * Writing by pointer allows nulling it, allowing to remove (i.e. to not add into future
+ * state) the component from an entity.
  */
 template futureComponentByPointer(alias ProcessFunc)
 {
@@ -157,8 +166,8 @@ template futureComponentByPointer(alias ProcessFunc)
         hasFutureComponent!ProcessFunc && isPointer!(RawFutureComponentType!ProcessFunc);
 }
 
-/** If ProcessFunc writes to a future component, return its index in the parameter list.
- * Otherwise return size_t.max.
+/** If ProcessFunc writes to a future [component](../concepts/component.html), return its
+ * index in the parameter list. Otherwise return `size_t.max`.
  */
 size_t futureComponentIndex(alias ProcessFunc)()
 {
@@ -179,43 +188,54 @@ size_t futureComponentIndex(alias ProcessFunc)()
     return result;
 }
 
-/** Get a tuple containing type information for every parameter of a process() method.
+/** Get a tuple containing compile-time information about every parameter of a
+ * [process()](../concepts/process.html#process-method) method.
  *
- * Each element of a tuple is a ParamInfo template, which contains various type
- * information about the corresponding parameter of the process() method.
+ * Each element of a tuple is a ParamInfo template, which contains various information
+ * about the corresponding parameter of the
+ * [process()](../concepts/process.html#process-method) method.
  */
 template processMethodParamInfo(alias Method)
 {
     alias ParamTypes          = ParameterTypeTuple!Method;
     alias ParamStorageClasses = ParameterStorageClassTuple!Method;
 
-    /// Information about the process() method parameter at specified index in ParamTypes.
+    /** Information about the [process()](../concepts/process.html#process-method) method
+     * parameter at specified index.
+     *
+     * Note:
+     *
+     * There is one more member, which only exists if  `isComponent == true`: $(BR)
+     * ``alias Component``: specifies the actual component type, with any slice/pointer
+     * information removed.
+     */
     template ParamInfo(int i)
     {
         /// Type of the parameter.
         alias Param        = ParamTypes[i];
         /// Storage class of the parameter.
         enum storage       = ParamStorageClasses[i];
-        /// Is the parameter a slice (used with MultiComponents)?
+        /// Is the parameter a slice? (used with
+        /// [MultiComponents](../concepts/component.html#multicomponent))
         enum isSlice       = isArray!Param;
-        /// Is the parameter a pointer (used for optional future components)?
+        /// Is the parameter a pointer? (used for optional future components)
         enum isPtr         = isPointer!Param;
-        /// Is the parameter passed by reference?
+        /// Is the parameter passed by `ref`?
         enum isRef         = storage & ParameterStorageClass.ref_;
-        /// Is the parameter passed by an 'out' reference?
+        /// Is the parameter passed by `out`?
         enum isOut         = storage & ParameterStorageClass.out_;
         /// Name of the parameter type.
         enum ParamTypeName = Param.stringof;
-        /// Is the parameter an EntityAccess struct?
+        /// Is the parameter an EntityAccess (EntityManager.Context) struct?
         enum isEntityAccess = .isEntityAccess!Param;
-        /// Is the parameter a component?
+        /// Is the parameter a [component](../concepts/component.html)?
         enum isComponent    = !isEntityAccess;
         /** If the parameter is a component, the Component alias specifies the component
          * type (with any slice or pointer information removed).
          */
+        // Get the actual component type (Param may be a pointer or slice).
         static if(isComponent)
         {
-            // Get the actual component type (Param may be a pointer or slice).
             static if(isSlice)    { alias Component = typeof(Param.init[0]); }
             else static if(isPtr) { alias Component = typeof(*Param.init); }
             else                  { alias Component = Param; }
@@ -225,7 +245,8 @@ template processMethodParamInfo(alias Method)
     alias processMethodParamInfo = staticMap!(ParamInfo, tupleIndices!ParamTypes);
 }
 
-/// Validate a process() method.
+/// Validate a [process()](../concepts/process.html#process-method) method, triggering
+/// a compile-time error if invalid.
 template validateProcessMethod(alias Function)
 {
     // Return type does not matter; it just allows us to call this method with CTFE when
@@ -323,7 +344,7 @@ template validateProcessMethod(alias Function)
 }
 
 
-/// Validate a Process type.
+/// Validate a Process type, triggering a compile-time error if invalid.
 mixin template validateProcess(Process)
 {
     // For now processes must be classes.
@@ -378,28 +399,29 @@ mixin template validateProcess(Process)
 }
 
 
-/** Prioritize overloads of the process() method from process P.
+/** Prioritize overloads of the [process()](../concepts/process.html#process-method) method
+ * from [process](../concepts/process.html) P.
  *
- * Returns: Array of 2-tuples sorted from the most specific process() overload (the one
- *          that reads the most past components) to the most general (reads the fewest
- *          past components). The first member of each 2-tuple is a string containing
- *          comma-separated IDs of past component types the overload reads; the second
- *          member is the index of the overload in processOverloads!P.
+ * Returns: Array of pairs sorted from the most specific `process()` overload (reads the
+ *          most past components) to the most general (fewest past components). The first
+ *          member of each pair is a string containing comma-separated IDs of past
+ *          component types the overload reads; the second member is the index of the
+ *          overload in processOverloads!P.
  *
  * Note:
  *
- * All process overloads in a Process write to the same future component but may read
- * different past components.
+ * Different `process()` overloads read different past components.  Which overload to call
+ * is ambiguous if there are two overloads with different past components but no overload
+ * handling the union of these components, since there might be an entity with components
+ * matching both overloads.
  *
- * Which overload to call is ambiguous if there are two overloads with different past
- * components but no overload handling the union of these components, since there might be
- * an entity with components matching both overloads.
- *
- * Example: if one process() method reads components A and B, another reads B, C, and an
- * entity has A, B, C, we don't know which overload to call. This will trigger an error,
- * requiring the user to define another process() overload reading A, B, C. This overload
- * will take precedence as it is unambiguosly more specific than both previous overloads.
+ * **Example:** if one `process()` method reads components *A and B*, another reads *B, C*
+ * and an entity has *A, B, C*, we don't know which overload to call. This will trigger an
+ * error, requiring the user to define another `process()` overload reading *A, B, C*.
+ * This overload will take precedence as it is unambiguosly more specific than both
+ * previous overloads.
  */
+
 Tuple!(string, size_t)[] prioritizeProcessOverloads(P)()
 {
     // All overloads of the process() method in P.

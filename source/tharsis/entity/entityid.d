@@ -3,7 +3,7 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-/// Unique identifier for an entity.
+/// Unique identifier of an entity.
 module tharsis.entity.entityid;
 
 import std.conv;
@@ -12,7 +12,7 @@ import std.conv;
 struct EntityID
 {
 package:
-    /// The identifier value.
+    // The identifier value.
     uint id_ = uint.max;
 
 public:

@@ -16,7 +16,7 @@ import tharsis.entity.entitypolicy;
 
 
 
-/// Diagnostics info about a Tharsis process.
+/// Diagnostics info about a Tharsis [process](../concepts/process.html).
 struct ProcessDiagnostics
 {
     /** Name of the process.
@@ -25,7 +25,8 @@ struct ProcessDiagnostics
      * process.
      */
     string name;
-    /** Number of calls to the process() method/s of the Process during the game update.
+    /** Number of calls to the [process()](../concepts/process.html#process-method)
+     * method/s of the Process during the game update.
      *
      * A Process may have multiple process() methods, but at most one of them will be
      * called for one entity.
@@ -38,8 +39,7 @@ struct ProcessDiagnostics
      */
     size_t componentTypesRead;
 
-    /** Time this process spent executing this frame in hectonanoseconds.
-     */
+    /// Time this process spent executing this frame in hectonanoseconds.
     ulong duration;
 }
 
@@ -49,12 +49,10 @@ struct SchedulerDiagnostics
     /// Name of the scheduling algorithm used.
     string schedulingAlgorithm;
 
-    /** Did the scheduling algorithm procude an approximate (not guaranteed to be optimal)
-     * schedule?
-     */
+    /// Did the algorithm produce approximate (not guaranteed to be optimal) schedule?
     bool approximate;
 
-    /// Estimated time of the next frame in hnsecs.
+    /// Estimated time of the next frame in hectonanoseconds.
     ulong estimatedFrameTime;
 
     /// Time estimator diagnostics (duh).
@@ -63,7 +61,7 @@ struct SchedulerDiagnostics
 
 /** Diagnostics info for the Scheduler's TimeEstimator.
  *
- * The 'underestimate' values measure how much did the estimator underestimate the
+ * The *underestimate* values measure how much did the estimator underestimate the
  * execution time of a process. Positive underestimate means the process took longer than
  * estimated, negative means it took less time.
  */
@@ -96,8 +94,8 @@ struct EntityManagerDiagnostics(Policy)
     {
         /** Name of the component type.
          *
-         * If null, this ComponentType struct is unused and doesn't store diagnostics for
-         * any component type.
+         * If `null`, this ComponentType struct is unused and doesn't store diagnostics 
+         * for any component type.
          */
         string name;
         /// Number of past components of this type in the entity manager.
@@ -107,7 +105,7 @@ struct EntityManagerDiagnostics(Policy)
         /// Bytes actually used for past components of this type in the entity manager.
         size_t pastMemoryUsed;
 
-        /// Is this a 'null' struct that doesn't store valid data?
+        /// Is this a *null* struct that doesn't store valid data?
         bool isNull() @safe pure nothrow const @nogc { return name is null; }
     }
 
@@ -119,7 +117,7 @@ struct EntityManagerDiagnostics(Policy)
         ulong processesDuration;
     }
 
-    /// Number of past entitites.
+    /// Number of entities in past state.
     size_t pastEntityCount;
 
     /// Number of registered processes.
@@ -130,35 +128,26 @@ struct EntityManagerDiagnostics(Policy)
 
     /** Diagnostics for individual component types.
      *
+     * Note:
+     *
      * Not all entries in this array match existing component types. If 
-     * $(D componentTypes[i].isNull) is true, there is no component type with ID $(D i)
+     * `componentTypes[i].isNull == true`, there is no component type with ID $(D i)
      * and the curresponding entry is invalid.
      */
     ComponentType[maxComponentTypes!Policy] componentTypes;
 
-    /** Diagnostics for individual processes.
-     *
-     * Not all entries in this array match existing processes. $(D processes[i]) are the 
-     * diagnostics of process with ID (index) $(D i). If $(D processes[i].isNull) is true,
-     * there is no process with ID $(D i) and the curresponding entry is invalid.
-     */
-
     // Stores process diagnostics (accessed through a slice with processes()).
     // There may be more processes than this but it's highly unlikely.
     ProcessDiagnostics[Policy.maxProcesses] processesStorage;
-    // Get diagnostics for all used processes.
+
+    /// Get diagnostics for all used [Processes](../concepts/process.html).
     inout(ProcessDiagnostics)[] processes() @safe pure nothrow inout @nogc
     {
         return processesStorage[0 .. processCount];
     }
 
-    /** Diagnostics for individual (used) execution threads.
-     *
-     * As at least 1 process runs whole in one thread, there are at most as many used
-     * threads as processes.
-     */
     Thread[processesStorage.length] threadStorage;
-    // Get diagnostics for all threads.
+    /// Get diagnostics for all threads used to run Processes.
     inout(Thread)[] threads() @safe pure nothrow inout @nogc
     {
         return threadStorage[0 .. threadCount];
@@ -182,8 +171,8 @@ struct EntityManagerDiagnostics(Policy)
      *
      * Params:
      *
-     * typeID = Type ID of the component type. Must be a type ID of a registered component
-     *          type.
+     * typeID = Type ID of the component type. **Must be a type ID of a registered component
+     *          type.**
      */
     double pastComponentsPerEntity(ushort typeID)
         @safe pure nothrow const @nogc
@@ -199,7 +188,8 @@ struct EntityManagerDiagnostics(Policy)
         return pastComponentsTotal / cast(double)pastEntityCount;
     }
 
-    /// Get the total number of calls to process() methods of all Processes.
+    /// Get the total number of calls to [process()](../concepts/process.html#process-method)
+    /// methods of all Processes.
     size_t processCallsTotal() @safe pure nothrow const
     {
         return processes[].map!(a => a.processCalls).reduce!((a, b) => a + b).assumeWontThrow;
@@ -227,14 +217,14 @@ struct EntityManagerDiagnostics(Policy)
         return processCallsTotal / cast(double)pastEntityCount;
     }
 
-    /// Get the total past memory allocated for components in bytes.
+    /// Get the total memory allocated for past components in bytes.
     size_t pastMemoryAllocatedTotal() @safe pure nothrow const
     {
         return componentTypes[].map!(a => a.pastMemoryAllocated)
                                .reduce!((a, b) => a + b).assumeWontThrow;
     }
 
-    /// Get the total past memory used by components in bytes.
+    /// Get the total memory used by past components in bytes.
     size_t pastMemoryUsedTotal() @safe pure nothrow const
     {
         return componentTypes[].map!(a => a.pastMemoryUsed)

@@ -11,7 +11,8 @@ import std.string;
 import std.traits;
 
 
-/** Validate a Source at compile-time.
+/** Validate a [Source](../concepts/source.html) type, triggering a compile-time failure
+ * if invalid.
  *
  * Should be mixed in to types that use a Source template parameter.
  */

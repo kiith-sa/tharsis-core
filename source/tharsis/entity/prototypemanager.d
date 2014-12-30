@@ -25,9 +25,9 @@ import tharsis.util.qualifierhacks;
 
 /** Base class for resource managers managing entity prototypes.
  *
- * A project may need multiple entity prototype resource types; these should be managed
- * by separate resource managers derived from BasePrototypeManager templated with the
- * resource type.
+ * Some projects may need multiple entity prototype resource types; these should be
+ * managed by separate resource managers derived from BasePrototypeManager templated with 
+ * the resource type.
  *
  * The Resource type should define following members in addition to the Descriptor type
  * required by ResourceManager:
@@ -57,17 +57,17 @@ public:
      *
      * Params:
      *
-     * Source               = Type of source to load prototypes from (e.g. YAMLSource).
-     * Policy               = Policy used with the entity manager, specifying compile-time
+     * Source               = Type of [Source](../concepts/source.html) to load prototypes from.
+     * Policy               = Policy used with the EntityManager, specifying compile-time
      *                        tweakables.
      * componentTypeManager = Component type manager where all used component types are
      *                        registered.
      * entityManager        = The entity manager.
-     * getPrototypeSource   = A deleg that takes a resource descriptor (which has the
-     *                        Resource.Descriptor type of the Resource type parameter of
+     * getPrototypeSource   = A deleg that takes a resource descriptor (of type
+     *                        Resource.Descriptor of the Resource type parameter of
      *                        BasePrototypeManager) and returns a Source storing an entity
      *                        prototype. Returned source may be null
-     *                        (Source.isNull == true) if the source could not be loaded.
+     *                        `Source.isNull == true` if the source could not be loaded.
      */
     this(Source, Policy)(ComponentTypeManager!(Source, Policy) componentTypeManager,
                          EntityManager!Policy entityManager,
@@ -203,7 +203,6 @@ public:
         super(&loadResource);
     }
 
-    /// Deallocate all resource arrays.
     override void clear() @trusted
     {
         super.clear();
@@ -211,17 +210,21 @@ public:
     }
 }
 
-/// Manages entity prototypes defined in files or inline in a Source.
+/// Manages entity prototypes defined in files or inline in a [Source](../concepts/source.html).
 class PrototypeManager: BasePrototypeManager!EntityPrototypeResource
 {
 public:
     /** Construct a PrototypeManager.
      *
-     * Params: Source               = Type of source to load prototypes from (e.g. YAMLSource)
+     * Params: Source               = [Source](../concepts/source.html) type to load
+     *                                prototypes from (e.g.
+     *                                [tharsis-full](https://github.com/kiith-sa/tharsis-full)
+     *                                YAMLSource)
      *         Policy               = Policy used with the entity manager, specifying
      *                                compile-time tweakables.
-     *         componentTypeManager = Component type manager where all used component
-     *                                types are registered.
+     *         componentTypeManager = Component type manager where all used 
+     *                                [component](../concepts/component.html) types are
+     *                                registered.
      *         entityManager        = The entity manager.
      */
     this(Source, Policy)

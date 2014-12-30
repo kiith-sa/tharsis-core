@@ -17,6 +17,8 @@ import tharsis.entity.componenttypeinfo;
 import tharsis.util.mallocarray;
 
 
+package:
+
 /** A buffer storing all (either past or future) components of one component type.
  *
  * Components are stored as raw bytes. They are written by writing to memory accessed

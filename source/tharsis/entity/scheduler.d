@@ -20,10 +20,16 @@ import tharsis.util.mallocarray;
 version(X86)    { version = cpuidSupported; }
 version(X86_64) { version = cpuidSupported; }
 
-/** Determine the best thread count for the current CPU and return it.
+
+// TODO (long-term) one useful thing would be for user to provide 'desired frame duration'
+//      (when run out of time it, need to disable some processes) 2014-10-16
+/** Determine the "best" thread count for the current CPU and return it.
+ *
+ * Currently, this is the number of threads the CPU can handle simultaneously, e.g.
+ * 8 for an AMD Piledriver octal-core or 4 for a hyper-threaded dual-core Intel i3.
  *
  * Tharsis will use this number of threads (including the main thread), unless overridden
- * with EntityManager constructor.
+ * in Scheduler constructor.
  */
 size_t autodetectThreadCount() @safe nothrow @nogc
 {
@@ -32,15 +38,14 @@ size_t autodetectThreadCount() @safe nothrow @nogc
         import core.cpuid;
         return threadsPerCPU();
     }
-    else { return 4; }
+    else { return fallbackThreadCount; }
 }
 
-package:
+/// Number of threads to use if we can't determine number of cores (very unlikely case).
+enum fallbackThreadCount = 4;
 
-/// The default number of threads if we have no idea (e.g. on ARM - 4 is a good guess).
-enum defaultThreadCount = 4;
-
-/// Determines which Processes should run in which threads, as well as the thread count.
+/// Determines which [Processes](../concepts/process.html) should run in which threads, as
+/// well as the thread count.
 final class Scheduler
 {
 private:
@@ -70,13 +75,12 @@ private:
     SchedulerDiagnostics diagnostics_;
 
 public:
-    /** Construct a Scheduler.
+    /** Construct a Scheduler and use specified number of threads.
      *
      * Params:
      *
      * overrideThreadCount = If non-zero, thread count will be set to exactly this value.
-     *                       Otherwise, it will be autodetected (e.g. 4 on a quad-core,
-     *                       8 on an octal-core or on a quad-core with hyper threading)
+     *                       Otherwise, it will be determined by autodetectThreadCount().
      */
     this(size_t overrideThreadCount = 0) @safe nothrow
     {
@@ -100,16 +104,18 @@ public:
 
     /** Set the scheduling algorithm to use.
      *
-     * Note: destroys the previously used scheduling algorithm (either default or passed
-     * in previous schedulingAlgorithm call.)
+     * Note:
      *
-     * Must not be called while EntityManager.executeFrame() is running.
+     * Destroys the previously used scheduling algorithm (either initial default
+     * algorithm or an algoritm passed in previous schedulingAlgorithm call.)
+     *
+     * **Must not be called while EntityManager.executeFrame() is running.**
      * 
      * Params:
      *
-     * algorithm = The algorithm to use. Note that the Scheduler takes an ownership of
-     *             this object, and will handle its destruction. Once passed, the
-     *             algorithm must not be modified by the user.
+     * algorithm = Algorithm to use. Scheduler takes an ownership of this object and will
+     *             handle its destruction. Once passed, the algorithm **must not be
+     *             modified by the caller.**
      */
     void schedulingAlgorithm(SchedulingAlgorithm algorithm) @trusted nothrow
     {
@@ -121,26 +127,26 @@ public:
     size_t threadCount() @safe pure nothrow const @nogc { return threadCount_; }
 
 package:
-    /// Get the index of the thread a process with index processIndex should run in.
+    // Get the index of the thread a process with index processIndex should run in.
     uint processToThread(size_t processIndex) @safe pure nothrow const @nogc
     {
         return processToThread_[processIndex];
     }
 
-    /// Number of frames specified thread has had no processes scheduled to run in it.
+    // Number of frames specified thread has had no processes scheduled to run in it.
     uint idleFrames(size_t threadIndex) @safe pure nothrow const @nogc
     {
         return idleFrames_[threadIndex];
     }
 
-    /// Get diagnostics data.
+    // Get diagnostics data.
     ref const(SchedulerDiagnostics) diagnostics() @safe pure nothrow const @nogc
     {
         return diagnostics_;
     }
 
     import tharsis.prof;
-    /** Reschedule processes between threads.
+    /* Reschedule processes between threads.
      *
      * Provides information for Scheduler to decide how to assign Processes to threads.
      *
@@ -149,9 +155,9 @@ package:
      * processes   = Processes to schedule, wrapped in process wrappers. These are the
      *               processes used *this update* (it's possible that registered processes
      *               could change between updates in future).
-     * diagnostics = EntityManager diagnostics from the previous game update. Includes
-     *               time durations spent executing individual processes during the
-     *               previous update.
+     * diagnostics = EntityManager diagnostics from the previous frame. Includes time
+     *               durations spent executing individual processes during the previous
+     *               frame.
      * profiler    = Profiler to record scheduling overhead with.
      */
     void updateSchedule(Policy)(AbstractProcessWrapper!Policy[] processes,
@@ -218,24 +224,21 @@ import std.typecons: Flag, Yes, No;
 import tharsis.std.internal.scopebuffer;
 
 /// Information about a process for scheduling purposes.
-struct ProcessInfo
+private struct ProcessInfo
 {
     /// Thread the process is assigned to. uint.max if not assigned yet.
     uint assignedThread = uint.max;
-    /// ID (index) of the process.
+    /// ID (index used by EntityManager) of the process.
     size_t processIdx = uint.max;
 }
 
 
 /** Base class for scheduling algorithms. Can be derived to implement custom algorithms.
  *
- * The actual algorithms are used by calling beginScheduling(), passing parameters by
+ * The algorithm is used by calling beginScheduling(), passing parameters by
  * addProcess()/increaseThreadUsage() and running the algorithm itself in endScheduling().
- *
  * The only reason for a persistent class that exists between multiple
- * beginScheduling()/endScheduling() pairs is to reuse resources (allocated memory);
- * it would also be possible to separate the scheduling algorithms into short-lived RAII
- * structs that access these resources through an external struct.
+ * beginScheduling()/endScheduling() calls is to reuse resources (allocated memory).
  */
 class SchedulingAlgorithm
 {
@@ -244,22 +247,22 @@ private:
     bool scheduling_ = false;
 
 protected:
-    /// Number of threads we're scheduling for.
+    // Number of threads we're scheduling for.
     const size_t threadCount_;
-    /// Estimated usage (run time) of inidivual threads (depends on which processes run where).
+    // Estimated usage (run time) of inidivual threads (depends on which processes run where).
     ulong[] threadUsage_;
 
-    /// Default storage for procInfo_.
+    // Default storage for procInfo_.
     ProcessInfo[64] procInfoScratch_;
-    /** Info about processes to schedule (added by addProcess(), cleared by beginScheduling()).
+    /* Info about processes to schedule (added by addProcess(), cleared by beginScheduling()).
      *
      * Order of processes here may not match their IDs/indices, see procIDToProcInfo_.
      */
     ScopeBuffer!ProcessInfo procInfo_;
 
-    /// Default storage for procIDToProcInfo_.
+    // Default storage for procIDToProcInfo_.
     uint[64] procIDToProcInfoScratch_;
-    /** Translates process IDs (indices) to their corresponding procInfo_ elements.
+    /* Translates process IDs (indices) to their corresponding procInfo_ elements.
      *
      * procIDToProcInfo_[processID] is the procInfo_ index of process with that ID.
      * Note that this relies on process IDs being 'small', as they are now since they
@@ -268,7 +271,7 @@ protected:
     ScopeBuffer!uint procIDToProcInfo_;
 
 public:
-    /** Construct a scheduling algorithm for specified number of threads.
+    /** Initialize base scheduling algorithm state.
      *
      * Params:
      *
@@ -292,12 +295,12 @@ public:
         procIDToProcInfo_.free();
     }
 
-    /// Get the name of the algorithm.
+    /// Get name of the scheduling algorithm.
     string name() @safe pure nothrow const @nogc { assert(false, "Must be overridden"); }
 
-    /** Get the estimated usage (run time) of thread with specified index.
+    /** Get estimated usage (run time) of thread with specified index.
      *
-     * Can only be called after endScheduling().
+     * Note: Can only be called after endScheduling().
      */
     final ulong estimatedThreadUsage(size_t thread) @safe pure nothrow const @nogc
     {
@@ -307,7 +310,7 @@ public:
 
     /** Get the thread the process with specified ID (index) should run in.
      *
-     * Can only be called after endScheduling().
+     * Note: Can only be called after endScheduling().
      */
     final uint assignedThread(size_t process) @safe pure nothrow const @nogc
     out(result)
@@ -324,7 +327,7 @@ public:
     }
 
 protected:
-    /// Internal implementation of endScheduling(). Runs the scheduling algorithm.
+    /// Run the scheduling algorithm.
     Flag!"approximate" doScheduling(TimeEstimator estimator) @safe nothrow
     {
         // Implemented because of a DMD bug as of 2.066
@@ -347,9 +350,10 @@ protected:
 package final:
     /* Increase thread usage (estimated run time) for specified thread.
      *
-     * Can only be called between beginScheduling() and endScheduling(). Used to tell the
-     * scheduling algorithm about thread usage by processes that are not scheduled by the
-     * algorithm (e.g. processes fixed to specific threads).
+     * Used to tell the scheduling algorithm about thread usage by processes that are not
+     * scheduled by the algorithm (e.g. processes fixed to specific threads).
+     *
+     * Note: Can only be called between beginScheduling() and endScheduling(). 
      */
     void increaseThreadUsage(size_t thread, ulong usage) @safe pure nothrow @nogc
     {
@@ -447,13 +451,12 @@ class DumbScheduling: SchedulingAlgorithm
 /** Randomized backtracking that decides randomly on which branch of the call tree to
  * take, but covers all branches that it didn't backtrack from.
  *
- * Takes multiple 'attempts' to backtrack, each with limited 'time' (the number of
- * recursive backtrack calls to give up after). Each next attempt remembers the best
- * result of the previous attempt to cull the backtrack tree early, and uses different
- * random order to traverse the branches (i.e. tries assigning threads to processes in a
- * different order).
+ * Takes multiple *attempts* to backtrack, each with limited *time* (maximum number of
+ * recursive backtrack calls allowed). Every next attempt remembers the best result of the
+ * previous attempt to cull the backtrack tree early, and uses different random order to
+ * traverse the branches (i.e. tries assigning threads to processes in a different order).
  *
- * If attempts are exhausted, the best result so far is used.
+ * If attempts are exhausted, the best result computed so far is used.
  */
 class RandomBacktrackScheduling: SchedulingAlgorithm
 {
@@ -706,9 +709,7 @@ class PlainBacktrackScheduling: SchedulingAlgorithm
     }
 }
 
-/** Longest processing time scheduling algorithm.
- *
- * Fast and gets decent results.
+/** Longest processing time scheduling algorithm. Fast and gets decent results.
  */
 class LPTScheduling: SchedulingAlgorithm
 {
@@ -771,20 +772,21 @@ public:
 }
 
 
+public:
 // More time estimator ideas:
 // - average time (of last N frames)
 // - neural net for each process (hard, usefullness uncertain)
 /** Base class for time estimators.
  *
- * Time estimators estimate the time each Process will take to execute during the next
- * game update.
+ * Time estimators estimate the time each [Process](../concepts/process.html) will take to
+ * execute during the next frame.
  */
 abstract class TimeEstimator
 {
 protected:
     // Default storage for timeEstimates_.
     ulong[64] timeEstimatesScratch_;
-    /// Estimated times for processes are stored here, indexed by process indices.
+    // Estimated times for processes are stored here, indexed by process indices.
     ScopeBuffer!ulong timeEstimates_;
 
 public:
@@ -800,6 +802,15 @@ public:
         timeEstimates_.free();
     }
 
+    /// Update time estimates based on process diagnostics from the last frame.
+    void updateEstimates(const ProcessDiagnostics[] processes) @trusted nothrow;
+
+    /// Get the estimated process run duration for process with specified index.
+    final ulong processDuration(size_t processIdx) @trusted pure nothrow const @nogc
+    {
+        return timeEstimates_[processIdx];
+    }
+
     /** Get diagnostics such as estimation errors.
      *
      * Params:
@@ -807,7 +818,7 @@ public:
      * entityManager = Entity manager diagnostics from previous frame such as process durations.
      * scheduler     = Scheduler diagnostics from previous frame.
      */
-    TimeEstimatorDiagnostics diagnostics(Policy)
+    final TimeEstimatorDiagnostics diagnostics(Policy)
         (ref const EntityManagerDiagnostics!Policy entityManager,
          ref const SchedulerDiagnostics scheduler)
         @trusted pure nothrow @nogc
@@ -838,17 +849,10 @@ public:
         result.averageProcessUnderestimateRatio = underestimateRatioSum / processCount;
         return result;
     }
-
-    /// Update time estimates based on process diagnostics from the last game update.
-    void updateEstimates(const ProcessDiagnostics[] processes) @trusted nothrow;
-
-    /// Get the estimated process run duration for process with specified index.
-    final ulong processDuration(size_t processIdx) @trusted pure nothrow const @nogc
-    {
-        return timeEstimates_[processIdx];
-    }
 }
 
+// TODO If we have many time estimators and allow changing them in future, this may be public
+private:
 /// Simple time estimator that expects a process to take the same time it took the last frame.
 final class SimpleTimeEstimator: TimeEstimator
 {
@@ -871,17 +875,17 @@ final class SimpleTimeEstimator: TimeEstimator
 /** Time estimator that quickly increases estimated time at a spike and gradually
  * decreases it as the measured time gets lower.
  *
- * If a process takes longer than estimated time to run, the new estimate will be set to
- * the time it took to run. If it takes less than estimated time to run, the estimate will
- * be decreased by $(D (estimated - measured) * estimateFalloff_). estimateFalloff_ is a
- * normalized value specified at constructor. E.g. if estimateFalloff_ is 0.1, any time
- * the measured time is lower than estimated the estimate will be decreased by 10% of the
- * difference between estimated and measured time.
+ * If a process takes more time than expected to run, the new estimate will be set that 
+ * new time. If it takes less than expected, the estimate will be decreased by
+ * `(estimated - measured) * estimateFalloff`. `estimateFalloff` is a normalized value
+ * passed to constructor. E.g. if `estimateFalloff` is `0.1`, any time the measured time
+ * is lower than estimated the estimate will be decreased by 10% of the difference between
+ * estimated and measured time.
  */
 final class StepTimeEstimator: TimeEstimator
 {
 private:
-    /** A normalized number specifying how fast can estimated time decrease when process
+    /* A normalized number specifying how fast can estimated time decrease when process
      * time is overestimated.
      */
     float estimateFalloff_;
@@ -892,9 +896,9 @@ public:
      * Params:
      *
      * estimateFalloff = normalized number specifying how fast can estimated time decrease
-     *                   when process time is overestimated. E.g. ie 0.1, the estimated
-     *                   time will decrease by 10% of the difference between estimated
-     *                   and measured time (if estimated was longer than measured).
+     *                   when process time is overestimated. E.g. if `0.1`, estimated time
+     *                   will decrease by 10% of the difference between estimated and
+     *                   measured time (if estimated was longer than measured).
      */
     this(float estimateFalloff) @safe pure nothrow @nogc
     {
