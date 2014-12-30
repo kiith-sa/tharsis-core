@@ -1,0 +1,299 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Component &mdash; Tharsis Core 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/redcloud.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Noticia+Text|Open+Sans|Droid+Sans+Mono" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/cloud.js"></script>
+    <link rel="top" title="Tharsis Core 0.1 documentation" href="../index.html" />
+    <link rel="next" title="Source" href="source.html" />
+    <link rel="prev" title="Process" href="process.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head>
+  <body>
+    <div class="relbar-top">
+        
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../contents.html" title="Table Of Contents"
+             accesskey="C">toc</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="source.html" title="Source"
+             accesskey="N">next</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="process.html" title="Process"
+             accesskey="P">previous</a> &nbsp; &nbsp;</li>
+    <li><a href="../index.html">Tharsis Core 0.1 documentation</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="component">
+<span id="id1"></span><h1>Component<a class="headerlink" href="#component" title="Permalink to this headline">¶</a></h1>
+<p><strong>(WIP)</strong></p>
+<div class="section" id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="multicomponents">
+<span id="multicomponent"></span><h2>Multicomponents<a class="headerlink" href="#multicomponents" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="component-properties">
+<h2>Component properties<a class="headerlink" href="#component-properties" title="Permalink to this headline">¶</a></h2>
+<p>Propeties with a custom attribute can be accessed using the <tt class="docutils literal"><span class="pre">properties()</span></tt> method of
+<tt class="docutils literal"><span class="pre">ComponentTypeInfo</span></tt>. This is used e.g. in <tt class="docutils literal"><span class="pre">tharsis.defaults.processes.SpawnerProcess</span></tt>
+to implement relative properties where a property of a spawned entity is affected by the
+same property of the spawner.</p>
+<div class="section" id="default-values-of-component-properties">
+<h3>Default values of component properties<a class="headerlink" href="#default-values-of-component-properties" title="Permalink to this headline">¶</a></h3>
+<p>If a property can not be found in the <a class="reference internal" href="source.html#source"><em>Source</em></a> used to load the component, and the
+property is not a resource handle, the default value of that property (<tt class="docutils literal"><span class="pre">.init</span></tt>) is used.</p>
+<p>Note that in D, default values of floating-point types are NaN so you almost certainly
+want to specify default values for floating-point properties.</p>
+</div>
+</div>
+<div class="section" id="example-component-types">
+<h2>Example component types<a class="headerlink" href="#example-component-types" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="normal-non-multi-component-example">
+<h3>Normal (non-multi) component example<a class="headerlink" href="#normal-non-multi-component-example" title="Permalink to this headline">¶</a></h3>
+<div class="code d highlight-python"><div class="highlight"><pre>/// Accelerates and decelerates entities.
+struct EngineComponent
+{
+    /// Acceleration of the engine.
+    float acceleration = 0.0f;
+    /// Max speed the entity can be accelerated to by this engine (in any direction).
+    float maxSpeed = 0.0f;
+
+    /// Small for testing. Will increase.
+    enum minPrealloc = 64;
+
+    /// Quite a few entities have engines.
+    enum minPreallocPerEntity = 0.5;
+
+    enum ushort ComponentTypeID = userComponentTypeID!6;
+}
+</pre></div>
+</div>
+</div>
+<div class="section" id="multicomponent-example">
+<h3>MultiComponent example<a class="headerlink" href="#multicomponent-example" title="Permalink to this headline">¶</a></h3>
+<div class="code d highlight-python"><div class="highlight"><pre>struct WeaponMultiComponent
+{
+    /// Handle to the resource storing the weapon itself.
+    ResourceHandle!WeaponResource weapon;
+
+    /// Time until next weapon burst. If lower than 0, it&#39;s time to fire/spawn the projectiles.
+    float secsTillBurst = 0.0f;
+
+    /// Allocate space for at least 64 WeaponMultiComponents.
+    enum minPrealloc = 64;
+
+    /// Most entities have 1 weapon. Some have 0, some have 2, very few have more.
+    enum minPreallocPerEntity = 1.0;
+
+    /// No more than 32 WeaponMultiComponents per entity.
+    enum maxComponentsPerEntity = 32;
+
+    enum ushort ComponentTypeID = userComponentTypeID!8;
+}
+</pre></div>
+</div>
+<ul class="simple">
+<li>The component has a single non-resource property, <tt class="docutils literal"><span class="pre">secsTillBurst</span></tt>, which has
+a default value of <tt class="docutils literal"><span class="pre">0.0f</span></tt>.</li>
+</ul>
+<p><a class="reference internal" href="source.html#source"><em>Source</em></a> of a component of this type (using <tt class="docutils literal"><span class="pre">tharsis.defaults.yamlsource.YAMLSource</span></tt>):</p>
+<div class="code yaml highlight-python"><div class="highlight"><pre>weaponMulti:
+  - weapon: weapon.yaml
+  - secsTillBurst: 0.3
+    weapon: weapon.yaml
+</pre></div>
+</div>
+<ul class="simple">
+<li>There are two weapon components. Both refer to the same weapon resource,
+<tt class="docutils literal"><span class="pre">weapon.yaml</span></tt>. The first weapon doesn&#8217;t specify <tt class="docutils literal"><span class="pre">secsTillBurst</span></tt>, so the default
+value of <tt class="docutils literal"><span class="pre">0.0f</span></tt> is used. The second weapon sets the value of <tt class="docutils literal"><span class="pre">secsTillBurst</span></tt>
+explicitly to <tt class="docutils literal"><span class="pre">0.3</span></tt>.</li>
+</ul>
+</div>
+<div class="section" id="enum-ushort-componenttypeid">
+<span id="componenttypeid"></span><h3><tt class="docutils literal"><span class="pre">enum</span> <span class="pre">ushort</span> <span class="pre">ComponentTypeID</span></tt><a class="headerlink" href="#enum-ushort-componenttypeid" title="Permalink to this headline">¶</a></h3>
+</div>
+</div>
+<div class="section" id="component-tweakables">
+<h2>Component tweakables<a class="headerlink" href="#component-tweakables" title="Permalink to this headline">¶</a></h2>
+<p>A component type can declare various <tt class="docutils literal"><span class="pre">enum</span></tt> values to tell Tharsis how to treat the
+components of that type. This is a reference of these tweakables.</p>
+<p>Usage example:</p>
+<div class="code d highlight-python"><div class="highlight"><pre>struct WeaponMultiComponent
+{
+    ...
+
+    /// Allocate space for at least 64 WeaponMultiComponents.
+    enum minPrealloc = 64;
+
+    ...
+}
+</pre></div>
+</div>
+<table border="1" class="docutils">
+<colgroup>
+<col width="6%" />
+<col width="25%" />
+<col width="69%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>uint</td>
+<td>minPrealloc</td>
+<td><p class="first">The minimum number of components of this type to preallocate
+space for.</p>
+<p class="last">Default: <tt class="docutils literal"><span class="pre">0</span></tt></p>
+</td>
+</tr>
+<tr class="row-even"><td>float</td>
+<td>minPreallocPerEntity</td>
+<td><p class="first">Number of components to preallocate space for relative to
+entity count. E.g. if this is <tt class="docutils literal"><span class="pre">0.1</span></tt> and there are <tt class="docutils literal"><span class="pre">10000</span></tt>
+entities, space for at least <tt class="docutils literal"><span class="pre">1000</span></tt> components of this type
+will be allocated.</p>
+<p class="last">Default: <tt class="docutils literal"><span class="pre">0.0f</span></tt></p>
+</td>
+</tr>
+<tr class="row-odd"><td>uint</td>
+<td>maxComponentsPerEntity</td>
+<td><p class="first">(MultiComponents only) no entity will have more than this
+many components of this type.</p>
+<p class="last">Default: N/A (must be specified explicitly)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="lifecomponent">
+<span id="life-component"></span><h2>LifeComponent<a class="headerlink" href="#lifecomponent" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><div class="sphinxlocaltoc">
+    <h3><a href="../index.html">Page contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Component</a><ul>
+<li><a class="reference internal" href="#example">Example</a></li>
+<li><a class="reference internal" href="#multicomponents">Multicomponents</a></li>
+<li><a class="reference internal" href="#component-properties">Component properties</a><ul>
+<li><a class="reference internal" href="#default-values-of-component-properties">Default values of component properties</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#example-component-types">Example component types</a><ul>
+<li><a class="reference internal" href="#normal-non-multi-component-example">Normal (non-multi) component example</a></li>
+<li><a class="reference internal" href="#multicomponent-example">MultiComponent example</a></li>
+<li><a class="reference internal" href="#enum-ushort-componenttypeid"><tt class="docutils literal"><span class="pre">enum</span> <span class="pre">ushort</span> <span class="pre">ComponentTypeID</span></tt></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#component-tweakables">Component tweakables</a></li>
+<li><a class="reference internal" href="#lifecomponent">LifeComponent</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div class="sphinxprev">
+    <h4>Previous page</h4>
+    <p class="topless"><a href="process.html"
+                          title="Previous page">&larr; Process</a></p>
+  </div>
+  <div class="sphinxnext">
+    <h4>Next page</h4>
+    <p class="topless"><a href="source.html"
+                          title="Next page">&rarr; Source</a></p>
+  </div>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/concepts/component.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../contents.html" title="Table Of Contents"
+             >toc</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="source.html" title="Source"
+             >next</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="process.html" title="Process"
+             >previous</a> &nbsp; &nbsp;</li>
+    <li><a href="../index.html">Tharsis Core 0.1 documentation</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer">
+        &copy; Copyright 2014, Ferdinand Majerech.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

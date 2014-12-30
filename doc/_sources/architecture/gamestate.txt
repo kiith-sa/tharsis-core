@@ -1,0 +1,8 @@
+.. _game-state:
+
+==========
+Game state
+==========
+
+
+.. TODO explain past, future state

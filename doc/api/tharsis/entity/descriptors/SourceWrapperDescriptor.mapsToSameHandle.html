@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<link rel="stylesheet" type="text/css" href="../../../style.css"/><script src="../../../highlight.pack.js"></script>
+<title>mapsToSameHandle</title>
+<base href="../../../"/>
+<script src="search.js"></script>
+</head>
+<body>
+<div class="main">
+<div class="toc">
+<div class="toc-additional">
+<div class="section">
+<ul>
+<li><a href="../index.html">Documentation home</a>
+</li>
+<li><a href="https://github.com/kiith-sa/tharsis-core">Tharsis GitHub</a>
+</li>
+</ul>
+
+</div>
+
+</div>
+<ul>
+<li><span class="package">tharsis</span>
+<ul>
+<li><span class="package">tharsis.entity</span>
+<ul>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/componenttypeinfo.html">componenttypeinfo</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/componenttypemanager.html">componenttypemanager</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/descriptors.html">descriptors</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/diagnostics.html">diagnostics</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entity.html">entity</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entityid.html">entityid</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entitymanager.html">entitymanager</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entitypolicy.html">entitypolicy</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entityprototype.html">entityprototype</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entityrange.html">entityrange</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/lifecomponent.html">lifecomponent</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/processtypeinfo.html">processtypeinfo</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/prototypemanager.html">prototypemanager</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/resourcemanager.html">resourcemanager</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/scheduler.html">scheduler</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/source.html">source</a></li>
+</ul></li>
+</ul></li>
+</ul>
+</div>
+<div class="breadcrumbs">
+<table id="results"></table>
+<a class="home" href=index.html>⌂</a>
+<input type="search" id="search" placeholder="Search" onkeyup="searchSubmit(this.value, event)"/>
+<small>tharsis.entity.<a href=tharsis/entity/descriptors.html>descriptors</a>.</small><span class="highlight"><a href=tharsis/entity/descriptors/SourceWrapperDescriptor.html.html>SourceWrapperDescriptor</a>.mapsToSameHandle</span></div>
+<div class="content">
+<pre><code>public bool mapsToSameHandle(ref const(SourceWrapperDescriptor) rhs) @safe pure nothrow const @nogc
+</code></pre><div class="section">
+<p>Determine if this descriptor maps to the same resource handle as another descriptor.
+</p>
+
+</div>
+<div class="section">
+<p>Usually, this returns <code class="prettyprint">true</code> if two descriptors describe one resource (e.g. if they
+ are equal). SourceWrapperDescriptors are assumed to never map to the same handle
+ (the resource is loaded directly from a subnode of a larger resource's definition).
+</p>
+<p> The resource manager uses this to figure whether to load a new resource or reuse an
+ existing one (if a descriptor maps to the same handle as a descriptor of already
+ existing resource) when a resource handle is requested.
+</p>
+
+</div>
+
+<script>hljs.initHighlightingOnLoad();</script>
+</div>
+</div>
+</body>
+</html>

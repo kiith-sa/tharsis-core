@@ -1,370 +1,112 @@
-
 <!DOCTYPE html>
 <html>
-	<head>
-		<meta charset="UTF-8"/><!-- using block title in layout.dt--><!-- using block ddox.defs in ddox.layout.dt--><!-- using block ddox.title in ddox.layout.dt-->
-		<title>Module tharsis.entity.componenttypeinfo</title>
-		<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
-		<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
-		<script type="text/javascript" src="../../scripts/jquery.js">/**/</script>
-		<script type="text/javascript" src="../../prettify/prettify.js">/**/</script>
-		<script type="text/javascript" src="../../scripts/ddox.js">/**/</script>
-	</head>
-	<body onload="prettyPrint(); setupDdox();">
-		<nav id="main-nav"><!-- using block navigation in layout.dt-->
-						<ul>
-						<li>
-							<a href="../../tharsis/entity/componentbuffer.html">tharsis.entity.componentbuffer</a>
-						</li>
-						<li>
-							<a href="../../tharsis/entity/componenttypeinfo.html">tharsis.entity.componenttypeinfo</a>
-						</li>
-						<li>
-							<a href="../../tharsis/entity/componenttypemanager.html">tharsis.entity.componenttypemanager</a>
-						</li>
-						<li>
-							<a href="../../tharsis/entity/descriptors.html">tharsis.entity.descriptors</a>
-						</li>
-						<li>
-							<a href="../../tharsis/entity/entity.html">tharsis.entity.entity</a>
-						</li>
-						<li>
-							<a href="../../tharsis/entity/entityid.html">tharsis.entity.entityid</a>
-						</li>
-						<li>
-							<a href="../../tharsis/entity/entitymanager.html">tharsis.entity.entitymanager</a>
-						</li>
-						<li>
-							<a href="../../tharsis/entity/entitypolicy.html">tharsis.entity.entitypolicy</a>
-						</li>
-						<li>
-							<a href="../../tharsis/entity/entityprototype.html">tharsis.entity.entityprototype</a>
-						</li>
-						<li>
-							<a href="../../tharsis/entity/entityrange.html">tharsis.entity.entityrange</a>
-						</li>
-						<li>
-							<a href="../../tharsis/entity/lifecomponent.html">tharsis.entity.lifecomponent</a>
-						</li>
-						<li>
-							<a href="../../tharsis/entity/processtypeinfo.html">tharsis.entity.processtypeinfo</a>
-						</li>
-						<li>
-							<a href="../../tharsis/entity/processwrapper.html">tharsis.entity.processwrapper</a>
-						</li>
-						<li>
-							<a href="../../tharsis/entity/prototypemanager.html">tharsis.entity.prototypemanager</a>
-						</li>
-						<li>
-							<a href="../../tharsis/entity/resourcemanager.html">tharsis.entity.resourcemanager</a>
-						</li>
-						<li>
-							<a href="../../tharsis/entity/source.html">tharsis.entity.source</a>
-						</li>
-						<li>
-							<a href="../../tharsis/util/alloc.html">tharsis.util.alloc</a>
-						</li>
-						<li>
-							<a href="../../tharsis/util/array.html">tharsis.util.array</a>
-						</li>
-						<li>
-							<a href="../../tharsis/util/bitmanip.html">tharsis.util.bitmanip</a>
-						</li>
-						<li>
-							<a href="../../tharsis/util/debughacks.html">tharsis.util.debughacks</a>
-						</li>
-						<li>
-							<a href="../../tharsis/util/interfaces.html">tharsis.util.interfaces</a>
-						</li>
-						<li>
-							<a href="../../tharsis/util/mallocarray.html">tharsis.util.mallocarray</a>
-						</li>
-						<li>
-							<a href="../../tharsis/util/math.html">tharsis.util.math</a>
-						</li>
-						<li>
-							<a href="../../tharsis/util/noncopyable.html">tharsis.util.noncopyable</a>
-						</li>
-						<li>
-							<a href="../../tharsis/util/pagedarray.html">tharsis.util.pagedarray</a>
-						</li>
-						<li>
-							<a href="../../tharsis/util/qualifierhacks.html">tharsis.util.qualifierhacks</a>
-						</li>
-						<li>
-							<a href="../../tharsis/util/stackbuffer.html">tharsis.util.stackbuffer</a>
-						</li>
-						<li>
-							<a href="../../tharsis/util/testing.html">tharsis.util.testing</a>
-						</li>
-						<li>
-							<a href="../../tharsis/util/traits.html">tharsis.util.traits</a>
-						</li>
-						<li>
-							<a href="../../tharsis/util/typecons.html">tharsis.util.typecons</a>
-						</li>
-						<li>
-							<a href="../../tharsis/util/typetuple.html">tharsis.util.typetuple</a>
-						</li>
-						</ul>
-				<noscript>
-					<p style="color: red">The search functionality needs JavaScript enabled</p>
-				</noscript>
-				<div id="symbolSearchPane" style="display: none">
-					<p>
-						<input id="symbolSearch" type="text" placeholder="Search for symbols" onchange="performSymbolSearch(24);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
-					</p>
-	<ul id="symbolSearchResults" style="display: none"></ul>
-	<script type="application/javascript" src="../../symbols.js"></script>
-	<script type="application/javascript">
-var symbolSearchRootDir = "../../";
-$('#symbolSearchPane').show();
-	</script>
-				</div>
-				<script type="text/javascript" src="../../scripts/mousetrap.js"></script>
-				<script type="text/javascript">
-$(document).ready(function() {
-	Mousetrap.bind('s', function(e) {
-		$("#symbolSearch").focus();
-		return false;
-	});
-});
-				</script>
-		</nav>
-		<div id="main-contents">
-			<h1>Module tharsis.entity.componenttypeinfo</h1><!-- using block body in layout.dt--><!-- using block ddox.description in ddox.layout.dt-->
-			<p>Type information about a component type.
+<head>
+<meta charset="utf-8"/>
+<link rel="stylesheet" type="text/css" href="../../style.css"/><script src="../../highlight.pack.js"></script>
+<title>tharsis.entity.componenttypeinfo</title>
+<base href="../../"/>
+<script src="search.js"></script>
+</head>
+<body>
+<div class="main">
+<div class="toc">
+<div class="toc-additional">
+<div class="section">
+<ul>
+<li><a href="../index.html">Documentation home</a>
+</li>
+<li><a href="https://github.com/kiith-sa/tharsis-core">Tharsis GitHub</a>
+</li>
+</ul>
+
+</div>
+
+</div>
+<ul>
+<li><span class="package">tharsis</span>
+<ul>
+<li><span class="package">tharsis.entity</span>
+<ul>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/componenttypeinfo.html">componenttypeinfo</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/componenttypemanager.html">componenttypemanager</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/descriptors.html">descriptors</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/diagnostics.html">diagnostics</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entity.html">entity</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entityid.html">entityid</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entitymanager.html">entitymanager</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entitypolicy.html">entitypolicy</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entityprototype.html">entityprototype</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entityrange.html">entityrange</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/lifecomponent.html">lifecomponent</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/processtypeinfo.html">processtypeinfo</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/prototypemanager.html">prototypemanager</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/resourcemanager.html">resourcemanager</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/scheduler.html">scheduler</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/source.html">source</a></li>
+</ul></li>
+</ul></li>
+</ul>
+</div>
+<div class="breadcrumbs">
+<table id="results"></table>
+<a class="home" href=index.html>⌂</a>
+<input type="search" id="search" placeholder="Search" onkeyup="searchSubmit(this.value, event)"/>
+<small>tharsis.entity.componenttypeinfo</small></div>
+<div class="content">
+<div class="section">
+<p>Type information about a component type.
 </p>
-<!-- using block ddox.sections in ddox.layout.dt-->
-			<section></section><!-- using block ddox.members in ddox.layout.dt-->
-			<section>
-				<h2>Functions</h2>
-				<table>
-					<col class="caption"/>
-					<tr>
-						<th>Name</th>
-						<th>Description</th>
-					</tr>
-					<tr>
-						<td>
-							<a id="componentIDs" class="public" href="../../tharsis/entity/componenttypeinfo/componentIDs.html">
-								<code>componentIDs</code>
-							</a>
-						</td>
-						<td>Get a sorted array of IDs of specified component types.
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a id="isResourceHandle" class="public" href="../../tharsis/entity/componenttypeinfo/isResourceHandle.html">
-								<code>isResourceHandle</code>
-							</a>
-						</td>
-						<td>Is Component.property a resource handle?
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a id="maxComponentsPerEntity" class="public" href="../../tharsis/entity/componenttypeinfo/maxComponentsPerEntity.html">
-								<code>maxComponentsPerEntity</code>
-							</a>
-						</td>
-						<td>Get the maximum possible components of this type at entity may have.
-</td>
-					</tr>
-				</table>
-			</section>
-			<section>
-				<h2>Structs</h2>
-				<table>
-					<col class="caption"/>
-					<tr>
-						<th>Name</th>
-						<th>Description</th>
-					</tr>
-					<tr>
-						<td>
-							<a id="ComponentPropertyInfo" class="public" href="../../tharsis/entity/componenttypeinfo/ComponentPropertyInfo.html">
-								<code>ComponentPropertyInfo</code>
-							</a>
-						</td>
-						<td>Type information about a component type property (data member).
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a id="ComponentTypeInfo" class="public" href="../../tharsis/entity/componenttypeinfo/ComponentTypeInfo.html">
-								<code>ComponentTypeInfo</code>
-							</a>
-						</td>
-						<td>Type information about a component type.
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a id="ImmutableRawComponent" class="public" href="../../tharsis/entity/componenttypeinfo/ImmutableRawComponent.html">
-								<code>ImmutableRawComponent</code>
-							</a>
-						</td>
-						<td>An immutable equivalent of <a href="../../tharsis/entity/componenttypeinfo/RawComponent.html"><code class="prettyprint lang-d">RawComponent</code></a>.
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a id="PropertyName" class="public" href="../../tharsis/entity/componenttypeinfo/PropertyName.html">
-								<code>PropertyName</code>
-							</a>
-						</td>
-						<td>Used as an user-defined attribute for component properties to override the
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a id="RawComponent" class="public" href="../../tharsis/entity/componenttypeinfo/RawComponent.html">
-								<code>RawComponent</code>
-							</a>
-						</td>
-						<td>Stores a component of any component type as raw data.
-</td>
-					</tr>
-				</table>
-			</section>
-			<section>
-				<h2>Templates</h2>
-				<table>
-					<col class="caption"/>
-					<tr>
-						<th>Name</th>
-						<th>Description</th>
-					</tr>
-					<tr>
-						<td>
-							<a id="validateComponent" class="public" href="../../tharsis/entity/componenttypeinfo/validateComponent.html">
-								<code>validateComponent</code>
-							</a>
-						</td>
-						<td>Validate a component type at compile-time.
-</td>
-					</tr>
-				</table>
-			</section>
-			<section>
-				<h2>Global variables</h2>
-				<table>
-					<col class="caption"/>
-					<tr>
-						<th>Name</th>
-						<th>Type</th>
-						<th>Description</th>
-					</tr>
-					<tr>
-						<td>
-							<a id="isMultiComponent" class="public" href="../../tharsis/entity/componenttypeinfo/isMultiComponent.html">
-								<code>isMultiComponent</code>
-							</a>
-						</td>
-						<td>
-<code class="prettyprint lang-d">void</code>
-						</td>
-						<td>Determine if a component type is a MultiComponent type.
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a id="maxReservedComponentTypes" class="public" href="../../tharsis/entity/componenttypeinfo/maxReservedComponentTypes.html">
-								<code>maxReservedComponentTypes</code>
-							</a>
-						</td>
-						<td>
-<code class="prettyprint lang-d">ushort</code>
-						</td>
-						<td>Number of component type IDs reserved for Tharsis builtins and the defaults package.
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a id="nullComponentTypeID" class="public" href="../../tharsis/entity/componenttypeinfo/nullComponentTypeID.html">
-								<code>nullComponentTypeID</code>
-							</a>
-						</td>
-						<td>
-<code class="prettyprint lang-d">ushort</code>
-						</td>
-						<td>A 'null' component type ID, e.g. to specify a unused component buffer.
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a id="userComponentTypeID" class="public" href="../../tharsis/entity/componenttypeinfo/userComponentTypeID.html">
-								<code>userComponentTypeID</code>
-							</a>
-						</td>
-						<td>
-<code class="prettyprint lang-d">void</code>
-						</td>
-						<td>Generate a component type ID for a user-defined component type.
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a id="maxBuiltinComponentTypes" class="package" href="../../tharsis/entity/componenttypeinfo/maxBuiltinComponentTypes.html">
-								<code>maxBuiltinComponentTypes</code>
-							</a>
-						</td>
-						<td>
-<code class="prettyprint lang-d">ushort</code>
-						</td>
-						<td>Maximum possible number of builtin, mandatory component types.
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a id="maxDefaultsComponentTypes" class="package" href="../../tharsis/entity/componenttypeinfo/maxDefaultsComponentTypes.html">
-								<code>maxDefaultsComponentTypes</code>
-							</a>
-						</td>
-						<td>
-<code class="prettyprint lang-d">ushort</code>
-						</td>
-						<td>Maximum possible number of component types in the 'defaults' package.
-</td>
-					</tr>
-				</table>
-			</section>
-			<section>
-				<h2>Aliases</h2>
-				<table>
-					<col class="caption"/>
-					<tr>
-						<th>Name</th>
-						<th>Type</th>
-						<th>Description</th>
-					</tr>
-					<tr>
-						<td>
-							<a id="BuiltinComponents" class="public" href="../../tharsis/entity/componenttypeinfo/BuiltinComponents.html">
-								<code>BuiltinComponents</code>
-							</a>
-						</td>
-						<td>
-						</td>
-						<td>A tuple of all builtin component types.
-</td>
-					</tr>
-				</table>
-			</section>
-			<section>
-				<h2>Authors</h2><!-- using block ddox.authors in ddox.layout.dt-->
 
-			</section>
-			<section>
-				<h2>Copyright</h2><!-- using block ddox.copyright in ddox.layout.dt-->
+</div>
+<div class="section">
+<h2>Aliases</h2>
+<table>
+<tr><td><a href="tharsis/entity/componenttypeinfo/BuiltinComponents.html">BuiltinComponents</a></td><td><pre><code>TypeTuple!(LifeComponent)</code></pre></td><td><p>A tuple of all builtin component types.
+</p>
+</td></tr></table>
+<h2>Variables</h2>
+<table>
+<tr><td><a href="tharsis/entity/componenttypeinfo/maxBuiltinComponentTypes.html">maxBuiltinComponentTypes</a></td><td><pre><code>ushort</code></pre></td><td><p>Maximum possible number of builtin, mandatory component types.
+</p>
+</td></tr><tr><td><a href="tharsis/entity/componenttypeinfo/maxDefaultsComponentTypes.html">maxDefaultsComponentTypes</a></td><td><pre><code>ushort</code></pre></td><td><p>Maximum possible number of component types in the <code class="prettyprint">defaults</code> package of <code class="prettyprint">tharsis-full</code>.
+</p>
+</td></tr><tr><td><a href="tharsis/entity/componenttypeinfo/maxReservedComponentTypes.html">maxReservedComponentTypes</a></td><td><pre><code>ushort</code></pre></td><td><p>Number of component type IDs reserved for Tharsis builtins and the <code class="prettyprint">defaults</code> package.
+</p>
+</td></tr><tr><td><a href="tharsis/entity/componenttypeinfo/nullComponentTypeID.html">nullComponentTypeID</a></td><td><pre><code>ushort</code></pre></td><td><p>A 'null' component type ID, e.g. to specify a unused component buffer.
+</p>
+</td></tr></table>
+<h2>Functions</h2>
+<table>
+<tr><td><a href="tharsis/entity/componenttypeinfo/componentIDs.html">componentIDs</a><span class="extrainfo"><span class="method-attribs"><span class="attr-trusted">@trusted</span></span></span></td><td></td><td><p>Get a sorted array of IDs of specified component types.
+</p>
+</td></tr><tr><td><span class="extrainfo"><span class="attribs"><span class="attr-auto">auto</span></span></span><a href="tharsis/entity/componenttypeinfo/maxComponentsPerEntity.html">maxComponentsPerEntity</a><span class="extrainfo"><span class="method-attribs"><span class="attr-safe">@safe</span>, <span class="attr-pure">pure</span>, <span class="attr-nothrow">nothrow</span></span></span></td><td></td><td><p>Get the maximum possible components of this type at entity may have.
+</p>
+</td></tr><tr><td><a href="tharsis/entity/componenttypeinfo/isResourceHandle.html">isResourceHandle</a><span class="extrainfo"></span></td><td></td><td><p>Is Component.property a resource handle?
+</p>
+</td></tr></table>
+<h2>Structs</h2>
+<table>
+<tr><td><a href="tharsis/entity/componenttypeinfo/PropertyName.html">PropertyName</a></td><td></td><td><p>Used as an user-defined attribute for component properties to override the name of the
+property in the <a href="../concepts/source.html">Source</a> it's loaded from (e.g. YAML).
+</p>
+</td></tr><tr><td><a href="tharsis/entity/componenttypeinfo/RawComponent.html">RawComponent</a></td><td></td><td><p>Stores a component of any component type as raw data.
+</p>
+</td></tr><tr><td><a href="tharsis/entity/componenttypeinfo/ImmutableRawComponent.html">ImmutableRawComponent</a></td><td></td><td><p>An immutable equivalent of RawComponent.
+</p>
+</td></tr><tr><td><a href="tharsis/entity/componenttypeinfo/ComponentPropertyInfo.html">ComponentPropertyInfo</a></td><td></td><td><p>Type information about a component type property (data member).
+</p>
+</td></tr><tr><td><a href="tharsis/entity/componenttypeinfo/ComponentTypeInfo.html">ComponentTypeInfo</a></td><td></td><td><p>Type information about a <a href="../concepts/component.html">component</a> type.
+</p>
+</td></tr></table>
+<h2>Templates</h2>
+<table>
+<tr><td><a href="tharsis/entity/componenttypeinfo/validateComponent.html">validateComponent</a></td><td></td><td><p>Validate a component type at compile-time, triggering an compile-time error if invalid.
+</p>
+</td></tr></table>
+</div>
 
-			</section>
-			<section>
-				<h2>License</h2><!-- using block ddox.license in ddox.layout.dt-->
-
-			</section>
-		</div>
-	</body>
+<script>hljs.initHighlightingOnLoad();</script>
+</div>
+</div>
+</body>
 </html>

@@ -1,170 +1,72 @@
-
 <!DOCTYPE html>
 <html>
-	<head>
-		<meta charset="UTF-8"/><!-- using block title in layout.dt--><!-- using block ddox.defs in ddox.layout.dt--><!-- using block ddox.title in ddox.layout.dt-->
-		<title>Function ResourceHandle.rawHandle</title>
-		<link rel="stylesheet" type="text/css" href="../../../styles/ddox.css"/>
-		<link rel="stylesheet" href="../../../prettify/prettify.css" type="text/css"/>
-		<script type="text/javascript" src="../../../scripts/jquery.js">/**/</script>
-		<script type="text/javascript" src="../../../prettify/prettify.js">/**/</script>
-		<script type="text/javascript" src="../../../scripts/ddox.js">/**/</script>
-	</head>
-	<body onload="prettyPrint(); setupDdox();">
-		<nav id="main-nav"><!-- using block navigation in layout.dt-->
-						<ul>
-						<li>
-							<a href="../../../tharsis/entity/componentbuffer.html">tharsis.entity.componentbuffer</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/entity/componenttypeinfo.html">tharsis.entity.componenttypeinfo</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/entity/componenttypemanager.html">tharsis.entity.componenttypemanager</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/entity/descriptors.html">tharsis.entity.descriptors</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/entity/entity.html">tharsis.entity.entity</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/entity/entityid.html">tharsis.entity.entityid</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/entity/entitymanager.html">tharsis.entity.entitymanager</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/entity/entitypolicy.html">tharsis.entity.entitypolicy</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/entity/entityprototype.html">tharsis.entity.entityprototype</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/entity/entityrange.html">tharsis.entity.entityrange</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/entity/lifecomponent.html">tharsis.entity.lifecomponent</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/entity/processtypeinfo.html">tharsis.entity.processtypeinfo</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/entity/processwrapper.html">tharsis.entity.processwrapper</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/entity/prototypemanager.html">tharsis.entity.prototypemanager</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/entity/resourcemanager.html">tharsis.entity.resourcemanager</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/entity/source.html">tharsis.entity.source</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/util/alloc.html">tharsis.util.alloc</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/util/array.html">tharsis.util.array</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/util/bitmanip.html">tharsis.util.bitmanip</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/util/debughacks.html">tharsis.util.debughacks</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/util/interfaces.html">tharsis.util.interfaces</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/util/mallocarray.html">tharsis.util.mallocarray</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/util/math.html">tharsis.util.math</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/util/noncopyable.html">tharsis.util.noncopyable</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/util/pagedarray.html">tharsis.util.pagedarray</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/util/qualifierhacks.html">tharsis.util.qualifierhacks</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/util/stackbuffer.html">tharsis.util.stackbuffer</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/util/testing.html">tharsis.util.testing</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/util/traits.html">tharsis.util.traits</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/util/typecons.html">tharsis.util.typecons</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/util/typetuple.html">tharsis.util.typetuple</a>
-						</li>
-						</ul>
-				<noscript>
-					<p style="color: red">The search functionality needs JavaScript enabled</p>
-				</noscript>
-				<div id="symbolSearchPane" style="display: none">
-					<p>
-						<input id="symbolSearch" type="text" placeholder="Search for symbols" onchange="performSymbolSearch(24);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
-					</p>
-	<ul id="symbolSearchResults" style="display: none"></ul>
-	<script type="application/javascript" src="../../../symbols.js"></script>
-	<script type="application/javascript">
-var symbolSearchRootDir = "../../../";
-$('#symbolSearchPane').show();
-	</script>
-				</div>
-				<script type="text/javascript" src="../../../scripts/mousetrap.js"></script>
-				<script type="text/javascript">
-$(document).ready(function() {
-	Mousetrap.bind('s', function(e) {
-		$("#symbolSearch").focus();
-		return false;
-	});
-});
-				</script>
-		</nav>
-		<div id="main-contents">
-			<h1>Function ResourceHandle.rawHandle</h1><!-- using block body in layout.dt--><!-- Default block ddox.description in ddox.layout.dt--><!-- Default block ddox.sections in ddox.layout.dt--><!-- using block ddox.members in ddox.layout.dt-->
-			<section>
-				<p>Get the raw resource handle.
-</p>
-<section>
+<head>
+<meta charset="utf-8"/>
+<link rel="stylesheet" type="text/css" href="../../../style.css"/><script src="../../../highlight.pack.js"></script>
+<title>rawHandle</title>
+<base href="../../../"/>
+<script src="search.js"></script>
+</head>
+<body>
+<div class="main">
+<div class="toc">
+<div class="toc-additional">
+<div class="section">
+<ul>
+<li><a href="../index.html">Documentation home</a>
+</li>
+<li><a href="https://github.com/kiith-sa/tharsis-core">Tharsis GitHub</a>
+</li>
+</ul>
 
+</div>
 
-<p>May be used e.g. as an index into an array of resources in a resource
+</div>
+<ul>
+<li><span class="package">tharsis</span>
+<ul>
+<li><span class="package">tharsis.entity</span>
+<ul>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/componenttypeinfo.html">componenttypeinfo</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/componenttypemanager.html">componenttypemanager</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/descriptors.html">descriptors</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/diagnostics.html">diagnostics</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entity.html">entity</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entityid.html">entityid</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entitymanager.html">entitymanager</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entitypolicy.html">entitypolicy</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entityprototype.html">entityprototype</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entityrange.html">entityrange</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/lifecomponent.html">lifecomponent</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/processtypeinfo.html">processtypeinfo</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/prototypemanager.html">prototypemanager</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/resourcemanager.html">resourcemanager</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/scheduler.html">scheduler</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/source.html">source</a></li>
+</ul></li>
+</ul></li>
+</ul>
+</div>
+<div class="breadcrumbs">
+<table id="results"></table>
+<a class="home" href=index.html>⌂</a>
+<input type="search" id="search" placeholder="Search" onkeyup="searchSubmit(this.value, event)"/>
+<small>tharsis.entity.<a href=tharsis/entity/resourcemanager.html>resourcemanager</a>.</small><span class="highlight"><a href=tharsis/entity/resourcemanager/ResourceHandle.html.html>ResourceHandle</a>.rawHandle</span></div>
+<div class="content">
+<pre><code>public @property RawResourceHandle rawHandle() @safe const pure nothrow
+</code></pre><div class="section">
+<p>Get the raw resource handle.
 </p>
 
-<p>manager.
+</div>
+<div class="section">
+<p>May be used e.g. as an index into an array of resources in a resource manager.
 </p>
-</section>
 
-					<section>
-						<h3>Prototype</h3>
-						<pre class="code prettyprint lang-d prototype">
-<a href="../../../tharsis/entity/resourcemanager/RawResourceHandle.html">RawResourceHandle</a> rawHandle() const pure nothrow @property @safe;</pre>
-					</section>
+</div>
 
-			</section>
-			<section>
-				<h2>Authors</h2><!-- using block ddox.authors in ddox.layout.dt-->
-
-			</section>
-			<section>
-				<h2>Copyright</h2><!-- using block ddox.copyright in ddox.layout.dt-->
-
-			</section>
-			<section>
-				<h2>License</h2><!-- using block ddox.license in ddox.layout.dt-->
-
-			</section>
-		</div>
-	</body>
+<script>hljs.initHighlightingOnLoad();</script>
+</div>
+</div>
+</body>
 </html>

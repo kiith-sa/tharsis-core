@@ -1,392 +1,95 @@
-
 <!DOCTYPE html>
 <html>
-	<head>
-		<meta charset="UTF-8"/><!-- using block title in layout.dt--><!-- using block ddox.defs in ddox.layout.dt--><!-- using block ddox.title in ddox.layout.dt-->
-		<title>Class BasePrototypeManager</title>
-		<link rel="stylesheet" type="text/css" href="../../../styles/ddox.css"/>
-		<link rel="stylesheet" href="../../../prettify/prettify.css" type="text/css"/>
-		<script type="text/javascript" src="../../../scripts/jquery.js">/**/</script>
-		<script type="text/javascript" src="../../../prettify/prettify.js">/**/</script>
-		<script type="text/javascript" src="../../../scripts/ddox.js">/**/</script>
-	</head>
-	<body onload="prettyPrint(); setupDdox();">
-		<nav id="main-nav"><!-- using block navigation in layout.dt-->
-						<ul>
-						<li>
-							<a href="../../../tharsis/entity/componentbuffer.html">tharsis.entity.componentbuffer</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/entity/componenttypeinfo.html">tharsis.entity.componenttypeinfo</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/entity/componenttypemanager.html">tharsis.entity.componenttypemanager</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/entity/descriptors.html">tharsis.entity.descriptors</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/entity/entity.html">tharsis.entity.entity</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/entity/entityid.html">tharsis.entity.entityid</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/entity/entitymanager.html">tharsis.entity.entitymanager</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/entity/entitypolicy.html">tharsis.entity.entitypolicy</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/entity/entityprototype.html">tharsis.entity.entityprototype</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/entity/entityrange.html">tharsis.entity.entityrange</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/entity/lifecomponent.html">tharsis.entity.lifecomponent</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/entity/processtypeinfo.html">tharsis.entity.processtypeinfo</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/entity/processwrapper.html">tharsis.entity.processwrapper</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/entity/prototypemanager.html">tharsis.entity.prototypemanager</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/entity/resourcemanager.html">tharsis.entity.resourcemanager</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/entity/source.html">tharsis.entity.source</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/util/alloc.html">tharsis.util.alloc</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/util/array.html">tharsis.util.array</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/util/bitmanip.html">tharsis.util.bitmanip</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/util/debughacks.html">tharsis.util.debughacks</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/util/interfaces.html">tharsis.util.interfaces</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/util/mallocarray.html">tharsis.util.mallocarray</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/util/math.html">tharsis.util.math</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/util/noncopyable.html">tharsis.util.noncopyable</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/util/pagedarray.html">tharsis.util.pagedarray</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/util/qualifierhacks.html">tharsis.util.qualifierhacks</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/util/stackbuffer.html">tharsis.util.stackbuffer</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/util/testing.html">tharsis.util.testing</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/util/traits.html">tharsis.util.traits</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/util/typecons.html">tharsis.util.typecons</a>
-						</li>
-						<li>
-							<a href="../../../tharsis/util/typetuple.html">tharsis.util.typetuple</a>
-						</li>
-						</ul>
-				<noscript>
-					<p style="color: red">The search functionality needs JavaScript enabled</p>
-				</noscript>
-				<div id="symbolSearchPane" style="display: none">
-					<p>
-						<input id="symbolSearch" type="text" placeholder="Search for symbols" onchange="performSymbolSearch(24);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
-					</p>
-	<ul id="symbolSearchResults" style="display: none"></ul>
-	<script type="application/javascript" src="../../../symbols.js"></script>
-	<script type="application/javascript">
-var symbolSearchRootDir = "../../../";
-$('#symbolSearchPane').show();
-	</script>
-				</div>
-				<script type="text/javascript" src="../../../scripts/mousetrap.js"></script>
-				<script type="text/javascript">
-$(document).ready(function() {
-	Mousetrap.bind('s', function(e) {
-		$("#symbolSearch").focus();
-		return false;
-	});
-});
-				</script>
-		</nav>
-		<div id="main-contents">
-			<h1>Class BasePrototypeManager</h1><!-- using block body in layout.dt--><!-- Default block ddox.description in ddox.layout.dt--><!-- Default block ddox.sections in ddox.layout.dt--><!-- using block ddox.members in ddox.layout.dt-->
-			<section>
-				<p>Base class for <a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.resource.html"><code class="prettyprint lang-d">resource</code></a> managers managing entity prototypes.
-</p>
-<section>
+<head>
+<meta charset="utf-8"/>
+<link rel="stylesheet" type="text/css" href="../../../style.css"/><script src="../../../highlight.pack.js"></script>
+<title>BasePrototypeManager</title>
+<base href="../../../"/>
+<script src="search.js"></script>
+</head>
+<body>
+<div class="main">
+<div class="toc">
+<div class="toc-additional">
+<div class="section">
+<ul>
+<li><a href="../index.html">Documentation home</a>
+</li>
+<li><a href="https://github.com/kiith-sa/tharsis-core">Tharsis GitHub</a>
+</li>
+</ul>
 
+</div>
 
-<p>There may be various entity prototype <a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.resource.html"><code class="prettyprint lang-d">resource</code></a> types (e.g. defined in a file or
+</div>
+<ul>
+<li><span class="package">tharsis</span>
+<ul>
+<li><span class="package">tharsis.entity</span>
+<ul>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/componenttypeinfo.html">componenttypeinfo</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/componenttypemanager.html">componenttypemanager</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/descriptors.html">descriptors</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/diagnostics.html">diagnostics</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entity.html">entity</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entityid.html">entityid</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entitymanager.html">entitymanager</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entitypolicy.html">entitypolicy</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entityprototype.html">entityprototype</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entityrange.html">entityrange</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/lifecomponent.html">lifecomponent</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/processtypeinfo.html">processtypeinfo</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/prototypemanager.html">prototypemanager</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/resourcemanager.html">resourcemanager</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/scheduler.html">scheduler</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/source.html">source</a></li>
+</ul></li>
+</ul></li>
+</ul>
+</div>
+<div class="breadcrumbs">
+<table id="results"></table>
+<a class="home" href=index.html>⌂</a>
+<input type="search" id="search" placeholder="Search" onkeyup="searchSubmit(this.value, event)"/>
+<small>tharsis.entity.<a href=tharsis/entity/prototypemanager.html>prototypemanager</a>.</small><span class="highlight">BasePrototypeManager</span></div>
+<div class="content">
+<pre><code>public class BasePrototypeManager : MallocResourceManager!Resource(Resource)
+</code></pre><div class="section">
+<p>Base class for resource managers managing entity prototypes.
 </p>
 
-<p>directly in a Source); these should be managed by separate <a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.resource.html"><code class="prettyprint lang-d">resource</code></a> managers derived
+</div>
+<div class="section">
+Some projects may need multiple entity prototype resource types; these should be
+ managed by separate resource managers derived from BasePrototypeManager templated with 
+ the resource type.
+
+ The Resource type should define following members in addition to the Descriptor type
+ required by ResourceManager:
+
+ <pre><code> // Constructor from descriptor.
+ this(ref Descriptor);
+ // The prototype stored by the resource (once loaded)
+ EntityPrototype prototype;
+ // Descriptor describing this resource.
+ Descriptor descriptor;
+ // The current resource state.
+ ResourceState state;
+</code></pre>
+
+ For an example Resource type, see
+ tharsis.entity.entityprototype.EntityPrototypeResource .
+</div>
+<div class="section">
+<h2>Functions</h2>
+<table>
+<tr><td><a href="tharsis/entity/prototypemanager/BasePrototypeManager.this.html">this</a></td><td></td><td><p>BasePrototypeManager constructor.
 </p>
+</td></tr></table>
+</div>
 
-<p>from <code class="prettyprint lang-d">BasePrototypeManager</code> templated with the <a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.resource.html"><code class="prettyprint lang-d">resource</code></a> type.
-</p>
-
-
-
-<p>The Resource type should define following members in addition to the Descriptor type
-</p>
-
-<p>required by ResourceManager:
-</p>
-
-
-
-<pre class="code prettyprint lang-d">
-// Constructor from descriptor.
-
-this(ref Descriptor);
-
-// The prototype stored by the <a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.resource.html">resource</a> (once loaded)
-
-EntityPrototype prototype;
-
-// Descriptor describing this <a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.resource.html">resource</a>.
-
-Descriptor descriptor;
-
-// The current <a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.resource.html">resource</a> <a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.state.html">state</a>.
-
-ResourceState <a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.state.html">state</a>;
-
-</pre>
-
-
-
-<p>For an example Resource type, see
-</p>
-
-<p><a href="../../../tharsis/entity/entityprototype/EntityPrototypeResource.html"><code class="prettyprint lang-d">tharsis.entity.entityprototype.EntityPrototypeResource</code></a> .
-</p>
-</section>
-
-					<section>
-						<h3>Inherits from</h3>
-						<ul>
-							<li>
-								<code class="prettyprint lang-d"><code class="prettyprint lang-d">Object</code></code>
- (base class)
-							</li>
-						</ul>
-					</section>
-					<section>
-						<h3>Fields</h3>
-						<table>
-							<col class="caption"/>
-							<tr>
-								<th>Name</th>
-								<th>Type</th>
-								<th>Description</th>
-							</tr>
-							<tr>
-								<td>
-									<a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.errorLog_.html" class="public"><code>errorLog_</code></a>
-								</td>
-								<td class="typecol"><code class="prettyprint lang-d">string</code></td>
-								<td>Any loading errors are written here.
-</td>
-							</tr>
-							<tr>
-								<td>
-									<a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.indicesToLoadMutex_.html" class="public"><code>indicesToLoadMutex_</code></a>
-								</td>
-								<td class="typecol"><code class="prettyprint lang-d">ReadWriteMutex</code></td>
-								<td>Mutex used to lock <a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.indicesToLoad_.html"><code class="prettyprint lang-d">indicesToLoad_</code></a>.
-</td>
-							</tr>
-							<tr>
-								<td>
-									<a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.indicesToLoad_.html" class="public"><code>indicesToLoad_</code></a>
-								</td>
-								<td class="typecol"><code class="prettyprint lang-d">shared(<a href="../../../tharsis/util/typecons/Class.html">Class</a>!(MallocArray!uint))</code></td>
-								<td>Indices of prototypes requested to be loaded by the user.
-</td>
-							</tr>
-							<tr>
-								<td>
-									<a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.loadResource_.html" class="public"><code>loadResource_</code></a>
-								</td>
-								<td class="typecol"><code class="prettyprint lang-d">void delegate(ref Resource, ref string)</code></td>
-								<td>Loads a <a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.resource.html"><code class="prettyprint lang-d">resource</code></a>, setting its <a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.state.html"><code class="prettyprint lang-d">state</code></a> to Loaded on success or LoadFailed on
-</td>
-							</tr>
-							<tr>
-								<td>
-									<a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.prototypeData_.html" class="public"><code>prototypeData_</code></a>
-								</td>
-								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../tharsis/util/pagedarray/PartiallyMutablePagedBuffer.html">PartiallyMutablePagedBuffer</a></code></td>
-								<td>Memory used by loaded (immutable) prototypes in <a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.resources_.html"><code class="prettyprint lang-d">resources_</code></a> to store components.
-</td>
-							</tr>
-							<tr>
-								<td>
-									<a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.resourcesToAddMutex_.html" class="public"><code>resourcesToAddMutex_</code></a>
-								</td>
-								<td class="typecol"><code class="prettyprint lang-d">ReadWriteMutex</code></td>
-								<td>Mutex used to lock <a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.resourcesToAdd_.html"><code class="prettyprint lang-d">resourcesToAdd_</code></a>.
-</td>
-							</tr>
-							<tr>
-								<td>
-									<a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.resourcesToAdd_.html" class="public"><code>resourcesToAdd_</code></a>
-								</td>
-								<td class="typecol"><code class="prettyprint lang-d">shared(<a href="../../../tharsis/util/typecons/Class.html">Class</a>!(MallocArray!Resource))</code></td>
-								<td>Resources are staged here after initial creation in a <a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.handle.html"><code class="prettyprint lang-d">handle</code></a>() call with a new
-</td>
-							</tr>
-							<tr>
-								<td>
-									<a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.resources_.html" class="public"><code>resources_</code></a>
-								</td>
-								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../tharsis/util/pagedarray/PagedArray.html">PagedArray</a>!Resource</code></td>
-								<td>Entity prototype resources are stored here.
-</td>
-							</tr>
-						</table>
-					</section>
-					<section>
-						<h3>Methods</h3>
-						<table>
-							<col class="caption"/>
-							<tr>
-								<th>Name</th>
-								<th>Description</th>
-							</tr>
-							<tr>
-								<td>
-									<a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.clear.html" class="public">
-										<code>clear</code>
-									</a>
-								</td>
-								<td>Deallocate all <a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.resource.html"><code class="prettyprint lang-d">resource</code></a> arrays.
-</td>
-							</tr>
-							<tr>
-								<td>
-									<a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.errorLog.html" class="public">
-										<code>errorLog</code>
-									</a>
-								</td>
-								<td></td>
-							</tr>
-							<tr>
-								<td>
-									<a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.handle.html" class="public">
-										<code>handle</code>
-									</a>
-								</td>
-								<td></td>
-							</tr>
-							<tr>
-								<td>
-									<a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.loadFailedDescriptors.html" class="public">
-										<code>loadFailedDescriptors</code>
-									</a>
-								</td>
-								<td></td>
-							</tr>
-							<tr>
-								<td>
-									<a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.requestLoad.html" class="public">
-										<code>requestLoad</code>
-									</a>
-								</td>
-								<td></td>
-							</tr>
-							<tr>
-								<td>
-									<a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.resource.html" class="public">
-										<code>resource</code>
-									</a>
-								</td>
-								<td></td>
-							</tr>
-							<tr>
-								<td>
-									<a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.resourceCount.html" class="public">
-										<code>resourceCount</code>
-									</a>
-								</td>
-								<td>Get the total number of resources, loaded or not.
-</td>
-							</tr>
-							<tr>
-								<td>
-									<a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.state.html" class="public">
-										<code>state</code>
-									</a>
-								</td>
-								<td></td>
-							</tr>
-							<tr>
-								<td>
-									<a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.update_.html" class="public">
-										<code>update_</code>
-									</a>
-								</td>
-								<td></td>
-							</tr>
-						</table>
-					</section>
-					<section>
-						<h3>Templates</h3>
-						<table>
-							<col class="caption"/>
-							<tr>
-								<th>Name</th>
-								<th>Description</th>
-							</tr>
-							<tr>
-								<td>
-									<a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.this.html" class="public">
-										<code>this</code>
-									</a>
-								</td>
-								<td><a href="../../../tharsis/entity/prototypemanager/BasePrototypeManager.html"><code class="prettyprint lang-d">BasePrototypeManager</code></a> constructor.
-</td>
-							</tr>
-						</table>
-					</section>
-
-			</section>
-			<section>
-				<h2>Authors</h2><!-- using block ddox.authors in ddox.layout.dt-->
-
-			</section>
-			<section>
-				<h2>Copyright</h2><!-- using block ddox.copyright in ddox.layout.dt-->
-
-			</section>
-			<section>
-				<h2>License</h2><!-- using block ddox.license in ddox.layout.dt-->
-
-			</section>
-		</div>
-	</body>
+<script>hljs.initHighlightingOnLoad();</script>
+</div>
+</div>
+</body>
 </html>

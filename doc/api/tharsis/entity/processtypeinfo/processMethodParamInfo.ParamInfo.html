@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<link rel="stylesheet" type="text/css" href="../../../style.css"/><script src="../../../highlight.pack.js"></script>
+<title>ParamInfo</title>
+<base href="../../../"/>
+<script src="search.js"></script>
+</head>
+<body>
+<div class="main">
+<div class="toc">
+<div class="toc-additional">
+<div class="section">
+<ul>
+<li><a href="../index.html">Documentation home</a>
+</li>
+<li><a href="https://github.com/kiith-sa/tharsis-core">Tharsis GitHub</a>
+</li>
+</ul>
+
+</div>
+
+</div>
+<ul>
+<li><span class="package">tharsis</span>
+<ul>
+<li><span class="package">tharsis.entity</span>
+<ul>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/componenttypeinfo.html">componenttypeinfo</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/componenttypemanager.html">componenttypemanager</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/descriptors.html">descriptors</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/diagnostics.html">diagnostics</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entity.html">entity</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entityid.html">entityid</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entitymanager.html">entitymanager</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entitypolicy.html">entitypolicy</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entityprototype.html">entityprototype</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entityrange.html">entityrange</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/lifecomponent.html">lifecomponent</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/processtypeinfo.html">processtypeinfo</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/prototypemanager.html">prototypemanager</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/resourcemanager.html">resourcemanager</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/scheduler.html">scheduler</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/source.html">source</a></li>
+</ul></li>
+</ul></li>
+</ul>
+</div>
+<div class="breadcrumbs">
+<table id="results"></table>
+<a class="home" href=index.html>⌂</a>
+<input type="search" id="search" placeholder="Search" onkeyup="searchSubmit(this.value, event)"/>
+<small>tharsis.entity.<a href=tharsis/entity/processtypeinfo.html>processtypeinfo</a>.</small><span class="highlight"><a href=tharsis/entity/processtypeinfo/processMethodParamInfo.html.html>processMethodParamInfo</a>.ParamInfo</span></div>
+<div class="content">
+<pre><code>public template ParamInfo(int i)
+</code></pre><div class="section">
+<p>Information about the <a href="../concepts/process.html#process-method">process()</a> method
+parameter at specified index.
+</p>
+
+</div>
+<div class="section note">
+<h2>Note:</h2>
+<div class="note-content">
+<p>There is one more member, which only exists if  <code class="prettyprint">isComponent == true</code>: <br/>
+<code class="prettyprint">alias Component</code>: specifies the actual component type, with any slice/pointer
+information removed.
+</p>
+
+</div>
+</div>
+<div class="section">
+<h2>Aliases</h2>
+<table>
+<tr><td><a href="tharsis/entity/processtypeinfo/processMethodParamInfo.ParamInfo.Param.html">Param</a></td><td><pre><code>ParamTypes[i]</code></pre></td><td><p>Type of the parameter.
+</p>
+</td></tr></table>
+<h2>Variables</h2>
+<table>
+<tr><td><a href="tharsis/entity/processtypeinfo/processMethodParamInfo.ParamInfo.storage.html">storage</a></td><td><pre><code>auto</code></pre></td><td><p>Storage class of the parameter.
+</p>
+</td></tr><tr><td><a href="tharsis/entity/processtypeinfo/processMethodParamInfo.ParamInfo.isSlice.html">isSlice</a></td><td><pre><code>auto</code></pre></td><td><p>Is the parameter a slice? (used with
+<a href="../concepts/component.html#multicomponent">MultiComponents</a>)
+</p>
+</td></tr><tr><td><a href="tharsis/entity/processtypeinfo/processMethodParamInfo.ParamInfo.isPtr.html">isPtr</a></td><td><pre><code>auto</code></pre></td><td><p>Is the parameter a pointer? (used for optional future components)
+</p>
+</td></tr><tr><td><a href="tharsis/entity/processtypeinfo/processMethodParamInfo.ParamInfo.isRef.html">isRef</a></td><td><pre><code>auto</code></pre></td><td><p>Is the parameter passed by <code class="prettyprint">ref</code>?
+</p>
+</td></tr><tr><td><a href="tharsis/entity/processtypeinfo/processMethodParamInfo.ParamInfo.isOut.html">isOut</a></td><td><pre><code>auto</code></pre></td><td><p>Is the parameter passed by <code class="prettyprint">out</code>?
+</p>
+</td></tr><tr><td><a href="tharsis/entity/processtypeinfo/processMethodParamInfo.ParamInfo.ParamTypeName.html">ParamTypeName</a></td><td><pre><code>auto</code></pre></td><td><p>Name of the parameter type.
+</p>
+</td></tr><tr><td><a href="tharsis/entity/processtypeinfo/processMethodParamInfo.ParamInfo.isEntityAccess.html">isEntityAccess</a></td><td><pre><code>auto</code></pre></td><td><p>Is the parameter an EntityAccess (EntityManager.Context) struct?
+</p>
+</td></tr><tr><td><a href="tharsis/entity/processtypeinfo/processMethodParamInfo.ParamInfo.isComponent.html">isComponent</a></td><td><pre><code>auto</code></pre></td><td><p>Is the parameter a <a href="../concepts/component.html">component</a>?
+</p>
+</td></tr></table>
+</div>
+
+<script>hljs.initHighlightingOnLoad();</script>
+</div>
+</div>
+</body>
+</html>

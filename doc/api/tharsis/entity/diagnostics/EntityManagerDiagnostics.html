@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<link rel="stylesheet" type="text/css" href="../../../style.css"/><script src="../../../highlight.pack.js"></script>
+<title>EntityManagerDiagnostics</title>
+<base href="../../../"/>
+<script src="search.js"></script>
+</head>
+<body>
+<div class="main">
+<div class="toc">
+<div class="toc-additional">
+<div class="section">
+<ul>
+<li><a href="../index.html">Documentation home</a>
+</li>
+<li><a href="https://github.com/kiith-sa/tharsis-core">Tharsis GitHub</a>
+</li>
+</ul>
+
+</div>
+
+</div>
+<ul>
+<li><span class="package">tharsis</span>
+<ul>
+<li><span class="package">tharsis.entity</span>
+<ul>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/componenttypeinfo.html">componenttypeinfo</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/componenttypemanager.html">componenttypemanager</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/descriptors.html">descriptors</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/diagnostics.html">diagnostics</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entity.html">entity</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entityid.html">entityid</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entitymanager.html">entitymanager</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entitypolicy.html">entitypolicy</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entityprototype.html">entityprototype</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/entityrange.html">entityrange</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/lifecomponent.html">lifecomponent</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/processtypeinfo.html">processtypeinfo</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/prototypemanager.html">prototypemanager</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/resourcemanager.html">resourcemanager</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/scheduler.html">scheduler</a></li>
+<li><small>tharsis.entity.</small><a href="tharsis/entity/source.html">source</a></li>
+</ul></li>
+</ul></li>
+</ul>
+</div>
+<div class="breadcrumbs">
+<table id="results"></table>
+<a class="home" href=index.html>⌂</a>
+<input type="search" id="search" placeholder="Search" onkeyup="searchSubmit(this.value, event)"/>
+<small>tharsis.entity.<a href=tharsis/entity/diagnostics.html>diagnostics</a>.</small><span class="highlight">EntityManagerDiagnostics</span></div>
+<div class="content">
+<pre><code>public struct EntityManagerDiagnostics(Policy)
+</code></pre><div class="section">
+<p>Diagnostics info for EntityManager.
+</p>
+
+</div>
+<div class="section">
+<h2>Variables</h2>
+<table>
+<tr><td><a href="tharsis/entity/diagnostics/EntityManagerDiagnostics.pastEntityCount.html">pastEntityCount</a></td><td><pre><code>size_t</code></pre></td><td><p>Number of entities in past state.
+</p>
+</td></tr><tr><td><a href="tharsis/entity/diagnostics/EntityManagerDiagnostics.processCount.html">processCount</a></td><td><pre><code>size_t</code></pre></td><td><p>Number of registered processes.
+</p>
+</td></tr><tr><td><a href="tharsis/entity/diagnostics/EntityManagerDiagnostics.threadCount.html">threadCount</a></td><td><pre><code>size_t</code></pre></td><td><p>Number of process execution threads (including the main thread).
+</p>
+</td></tr><tr><td><a href="tharsis/entity/diagnostics/EntityManagerDiagnostics.componentTypes.html">componentTypes</a></td><td><pre><code>ComponentType[maxComponentTypes!Policy]</code></pre></td><td><p>Diagnostics for individual component types.
+</p>
+</td></tr><tr><td><a href="tharsis/entity/diagnostics/EntityManagerDiagnostics.scheduler.html">scheduler</a></td><td><pre><code>SchedulerDiagnostics</code></pre></td><td><p>Diagnostics for the scheduler.
+</p>
+</td></tr></table>
+<h2>Functions</h2>
+<table>
+<tr><td><a href="tharsis/entity/diagnostics/EntityManagerDiagnostics.processes.html">processes</a><span class="extrainfo"><span class="method-attribs"><span class="attr-safe">@safe</span>, <span class="attr-pure">pure</span>, <span class="attr-nothrow">nothrow</span>, <span class="attr-inout">inout</span>, <span class="attr-nogc">@nogc</span></span></span></td><td></td><td><p>Get diagnostics for all used <a href="../concepts/process.html">Processes</a>.
+</p>
+</td></tr><tr><td><a href="tharsis/entity/diagnostics/EntityManagerDiagnostics.threads.html">threads</a><span class="extrainfo"><span class="method-attribs"><span class="attr-safe">@safe</span>, <span class="attr-pure">pure</span>, <span class="attr-nothrow">nothrow</span>, <span class="attr-inout">inout</span>, <span class="attr-nogc">@nogc</span></span></span></td><td></td><td><p>Get diagnostics for all threads used to run Processes.
+</p>
+</td></tr><tr><td><a href="tharsis/entity/diagnostics/EntityManagerDiagnostics.pastComponentsTotal.html">pastComponentsTotal</a><span class="extrainfo"><span class="method-attribs"><span class="attr-safe">@safe</span>, <span class="attr-pure">pure</span>, <span class="attr-nothrow">nothrow</span>, <span class="attr-const">const</span></span></span></td><td></td><td><p>Get the total number of past components of any type.
+</p>
+</td></tr><tr><td><a href="tharsis/entity/diagnostics/EntityManagerDiagnostics.pastComponentsPerEntity.html">pastComponentsPerEntity</a><span class="extrainfo"><span class="method-attribs"><span class="attr-safe">@safe</span>, <span class="attr-pure">pure</span>, <span class="attr-nothrow">nothrow</span>, <span class="attr-const">const</span>, <span class="attr-nogc">@nogc</span></span></span></td><td></td><td><p>Get the average number of past components of specified type in an entity.
+</p>
+</td></tr><tr><td><a href="tharsis/entity/diagnostics/EntityManagerDiagnostics.pastComponentsPerEntityTotal.html">pastComponentsPerEntityTotal</a><span class="extrainfo"><span class="method-attribs"><span class="attr-safe">@safe</span>, <span class="attr-pure">pure</span>, <span class="attr-nothrow">nothrow</span>, <span class="attr-const">const</span></span></span></td><td></td><td><p>Get the average number of past components of all types in an entity.
+</p>
+</td></tr><tr><td><a href="tharsis/entity/diagnostics/EntityManagerDiagnostics.processCallsTotal.html">processCallsTotal</a><span class="extrainfo"><span class="method-attribs"><span class="attr-safe">@safe</span>, <span class="attr-pure">pure</span>, <span class="attr-nothrow">nothrow</span>, <span class="attr-const">const</span></span></span></td><td></td><td><p>Get the total number of calls to <a href="../concepts/process.html#process-method">process()</a>
+methods of all Processes.
+</p>
+</td></tr><tr><td><a href="tharsis/entity/diagnostics/EntityManagerDiagnostics.processDurationTotal.html">processDurationTotal</a><span class="extrainfo"><span class="method-attribs"><span class="attr-safe">@safe</span>, <span class="attr-pure">pure</span>, <span class="attr-nothrow">nothrow</span>, <span class="attr-const">const</span></span></span></td><td></td><td><p>Get the total (summed) duration of all processes in all threads.
+</p>
+</td></tr><tr><td><a href="tharsis/entity/diagnostics/EntityManagerDiagnostics.processDurationAverage.html">processDurationAverage</a><span class="extrainfo"><span class="method-attribs"><span class="attr-safe">@safe</span>, <span class="attr-pure">pure</span>, <span class="attr-nothrow">nothrow</span>, <span class="attr-const">const</span></span></span></td><td></td><td><p>Get the average duration of a process.
+</p>
+</td></tr><tr><td><a href="tharsis/entity/diagnostics/EntityManagerDiagnostics.processCallsPerEntity.html">processCallsPerEntity</a><span class="extrainfo"><span class="method-attribs"><span class="attr-safe">@safe</span>, <span class="attr-pure">pure</span>, <span class="attr-nothrow">nothrow</span>, <span class="attr-const">const</span></span></span></td><td></td><td><p>Get the average number of process() calls per entity.
+</p>
+</td></tr><tr><td><a href="tharsis/entity/diagnostics/EntityManagerDiagnostics.pastMemoryAllocatedTotal.html">pastMemoryAllocatedTotal</a><span class="extrainfo"><span class="method-attribs"><span class="attr-safe">@safe</span>, <span class="attr-pure">pure</span>, <span class="attr-nothrow">nothrow</span>, <span class="attr-const">const</span></span></span></td><td></td><td><p>Get the total memory allocated for past components in bytes.
+</p>
+</td></tr><tr><td><a href="tharsis/entity/diagnostics/EntityManagerDiagnostics.pastMemoryUsedTotal.html">pastMemoryUsedTotal</a><span class="extrainfo"><span class="method-attribs"><span class="attr-safe">@safe</span>, <span class="attr-pure">pure</span>, <span class="attr-nothrow">nothrow</span>, <span class="attr-const">const</span></span></span></td><td></td><td><p>Get the total memory used by past components in bytes.
+</p>
+</td></tr><tr><td><a href="tharsis/entity/diagnostics/EntityManagerDiagnostics.pastMemoryUsedPerEntity.html">pastMemoryUsedPerEntity</a><span class="extrainfo"><span class="method-attribs"><span class="attr-safe">@safe</span>, <span class="attr-pure">pure</span>, <span class="attr-nothrow">nothrow</span>, <span class="attr-const">const</span></span></span></td><td></td><td><p>Get the average memory used by an entity in bytes.
+</p>
+</td></tr><tr><td><a href="tharsis/entity/diagnostics/EntityManagerDiagnostics.componentTypesReadPerProcess.html">componentTypesReadPerProcess</a><span class="extrainfo"><span class="method-attribs"><span class="attr-safe">@safe</span>, <span class="attr-pure">pure</span>, <span class="attr-nothrow">nothrow</span>, <span class="attr-const">const</span></span></span></td><td></td><td><p>Get the number of past component types read by a Process on average.
+</p>
+</td></tr></table>
+<h2>Structs</h2>
+<table>
+<tr><td><a href="tharsis/entity/diagnostics/EntityManagerDiagnostics.ComponentType.html">ComponentType</a></td><td></td><td><p>Diagnostics info about components of one component type.
+</p>
+</td></tr><tr><td><a href="tharsis/entity/diagnostics/EntityManagerDiagnostics.Thread.html">Thread</a></td><td></td><td><p>Diagnostics info about a thread.
+</p>
+</td></tr></table>
+</div>
+
+<script>hljs.initHighlightingOnLoad();</script>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,531 @@
+html {
+	font-family: sans;
+	margin: 0;
+	padding: 0;
+	background-color: #333;
+	border-left: .2em solid #333;
+	border-right: .2em solid #333;
+	min-height: 100%;
+}
+
+body {
+	margin: 0;
+	padding: 0;
+}
+
+div.main {
+	overflow: hidden;
+	background-color: #F8F8F8;
+}
+
+
+
+/**** BREADCRUMBS ****/
+
+div.breadcrumbs {
+	color: white;
+	background-color: #333;
+	padding-top: 1em;
+	padding-left: 1em;
+	padding-right: 1em;
+	box-sizing: border-box;
+	text-align: right;
+	top: 0;
+	position: fixed;
+	width: 100%;
+	height: 48px;
+	font-size: 95%;
+}
+
+div.breadcrumbs a {
+	color: white;
+}
+
+div.breadcrumbs span.highlight, div.breadcrumbs span a {
+	color: #DAAF07;
+}
+
+div.breadcrumbs input {
+	width: 7em;
+	margin-top: -0.1em;
+}
+
+div.breadcrumbs small {
+	font-size: 0.8em;
+}
+
+/** narrow screen hacks **/
+@media only screen and (max-width: 1000px)
+{
+	div.breadcrumbs span, div.breadcrumbs small {
+		font-size: 80%;
+	}
+}
+@media only screen and (max-width: 800px)
+{
+	div.breadcrumbs small {
+		display: none;
+		position: fixed;
+	}
+	div.breadcrumbs span {
+		font-size: 75%;
+	}
+}
+@media only screen and (max-width: 600px)
+{
+	div.breadcrumbs span {
+		font-size: 65%;
+	}
+}
+
+div.breadcrumbs a.home {
+	float: left;
+	font-weight: bold;
+	font-size: 200%;
+	margin: 0 2% 0 0%;
+	margin-top: -0.3em;
+	text-decoration: none;
+}
+
+div.breadcrumbs input {
+	float: left;
+}
+
+
+/** SEARCH RESULTS **/
+#results {
+	position: absolute;
+	max-height: 30em;
+	background-color: #eee;
+	box-shadow: 0 .25em .25em black;
+	display: none;
+	text-align: left;
+	color: black;
+	margin-top: 2em;
+	font-size: 70%;
+	z-index: 1000;
+	overflow-y: scroll;
+}
+
+#results a {
+	color: blue;
+}
+
+
+/**** TABLE OF CONTENTS ****/
+
+div.toc {
+	float: left;
+	margin-top: 48px;
+	padding: 1.5em 0.75em 1em 0.5em;
+	margin-right: -1px;
+	border-right: 1px solid #D0D0D0;
+	font-size: 0.72em;
+	line-height: 1.3em;
+}
+@media only screen and (max-width: 800px)
+{
+	div.toc {
+		font-size: 0.6em;
+		padding: 1.5em 0.5em 1em 0.3em;
+		line-height: 1.7em;
+	}
+}
+
+div.toc .toc-additional {
+	border-bottom: 1px dashed #333;
+	line-height: 1.5em;
+}
+
+div.toc .toc-additional p, div.toc .toc-additional ul {
+	margin: 0.4em 0;
+}
+
+div.toc ul {
+	list-style-type: none;
+	padding-left: 0;
+	padding-bottom: 0.5em;
+}
+
+div.toc ul ul {
+	list-style-type: none;
+	padding-left: 0.5em;
+}
+
+
+div.toc a {
+	color: #111;
+}
+
+div.toc small {
+	font-size: 0.7em;
+}
+@media only screen and (max-width: 800px)
+{
+	div.toc ul ul {
+		padding-left: 0.2em;
+	}
+	div.toc small {
+		display: none;
+		position: fixed;
+	}
+}
+
+div.toc span.package {
+	line-height: 1.8em;
+	font-weight: bold;
+	border: 1px solid rgba(0, 0, 0, 0.12);
+	border-radius: 3px;
+	background-color: #F0F0F0;
+}
+
+
+/**** MAIN CONTENT ****/
+
+div.content {
+	padding: 1.5em;
+	font-size: 90%;
+	line-height: 130%;
+	margin-top: 48px;
+	overflow: hidden;
+	border-left: 1px solid #D0D0D0;
+}
+@media only screen and (max-width: 800px)
+{
+	div.content {
+		font-size: 82%;
+	}
+}
+@media only screen and (max-width: 600px)
+{
+	div.content {
+		font-size: 70%;
+		padding: 1.5em 0.3em 1.5em 0.5em;
+	}
+}
+
+div.content h2 {
+	margin: .35em 0 .5em 0;
+	padding-top: .35em;
+	font-size: 1.35em;
+}
+
+div.content h3 {
+	font-size: 1.1em;
+}
+
+div.content tr {
+	margin: 0;
+}
+
+div.content table {
+	border-collapse: collapse;
+	border-bottom: 1px dashed #333;
+	font-size: 90%;
+	line-height: 130%;
+	margin: 1em 0;
+}
+
+div.content td {
+	border-top: 1px dashed #333;
+	margin: 0;
+	padding: .32em;
+}
+
+div.content td:first-child {
+	text-align: center;
+	display: block-inline;
+}
+
+/* prevent function attribs from wrapping, make the cell wider instead */
+div.content td:first-child * {
+	white-space: nowrap
+}
+
+/* The first markdown-generated paragraph in e.g. Params tables shouldn't add any vertical
+ * space
+ */
+div.content td p:first-child {
+	margin: 0;
+}
+
+div.content p strong {
+	font-size: 92%;
+}
+
+.paramName {
+	font-weight: bold;
+	width: 6em;
+}
+
+div.section {
+	padding: 0;
+	margin: 0;
+}
+
+
+
+/**** EXTRA INFO IN FUNCTION/CLASS/ETC LISTS ****/
+
+div.content td .extrainfo{
+	display: block;
+	line-height: 105%;
+	font-family: monospace;
+	font-size: 85%;
+	text-align: center;
+}
+
+.extrainfo div {
+	display: block;
+	margin: 0;
+}
+
+.extrainfo .attr-const   { color: blueviolet; }
+.extrainfo .attr-pure    { color: darkslategray; }
+.extrainfo .attr-nothrow { color: brown; }
+.extrainfo .attr-nogc    { color: darkgreen; }
+.extrainfo .attr-safe    { color: darkblue; }
+.extrainfo .attr-trusted { color: firebrick; }
+.extrainfo .attr-system  { color: darkred; }
+.extrainfo .attr-final   { color: darkolivegreen; }
+.extrainfo .attr-ref     { color: fuchsia; }
+
+
+
+/**** SECTION-SPECIFIC STYLES ****/
+
+div.section.seealso, div.section.note {
+	font-size: 75%;
+	line-height: 135%;
+	/* background-color: #F0F0C0; */
+	/* background-color: #DA7F07; */
+	/* background-color: #DA8F07; */
+	/* background-color: #DA9F07; */
+	background-color: #DAAF07;
+	padding: 1em;
+	margin-bottom: 0.5em;
+}
+
+div.section.seealso h2, div.section.note h2 {
+	display: block;
+	float: left;
+	margin: 0 0.7em -0.05em 0em;
+	padding: 0;
+	font-size: 1.1em;
+}
+
+div.section.seealso div.seealso-content, div.section.note div.note-content {
+	display: block;
+	margin-left: 6.5em;
+}
+
+div.section.seealso *:first-child, div.section.note *:first-child {
+	margin-top: 0em;
+}
+
+div.section.seealso ul, div.section.note ul {
+	padding-left: 1.5em;
+}
+
+div.section.seealso *:last-child, div.section.note *:last-child {
+	margin-bottom: 0em;
+}
+
+
+
+/**** CODE ****/
+
+/* DDoc code examples */
+code {
+	background-color: #333;
+	color: #eee;
+	padding: 0.8em;
+	border-radius: .1em;
+	display: block;
+}
+
+/* Markdown inline code */
+code.prettyprint {
+	font-family: monospace;
+	color: #333;
+	background-color:rgba(0,0,0,0.04);
+	border-radius: .15em;
+	border: 1px solid #C0C0C0;
+	padding: 0.22em;
+	display: inline;
+}
+
+/*do not affect the first <pre>, which is not in a section*/
+div.section pre > code {
+	margin: .5em;
+	border-radius: .1em;
+	padding: 0.8em;
+}
+
+div.section td pre {
+	margin: 0;
+	padding: 0;
+}
+
+
+div.section td code:not(.prettyprint) {
+	margin: 0;
+	padding: 0.6em;
+}
+
+.d_inlinecode {
+	font-family: monospace;
+	font-weight: bold;
+}
+
+.hljs {
+	display: block; padding: 1em;
+	background: #282B2E;
+	overflow-x: auto;
+	display: block;
+}
+
+.hljs-keyword,
+.hljs-literal,
+.hljs-change,
+.hljs-winutils,
+.hljs-flow,
+.lisp .hljs-title,
+.clojure .hljs-built_in,
+.nginx .hljs-title,
+.css .hljs-id,
+.tex .hljs-special {
+	color: #93C763;
+}
+
+.hljs-number {
+	color: #FFCD22;
+}
+
+.hljs {
+	color: #E0E2E4;
+}
+
+.css .hljs-tag,
+.css .hljs-pseudo {
+	color: #D0D2B5;
+}
+
+.hljs-attribute,
+.hljs .hljs-constant {
+	color: #668BB0;
+}
+
+.xml .hljs-attribute {
+	color: #B3B689;
+}
+
+.xml .hljs-tag .hljs-value {
+	color: #E8E2B7;
+}
+
+.hljs-code,
+.hljs-class .hljs-title,
+.hljs-header {
+	color: white;
+}
+
+.hljs-class,
+.hljs-hexcolor {
+	color: #93C763;
+}
+
+.hljs-regexp {
+	color: #D39745;
+}
+
+.hljs-at_rule,
+.hljs-at_rule .hljs-keyword {
+	color: #A082BD;
+}
+
+.hljs-doctype {
+	color: #557182;
+}
+
+.hljs-link_url,
+.hljs-tag,
+.hljs-tag .hljs-title,
+.hljs-bullet,
+.hljs-subst,
+.hljs-emphasis,
+.haskell .hljs-type,
+.hljs-preprocessor,
+.hljs-pragma,
+.ruby .hljs-class .hljs-parent,
+.hljs-built_in,
+.sql .hljs-aggregate,
+.django .hljs-template_tag,
+.django .hljs-variable,
+.smalltalk .hljs-class,
+.hljs-javadoc,
+.django .hljs-filter .hljs-argument,
+.smalltalk .hljs-localvars,
+.smalltalk .hljs-array,
+.hljs-attr_selector,
+.hljs-pseudo,
+.hljs-addition,
+.hljs-stream,
+.hljs-envvar,
+.apache .hljs-tag,
+.apache .hljs-cbracket,
+.tex .hljs-command,
+.hljs-prompt {
+	color: #8CBBAD;
+}
+
+.hljs-string {
+	color: #EC7600;
+}
+
+.hljs-comment,
+.java .hljs-annotation,
+.hljs-blockquote,
+.hljs-horizontal_rule,
+.python .hljs-decorator,
+.hljs-template_comment,
+.hljs-pi,
+.hljs-deletion,
+.hljs-shebang,
+.apache .hljs-sqbracket,
+.tex .hljs-formula {
+	color: #818E96;
+}
+
+.hljs-keyword,
+.hljs-literal,
+.css .hljs-id,
+.hljs-phpdoc,
+.hljs-title,
+.hljs-header,
+.haskell .hljs-type,
+.vbscript .hljs-built_in,
+.sql .hljs-aggregate,
+.rsl .hljs-built_in,
+.smalltalk .hljs-class,
+.diff .hljs-header,
+.hljs-chunk,
+.hljs-winutils,
+.bash .hljs-variable,
+.apache .hljs-tag,
+.tex .hljs-special,
+.hljs-request,
+.hljs-at_rule .hljs-keyword,
+.hljs-status {
+	font-weight: bold;
+}
+
+.coffeescript .javascript,
+.javascript .xml,
+.tex .hljs-formula,
+.xml .javascript,
+.xml .vbscript,
+.xml .css,
+.xml .hljs-cdata {
+	opacity: 0.5;
+}
