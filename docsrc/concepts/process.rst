@@ -3,7 +3,6 @@ Process
 =======
 
 
-
 A Process is a 'functionality block' in Tharsis; implemented as a class with
 a :ref:`process() <process-method>` method that reads :ref:`past <game-state>`
 :ref:`components <component>` of one or more types and optionally writes a :ref:`future
@@ -156,7 +155,7 @@ writing ``PositionComponent``.
 ``EntityManager`` does not *own* the registered Processes, but they must not be destroyed for
 as long as the ``EntityManager`` exists. ``EntityManager`` will not destroy the Processes in its
 destructor. Note that while `EntityManager.executeFrame()
-<../../api/tharsis/entity/entitymanager/EntityManager.executeFrame.html>`_ is executing,
+<../api/tharsis/entity/entitymanager/EntityManager.executeFrame.html>`_ is executing,
 the Processes :ref:`process() <process-method>`/:ref:`preProcess()
 <preProcess-method>`/:ref:`postProcess() <postProcess-method>` methods may be running in any
 thread; it's not safe to access the Processes without any needed synchronization.
@@ -214,7 +213,7 @@ Parameters
 .. _Context:
 
 * **optional** *entity context*: ``ref const`` `EntityManager.Context
-  <../../api/tharsis/entity/entitymanager/EntityManager.Context.html>`_
+  <../api/tharsis/entity/entitymanager/EntityManager.Context.html>`_
 
   Allows access to entity ID and all its past components. Note that accessing components
   through entity context has higher overhead than accessing components through
@@ -310,7 +309,7 @@ Can optionally have a `tharsis.prof.Profiler
 <http://defenestrate.eu/docs/tharsis.prof/tharsis.prof.profiler.html>`_ parameter to get
 access to a thread profiler attached to EntityManager_ through
 `EntityManager.attachPerThreadProfilers()
-<../../api/tharsis/entity/entitymanager/EntityManager.attachPerThreadProfilers.html>`_; if
+<../api/tharsis/entity/entitymanager/EntityManager.attachPerThreadProfilers.html>`_; if
 attached by the user.
 
 .. _postProcess-method:
@@ -355,8 +354,8 @@ cases (e.g. if you really know the target machine).
 there is no Process yet to write them.
 
 
-.. _EntityManager:       ../../api/tharsis/entity/entitymanager/EntityManager.html
-.. _EntityPolicy:        ../../api/tharsis/entity/entitypolicy.html
-.. _DefaultEntityPolicy: ../../api/tharsis/entity/entitypolicy/DefaultEntityPolicy.html
+.. _EntityManager:       ../api/tharsis/entity/entitymanager/EntityManager.html
+.. _EntityPolicy:        ../api/tharsis/entity/entitypolicy.html
+.. _DefaultEntityPolicy: ../api/tharsis/entity/entitypolicy/DefaultEntityPolicy.html
 
 
