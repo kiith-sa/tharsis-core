@@ -9,6 +9,7 @@ module tharsis.entity.diagnostics;
 
 
 import std.algorithm;
+import std.array: empty;
 import std.exception;
 
 
@@ -192,18 +193,30 @@ struct EntityManagerDiagnostics(Policy)
     /// methods of all Processes.
     size_t processCallsTotal() @safe pure nothrow const
     {
+        if(processes.empty)
+        {
+            return 0;
+        }
         return processes[].map!(a => a.processCalls).reduce!((a, b) => a + b).assumeWontThrow;
     }
 
     /// Get the total (summed) duration of all processes in all threads.
     ulong processDurationTotal() @safe pure nothrow const
     {
+        if(processes.empty)
+        {
+            return 0;
+        }
         return processes[].map!(a => a.duration).reduce!((a, b) => a + b).assumeWontThrow;
     }
 
     /// Get the average duration of a process.
     ulong processDurationAverage() @safe pure nothrow const
     {
+        if(processCount == 0)
+        {
+            return ulong.max;
+        }
         return processDurationTotal / processCount;
     }
 
@@ -240,6 +253,10 @@ struct EntityManagerDiagnostics(Policy)
     /// Get the number of past component types read by a Process on average.
     double componentTypesReadPerProcess() @safe pure nothrow const
     {
+        if(processes.empty)
+        {
+            return double.nan;
+        }
         return processes[].map!(a => a.componentTypesRead)
                           .reduce!((a, b) => a + b).assumeWontThrow 
                           / cast(double)processCount;
