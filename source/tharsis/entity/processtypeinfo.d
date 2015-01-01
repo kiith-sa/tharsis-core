@@ -421,7 +421,6 @@ mixin template validateProcess(Process)
  * This overload will take precedence as it is unambiguosly more specific than both
  * previous overloads.
  */
-
 Tuple!(string, size_t)[] prioritizeProcessOverloads(P)()
 {
     // All overloads of the process() method in P.
