@@ -15,7 +15,7 @@ import std.typecons;
 import tharsis.entity.componenttypeinfo;
 import tharsis.entity.componenttypemanager;
 import tharsis.entity.descriptors;
-import tharsis.entity.resourcemanager;
+import tharsis.entity.resource;
 import tharsis.util.alloc;
 import tharsis.util.array;
 import tharsis.util.math;

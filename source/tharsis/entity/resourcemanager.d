@@ -9,6 +9,7 @@ module tharsis.entity.resourcemanager;
 
 
 import tharsis.entity.entitymanager;
+import tharsis.entity.resource;
 import tharsis.util.interfaces;
 
 
@@ -113,6 +114,9 @@ package:
  *
  * Any Resource type must define a Descriptor type, which stores the data needed for the
  * ResourceManager to initialize the Resource (e.g. a file name).
+ *
+ * The tharsis.entity.resource.DefaultResource template can be used to easily automate
+ * most work in creating a resource type.
  */
 abstract class ResourceManager(Resource) : AbstractResourceManager
 {
@@ -195,6 +199,11 @@ public:
  * storage (consisting of manually allocated pages that are never moved).
  *
  * Resources are loaded by a delegate passed to MallocResourceManager constructor.
+ *
+ * Params:
+ *
+ * Resource = Resource type used. **Must be an instantation of
+ *            tharsis.entity.DefaultResource.**
  */
 abstract class MallocResourceManager(Resource) : ResourceManager!Resource
 {
@@ -478,21 +487,4 @@ private:
     {
         return resources_.length + resourcesToAdd_.assumeUnshared.length;
     }
-}
-
-
-/** Enumerates resource states.
- *
- * See_also: ResourceManager.state
- */
-enum ResourceState
-{
-    /// The resource has not been loaded yet.
-    New,
-    /// The resource is currently being loaded.
-    Loading,
-    /// The resource has been loaded successfully and can be used.
-    Loaded,
-    /// The resource has failed to load and can not be used.
-    LoadFailed
 }

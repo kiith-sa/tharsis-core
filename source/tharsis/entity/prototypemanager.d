@@ -13,6 +13,7 @@ import tharsis.entity.componenttypeinfo;
 import tharsis.entity.componenttypemanager;
 import tharsis.entity.entitymanager;
 import tharsis.entity.entityprototype;
+import tharsis.entity.resource;
 import tharsis.entity.resourcemanager;
 import tharsis.util.interfaces;
 import tharsis.util.qualifierhacks;
