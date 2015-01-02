@@ -519,6 +519,9 @@ public:
     /// Minimum number of components to preallocate per entity between game updates.
     double minPreallocPerEntity = 0;
 
+    /// Default (.init) value of the component, as raw bytes.
+    const(void[]) defaultValue;
+
 private:
     /* Type info of the Source type the components are loaded from.
      *
@@ -685,7 +688,7 @@ private:
      * Params:  Source    = Source the components will be loaded from (e.g. YAML).
      *          Component = Component type to generate info about.
      */
-    this(Source, Component)() @safe pure nothrow
+    this(Source, Component)() @system pure nothrow
     {
         mixin validateComponent!Component;
         alias FieldNamesTuple!Component Fields;
@@ -697,6 +700,9 @@ private:
         isMulti     = isMultiComponent!Component;
         name        = fullName[0 .. $ - "Component".length];
         sourceName  = name[0 .. 1].toLower.assumeWontThrow ~ name[1 .. $];
+
+        defaultValue = new void[Component.sizeof];
+        (*cast(Component*)defaultValue.ptr) = Component.init;
 
         static if(hasMember!(Component, "minPrealloc"))
         {

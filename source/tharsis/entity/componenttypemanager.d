@@ -256,7 +256,7 @@ public:
      * componentTypeMgr.registerComponentTypes!(HealthComponent, PhysicsComponent);
      * --------------------
      */
-    void registerComponentTypes(Types ...)() @safe pure nothrow
+    void registerComponentTypes(Types ...)() @trusted pure nothrow
     {
         assert(!locked, "Can't register component types with locked ComponentTypeManager");
         foreach(Component; Types)
