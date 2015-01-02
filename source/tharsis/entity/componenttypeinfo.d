@@ -223,6 +223,15 @@ private:
     alias AddRightToLeft = void function(ref RawComponent left, ref const(RawComponent) right)
                            @safe pure nothrow;
 
+    /* Name of the property in source code, but not necessarily in a Source.
+     *
+     * See_Also: sourceName
+     */
+    string name;
+
+    // Property name used when loading from the Source. May be different from the
+    // name of the Component's property.
+    string sourceName;
 
     /* The function to load the property.
      *
@@ -293,8 +302,11 @@ private:
     {
         auto loadPropDg = &implementLoadProperty!(Source, Component, fieldName);
 
-        loadProperty    = loadPropDg;
+        loadProperty = loadPropDg;
         addRightToLeft_ = &implementAddRightToLeft!(Component, fieldName);
+
+        name       = fieldName;
+        sourceName = fieldNameSource!(Component, fieldName);
 
         // Get user defined attributes of the property.
         mixin(q{
