@@ -118,8 +118,7 @@ public:
                                 void delegate(string) nothrow logError) nothrow
         {
             size_t count = 0;
-            Source componentSource;
-            if(sequence.isSequence) while(sequence.getSequenceValue(count, componentSource))
+            if(sequence.isSequence) foreach(ref componentSource; sequence)
             {
                 if(!loadComponent(componentType, componentSource, prototype, logError))
                 {

@@ -90,22 +90,25 @@ Skeleton of a Source struct
            assert(false);
        }
 
-       /** Get a nested Source from a 'sequence' Source.
+       /** Foreach over all members of a sequence Source or over all keys of a mapping Source.
         *
-        * (Get a value from a Source that represents an array of Sources)
-        *
-        * Can only be called on if the Source is a sequence (see isSequence()).
-        *
-        * Params:  index  = Index of the Source to get in the sequence.
-        *          target = Target to read the Source to.
-        *
-        * Returns: true on success, false if index is out of range.
+        * Must not be called for a scalar Source.
         */
-       bool getSequenceValue(size_t index, out TestSource target) @safe nothrow
+       int opApply(int delegate(ref YAMLSource) nothrow dg) @trusted nothrow
        {
-           assert(false);
-       }
+           int result = 0;
 
+           if(isSequence) 
+           {
+               assert(false);
+           }
+           else if(isMapping)
+           {
+               assert(false);
+           }
+           else assert(false, "opApply() called on a scalar Source");
+           return result;
+       }
 
        /** Get a nested Source from a 'mapping' Source.
         *

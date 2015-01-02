@@ -292,8 +292,6 @@ private:
     this(Source, Component, string fieldName)() @safe pure nothrow @nogc
     {
         auto loadPropDg = &implementLoadProperty!(Source, Component, fieldName);
-        // The cast adds the nothrow attribute (implementLoadProperty does not throw
-        // even though we can't mark it nothrow as of DMD 2.065).
 
         loadProperty    = loadPropDg;
         addRightToLeft_ = &implementAddRightToLeft!(Component, fieldName);
