@@ -200,10 +200,9 @@ private:
      *
      * Params:
      * component = Component with the property to load, as a raw byte array.
-     * source    = Source to load the property from, e.g. a YAML node defining the
-     *             component. Although we use a void pointer, the source must match the
-     *             type of the source used with the construct() function that created this
-     *             ComponentPropertyInfo.
+     * source    = `Source <../concepts/source.html>`_ to load the value of the property
+     *             from. Must have the Source type used with ComponentTypeInfo constructor,
+     *             `void*` is used to avoid templating ComponentPropertyInfo with Source.
      * getHandle = A delegate that, given resource type ID and descriptor, returns a raw
      *             resource handle. Used to init properties that are resource handles.
      *             Always passed but not every property will use this.
@@ -392,11 +391,10 @@ private:
      * When registering a component type, this template is instantiated for its properties
      * to implement loadProperty for every one of them.
      *
-     * Params: Source            = The Source type to load from (e.g. YAMLSource).
+     * Params: Source            = The `Source <../concepts/source.html>`_ type to load from.
      *         Component         = Component type we're loading.
      *         fieldNameInternal = Name of the property in the Component struct to load
-     *                             (may differ from the name of the same property in
-     *                             component source).
+     *                             (may differ from the name of the property in Source).
      *
      * See_Also: LoadProperty
      */
@@ -410,17 +408,7 @@ private:
 
         enum string compName = Component.stringof;
 
-        // The component is stored in a mapping; the property in a Source that is one of
-        // the values in that mapping.
-        Source fieldSource;
-        Source* source = cast(Source*)sourceRaw;
-        import std.exception;
-        if(!source.isMapping)
-        {
-            logError("'%s' failed to load: Component source is not a mapping\n\n"
-                     .format(compName)).assumeWontThrow;
-            return false;
-        }
+        Source* fieldSource = cast(Source*)sourceRaw;
 
         // Is this property a resource handle?
         enum isResource = isResourceHandle!(Component, fieldNameInternal);
@@ -432,29 +420,7 @@ private:
 
         alias typeof(*fieldPtr) FieldType;
 
-        // Property name used when loading from the Source. May be different from the
-        // name of the Component's property.
         enum string fieldName = fieldNameSource!(Component, fieldNameInternal);
-        if(!source.getMappingValue(fieldName, fieldSource))
-        {
-            static if(isResource)
-            {
-                logError("'%s' falied to load: Property '%s' not found\n\n"
-                         .format(compName, fieldName)).assumeWontThrow;
-                return false;
-            }
-            // If the property is not found in the Source, and the property is not a
-            // resource handle, default-initialize it.
-            else
-            {
-                import tharsis.util.debughacks;
-                mixin(q{
-                *fieldPtr = Component.init.%s;
-                }.format(fieldNameInternal));
-                return true;
-            }
-        }
-
         enum failedToLoad = "'%s' failed to load: Property '%s'".format(compName, fieldName)
                           ~ " does not have expected type '%s'\n\n";
         // If a property is a resource handle, source contains a resource descriptor. We
@@ -468,7 +434,7 @@ private:
 
             // Load the descriptor of the resource.
             Descriptor desc;
-            if(!Descriptor.load(fieldSource, desc))
+            if(!Descriptor.load(*fieldSource, desc))
             {
                 logError(failedToLoad.format(Descriptor.stringof)).assumeWontThrow;
                 return false;
@@ -681,14 +647,45 @@ public:
         assert(componentData.length == size,
                "Size of component to load doesn't match its component type");
         auto getHandle = &entityManager.rawResourceHandle;
-        // Try to load all the properties. If we fail to load any single property,
-        // loading fails.
-        foreach(ref p; properties_)
+
+        if(!source.isMapping)
         {
-            if(!p.loadProperty(componentData, cast(void*)&source, getHandle, logError))
+            logError("Failed to load component %s: got a non-mapping source"
+                     .format(sourceName).assumeWontThrow);
+            return false;
+        }
+
+        // Start by default-initializing the Component.
+        componentData[] = cast(ubyte[])defaultValue[];
+        foreach(ref keySource; source)
+        {
+            string propertyName;
+            if(!keySource.readTo(propertyName))
             {
-                return false;
+                logError("Encountered a non-string key in a definition of an %s component"
+                         .format(sourceName).assumeWontThrow);
             }
+            Source propertySource;
+            if(!source.getMappingValue(propertyName, propertySource))
+            {
+                assert(false, "This must succeed, since we know the key is in the Source; "
+                              "we've got it from the foreach()");
+            }
+
+            // Can't use std.algorithm.find as property info is non-copyable;
+            // property info array is not an input range.
+            auto found = properties_[];
+            while(!found.empty && found.front.sourceName != propertyName) { found.popFront; }
+
+            if(found.empty)
+            {
+                logError("Encountered unknown property %s in component %s: maybe a typo?"
+                         .format(propertyName, sourceName).assumeWontThrow);
+                continue;
+            }
+
+            found.front.loadProperty(componentData, cast(void*)&propertySource, getHandle,
+                                     logError);
         }
 
         return true;
