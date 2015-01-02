@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<link rel="stylesheet" type="text/css" href="../../../style.css"/><script src="../../../highlight.pack.js"></script>
+<title>DefaultResource</title>
+<base href="../../../"/>
+<script src="search.js"></script>
+</head>
+<body>
+<div class="main">
+<div class="toc">
+<div class="toc-additional">
+<div class="section">
+<ul>
+<li><a href="../index.html">Documentation home</a>
+</li>
+<li><a href="https://github.com/kiith-sa/tharsis-core">Tharsis GitHub</a>
+</li>
+</ul>
+
+</div>
+
+</div>
+<ul>
+<li>
+<span class="package">
+tharsis
+</span>
+<ul>
+<li>
+<span class="package">
+tharsis.entity
+</span>
+<ul>
+<li>
+<small>tharsis.entity.</small><a href="tharsis/entity/componenttypeinfo.html">componenttypeinfo</a>
+</li>
+<li>
+<small>tharsis.entity.</small><a href="tharsis/entity/componenttypemanager.html">componenttypemanager</a>
+</li>
+<li>
+<small>tharsis.entity.</small><a href="tharsis/entity/descriptors.html">descriptors</a>
+</li>
+<li>
+<small>tharsis.entity.</small><a href="tharsis/entity/diagnostics.html">diagnostics</a>
+</li>
+<li>
+<small>tharsis.entity.</small><a href="tharsis/entity/entity.html">entity</a>
+</li>
+<li>
+<small>tharsis.entity.</small><a href="tharsis/entity/entityid.html">entityid</a>
+</li>
+<li>
+<small>tharsis.entity.</small><a href="tharsis/entity/entitymanager.html">entitymanager</a>
+</li>
+<li>
+<small>tharsis.entity.</small><a href="tharsis/entity/entitypolicy.html">entitypolicy</a>
+</li>
+<li>
+<small>tharsis.entity.</small><a href="tharsis/entity/entityprototype.html">entityprototype</a>
+</li>
+<li>
+<small>tharsis.entity.</small><a href="tharsis/entity/entityrange.html">entityrange</a>
+</li>
+<li>
+<small>tharsis.entity.</small><a href="tharsis/entity/lifecomponent.html">lifecomponent</a>
+</li>
+<li>
+<small>tharsis.entity.</small><a href="tharsis/entity/processtypeinfo.html">processtypeinfo</a>
+</li>
+<li>
+<small>tharsis.entity.</small><a href="tharsis/entity/prototypemanager.html">prototypemanager</a>
+</li>
+<li>
+<small>tharsis.entity.</small><a href="tharsis/entity/resource.html">resource</a>
+</li>
+<li>
+<small>tharsis.entity.</small><a href="tharsis/entity/resourcemanager.html">resourcemanager</a>
+</li>
+<li>
+<small>tharsis.entity.</small><a href="tharsis/entity/scheduler.html">scheduler</a>
+</li>
+<li>
+<small>tharsis.entity.</small><a href="tharsis/entity/source.html">source</a>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="breadcrumbs">
+<table id="results"></table>
+<a class="home" href=index.html>⌂</a>
+<input type="search" id="search" placeholder="Search" onkeyup="searchSubmit(this.value, event)"/>
+<small>tharsis.entity.<a href=tharsis/entity/resource.html>resource</a>.</small><span class="highlight">DefaultResource</span></div>
+<div class="content">
+<pre><code>public struct DefaultResource(Payload)
+</code></pre><div class="section">
+<p>Template for simple creation of Resource types for usage with ResourceManager classes.
+</p>
+
+</div>
+<div class="section">
+<p>Adds members required to be in a Resource type (the Descriptor alias) as well as
+ members that are useful in almost every resource (descriptor itself, resource state).
+</p>
+
+</div>
+<div class="section">
+<h2>Parameters</h2>
+<table class="params">
+<tr class="param"><td class="paramName">Payload</td><td class="paramDoc"><p>The "resource" itself, that is, the data we need to manage as a resource.
+</p>
+</td></tr>
+</table></div>
+<div class="section">
+<h2>Example</h2>
+
+ <pre><code> /// Our resource - data describing a weapon, but can also have e.g. enum or alias members.
+ struct Weapon
+ {
+     /// Maximum number of projectiles a weapon can spawn in a single burst.
+     enum maxProjectiles = 128;
+
+     /// Time between successive bursts of projectiles.
+     float burstPeriod;
+
+     import tharsis.defaults.components;
+     /// Spawner components to spawn projectiles in a burst.
+     SpawnerMultiComponent[] projectiles;
+ }
+
+ import tharsis.entity.resource;
+ /// Weapon resource itself. Embeds Weapon.
+ alias WeaponResource = DefaultResource!Weapon;
+</code></pre>
+</div>
+<div class="section">
+<h2>Aliases</h2>
+<table>
+<tr><td><a href="tharsis/entity/resource/DefaultResource.Descriptor.html">Descriptor</a></td><td><pre><code>DefaultDescriptor!(typeof(this))</code></pre></td><td><p>Uses DefaultDescriptor.
+</p>
+</td></tr></table>
+<h2>Variables</h2>
+<table>
+<tr><td><a href="tharsis/entity/resource/DefaultResource.payload_.html">payload_</a></td><td><pre><code>Payload</code></pre></td><td><p>Stored resource data.
+</p>
+</td></tr><tr><td><a href="tharsis/entity/resource/DefaultResource.state.html">state</a></td><td><pre><code>ResourceState</code></pre></td><td><p>Current state of the resource.
+</p>
+</td></tr><tr><td><a href="tharsis/entity/resource/DefaultResource.descriptor.html">descriptor</a></td><td><pre><code>Descriptor</code></pre></td><td><p>Descriptor of the weapon (file name or a <code class="prettyprint">Source &lt;../concepts/source.html&gt;</code>_).
+</p>
+</td></tr></table>
+<h2>Functions</h2>
+<table>
+<tr><td><a href="tharsis/entity/resource/DefaultResource.this.html">this</a></td><td></td><td><p>No default construction.
+</p>
+</td></tr><tr><td><a href="tharsis/entity/resource/DefaultResource.this.html">this</a></td><td></td><td><p>Construct a new (not loaded) DefaultResource with specified descriptor.
+</p>
+</td></tr></table>
+</div>
+
+<script>hljs.initHighlightingOnLoad();</script>
+</div>
+</div>
+</body>
+</html>

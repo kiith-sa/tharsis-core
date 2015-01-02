@@ -73,6 +73,9 @@ tharsis.entity
 <small>tharsis.entity.</small><a href="tharsis/entity/prototypemanager.html">prototypemanager</a>
 </li>
 <li>
+<small>tharsis.entity.</small><a href="tharsis/entity/resource.html">resource</a>
+</li>
+<li>
 <small>tharsis.entity.</small><a href="tharsis/entity/resourcemanager.html">resourcemanager</a>
 </li>
 <li>
@@ -93,7 +96,7 @@ tharsis.entity
 <input type="search" id="search" placeholder="Search" onkeyup="searchSubmit(this.value, event)"/>
 <small>tharsis.entity.<a href=tharsis/entity/prototypemanager.html>prototypemanager</a>.</small><span class="highlight">BasePrototypeManager</span></div>
 <div class="content">
-<pre><code>public class BasePrototypeManager : MallocResourceManager!Resource(Resource)
+<pre><code>public class BasePrototypeManager(Resource) : MallocResourceManager!Resource
 </code></pre><div class="section">
 <p>Base class for resource managers managing entity prototypes.
 </p>

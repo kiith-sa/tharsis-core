@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <link rel="stylesheet" type="text/css" href="../../../style.css"/><script src="../../../highlight.pack.js"></script>
-<title>ResourceState</title>
+<title>Descriptor</title>
 <base href="../../../"/>
 <script src="search.js"></script>
 </head>
@@ -73,6 +73,9 @@ tharsis.entity
 <small>tharsis.entity.</small><a href="tharsis/entity/prototypemanager.html">prototypemanager</a>
 </li>
 <li>
+<small>tharsis.entity.</small><a href="tharsis/entity/resource.html">resource</a>
+</li>
+<li>
 <small>tharsis.entity.</small><a href="tharsis/entity/resourcemanager.html">resourcemanager</a>
 </li>
 <li>
@@ -91,35 +94,20 @@ tharsis.entity
 <table id="results"></table>
 <a class="home" href=index.html>⌂</a>
 <input type="search" id="search" placeholder="Search" onkeyup="searchSubmit(this.value, event)"/>
-<small>tharsis.entity.<a href=tharsis/entity/resourcemanager.html>resourcemanager</a>.</small><span class="highlight">ResourceState</span></div>
+<small>tharsis.entity.<a href=tharsis/entity/resource.html>resource</a>.</small><span class="highlight"><a href=tharsis/entity/resource/DefaultResource.html>DefaultResource</a>.Descriptor</span></div>
 <div class="content">
-<pre><code>public enum ResourceState
-</code></pre><div class="section">
-<p>Enumerates resource states.
-</p>
-
-</div>
-<div class="section seealso">
-<h2>See Also:</h2>
-<div class="seealso-content">
-<p> ResourceManager.state
-</p>
-
-</div>
-</div>
+<pre><code>alias Descriptor = DefaultDescriptor!(typeof(this))</code></pre>
 <div class="section">
-<h2>Values</h2>
-<table>
-<tr><td>New</td><td></td><td><p>The resource has not been loaded yet.
+<p>Uses DefaultDescriptor.
 </p>
-</td></tr><tr><td>Loading</td><td></td><td><p>The resource is currently being loaded.
-</p>
-</td></tr><tr><td>Loaded</td><td></td><td><p>The resource has been loaded successfully and can be used.
-</p>
-</td></tr><tr><td>LoadFailed</td><td></td><td><p>The resource has failed to load and can not be used.
-</p>
-</td></tr></table>
+
 </div>
+
+<script>hljs.initHighlightingOnLoad();</script>
+</div>
+</div>
+</body>
+</html>
 
 <script>hljs.initHighlightingOnLoad();</script>
 </div>

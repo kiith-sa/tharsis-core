@@ -73,6 +73,9 @@ tharsis.entity
 <small>tharsis.entity.</small><a href="tharsis/entity/prototypemanager.html">prototypemanager</a>
 </li>
 <li>
+<small>tharsis.entity.</small><a href="tharsis/entity/resource.html">resource</a>
+</li>
+<li>
 <small>tharsis.entity.</small><a href="tharsis/entity/resourcemanager.html">resourcemanager</a>
 </li>
 <li>
@@ -93,7 +96,7 @@ tharsis.entity
 <input type="search" id="search" placeholder="Search" onkeyup="searchSubmit(this.value, event)"/>
 <small>tharsis.entity.<a href=tharsis/entity/componenttypemanager.html>componenttypemanager</a>.</small><span class="highlight">ComponentTypeManager</span></div>
 <div class="content">
-<pre><code>public class ComponentTypeManager : AbstractComponentTypeManager(Source, Policy = DefaultEntityPolicy)
+<pre><code>public class ComponentTypeManager(Source, Policy = DefaultEntityPolicy) : AbstractComponentTypeManager
 </code></pre><div class="section">
 <p>Manages component type information and component loading.
 </p>
@@ -171,7 +174,7 @@ tharsis.entity
 <table>
 <tr><td><a href="tharsis/entity/componenttypemanager/ComponentTypeManager.this.html">this</a></td><td></td><td><p>Construct a ComponentTypeManager.
 </p>
-</td></tr><tr><td><a href="tharsis/entity/componenttypemanager/ComponentTypeManager.registerComponentTypes.html">registerComponentTypes</a><span class="extrainfo"><span class="method-attribs"><span class="attr-safe">@safe</span>, <span class="attr-pure">pure</span>, <span class="attr-nothrow">nothrow</span></span></span></td><td></td><td><p>Register specified <a href="../concepts/component.html">component</a> types.
+</td></tr><tr><td><a href="tharsis/entity/componenttypemanager/ComponentTypeManager.registerComponentTypes.html">registerComponentTypes</a><span class="extrainfo"><span class="method-attribs"><span class="attr-trusted">@trusted</span>, <span class="attr-pure">pure</span>, <span class="attr-nothrow">nothrow</span></span></span></td><td></td><td><p>Register specified <a href="../concepts/component.html">component</a> types.
 </p>
 </td></tr><tr><td><span class="extrainfo"><span class="attribs"><span class="attr-ref">ref</span></span></span><a href="tharsis/entity/componenttypemanager/ComponentTypeManager.sourceLoader.html">sourceLoader</a><span class="extrainfo"><span class="method-attribs"><span class="attr-safe">@safe</span>, <span class="attr-nothrow">nothrow</span>, <span class="attr-nogc">@nogc</span></span></span></td><td></td><td><p>Get the loader used to load components from <a href="../concepts/source.html">Sources</a>.
 </p>

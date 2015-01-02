@@ -137,22 +137,25 @@ by using e.g. reference counted or GC storage.</p>
         <span class="k">assert</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
     <span class="p">}</span>
 
-    <span class="cm">/** Get a nested Source from a &#39;sequence&#39; Source.</span>
+    <span class="cm">/** Foreach over all members of a sequence Source or over all keys of a mapping Source.</span>
 <span class="cm">     *</span>
-<span class="cm">     * (Get a value from a Source that represents an array of Sources)</span>
-<span class="cm">     *</span>
-<span class="cm">     * Can only be called on if the Source is a sequence (see isSequence()).</span>
-<span class="cm">     *</span>
-<span class="cm">     * Params:  index  = Index of the Source to get in the sequence.</span>
-<span class="cm">     *          target = Target to read the Source to.</span>
-<span class="cm">     *</span>
-<span class="cm">     * Returns: true on success, false if index is out of range.</span>
+<span class="cm">     * Must not be called for a scalar Source.</span>
 <span class="cm">     */</span>
-    <span class="kt">bool</span> <span class="n">getSequenceValue</span><span class="p">(</span><span class="nb">size_t</span> <span class="n">index</span><span class="p">,</span> <span class="k">out</span> <span class="n">TestSource</span> <span class="n">target</span><span class="p">)</span> <span class="nd">@safe</span> <span class="k">nothrow</span>
+    <span class="kt">int</span> <span class="n">opApply</span><span class="p">(</span><span class="kt">int</span> <span class="k">delegate</span><span class="p">(</span><span class="k">ref</span> <span class="n">YAMLSource</span><span class="p">)</span> <span class="k">nothrow</span> <span class="n">dg</span><span class="p">)</span> <span class="nd">@trusted</span> <span class="k">nothrow</span>
     <span class="p">{</span>
-        <span class="k">assert</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
-    <span class="p">}</span>
+        <span class="kt">int</span> <span class="n">result</span> <span class="p">=</span> <span class="mi">0</span><span class="p">;</span>
 
+        <span class="k">if</span><span class="p">(</span><span class="n">isSequence</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">assert</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">isMapping</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">assert</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="k">assert</span><span class="p">(</span><span class="kc">false</span><span class="p">,</span> <span class="s">&quot;opApply() called on a scalar Source&quot;</span><span class="p">);</span>
+        <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
+    <span class="p">}</span>
 
     <span class="cm">/** Get a nested Source from a &#39;mapping&#39; Source.</span>
 <span class="cm">     *</span>

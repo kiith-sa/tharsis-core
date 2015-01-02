@@ -73,6 +73,9 @@ tharsis.entity
 <small>tharsis.entity.</small><a href="tharsis/entity/prototypemanager.html">prototypemanager</a>
 </li>
 <li>
+<small>tharsis.entity.</small><a href="tharsis/entity/resource.html">resource</a>
+</li>
+<li>
 <small>tharsis.entity.</small><a href="tharsis/entity/resourcemanager.html">resourcemanager</a>
 </li>
 <li>
@@ -93,7 +96,7 @@ tharsis.entity
 <input type="search" id="search" placeholder="Search" onkeyup="searchSubmit(this.value, event)"/>
 <small>tharsis.entity.<a href=tharsis/entity/resourcemanager.html>resourcemanager</a>.</small><span class="highlight">ResourceManager</span></div>
 <div class="content">
-<pre><code>public abstract class ResourceManager : AbstractResourceManager(Resource)
+<pre><code>public abstract class ResourceManager(Resource) : AbstractResourceManager
 </code></pre><div class="section">
 <p>Base class for resource managers managing a specific Resource type.
 </p>
@@ -102,6 +105,9 @@ tharsis.entity
 <div class="section">
 <p>Any Resource type must define a Descriptor type, which stores the data needed for the
  ResourceManager to initialize the Resource (e.g. a file name).
+</p>
+<p> The tharsis.entity.resource.DefaultResource template can be used to easily automate
+ most work in creating a resource type.
 </p>
 
 </div>
