@@ -11,6 +11,7 @@ public import std.random;
 
 
 import std.range;
+import std.algorithm.sorting;
 
 /**
 Covers a given range $(D r) in a random manner, i.e. goes through each

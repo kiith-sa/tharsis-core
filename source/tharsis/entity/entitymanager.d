@@ -103,7 +103,7 @@ package:
             // Set by EntityManager to signify that the thread should stop.
             Stopping,
             // The thread is stopped, or never ran in the first place.
-            Stopped,
+            Stopped
         }
 
     private:
@@ -618,7 +618,7 @@ package:
         {
             return manager.rawHandle(descriptor);
         }
-        assert(false, "No resource manager for type " ~ to!string(type));
+        assert(false, "No resource manager for type " ~ std.conv.to!string(type));
     }
 
 private:
