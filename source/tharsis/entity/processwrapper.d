@@ -10,6 +10,8 @@ module tharsis.entity.processwrapper;
 import std.algorithm;
 
 import tharsis.entity.entitymanager;
+import tharsis.prof;
+
 
 package:
 
@@ -146,7 +148,7 @@ public:
 }
 
 
-import std.algorithm: join;
+import std.array: join;
 import std.string: format;
 import std.traits;
 

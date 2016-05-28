@@ -17,6 +17,7 @@ import tharsis.entity.resource;
 import tharsis.entity.resourcemanager;
 import tharsis.util.interfaces;
 import tharsis.util.qualifierhacks;
+import tharsis.util.pagedarray;
 
 
 // TODO: Add a method to specify resources to preload at start instead of always loading
